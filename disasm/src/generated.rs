@@ -770,13 +770,13 @@ impl Opcode {
         if code & 0xfc0007ff == 0x7c00002e {
             return Opcode::Lwzx;
         }
-        if code & 0xfc300fff == 0x4c000000 {
+        if code & 0xfc63ffff == 0x4c000000 {
             return Opcode::Mcrf;
         }
-        if code & 0xfc30ffff == 0xfc000080 {
+        if code & 0xfc63ffff == 0xfc000080 {
             return Opcode::Mcrfs;
         }
-        if code & 0xfc30ffff == 0x7c000400 {
+        if code & 0xfc7fffff == 0x7c000400 {
             return Opcode::Mcrxr;
         }
         if code & 0xfc1fffff == 0x7c000026 {
@@ -1109,7 +1109,7 @@ impl Opcode {
         if code & 0xfc0007ff == 0x7c000008 {
             return Opcode::Tw;
         }
-        if code & 0xfc000000 == 0xc0000000 {
+        if code & 0xfc000000 == 0xc000000 {
             return Opcode::Twi;
         }
         if code & 0xfc0007fe == 0x7c000278 {
@@ -7593,6 +7593,41 @@ impl Ins {
                     };
                 }
             }
+            Opcode::Tw => {
+                if ((self.code >> 21u8) & 0x1f) == 4 {
+                    return SimplifiedIns {
+                        mnemonic: "tweq",
+                        suffix: String::new(),
+                        args: vec![
+                            Argument::GPR(GPR(((self.code >> 16u8) & 0x1f) as _)),
+                            Argument::GPR(GPR(((self.code >> 11u8) & 0x1f) as _)),
+                        ],
+                        ins: self,
+                    };
+                }
+                if ((self.code >> 21u8) & 0x1f) == 5 {
+                    return SimplifiedIns {
+                        mnemonic: "twlge",
+                        suffix: String::new(),
+                        args: vec![
+                            Argument::GPR(GPR(((self.code >> 16u8) & 0x1f) as _)),
+                            Argument::GPR(GPR(((self.code >> 11u8) & 0x1f) as _)),
+                        ],
+                        ins: self,
+                    };
+                }
+                if ((self.code >> 21u8) & 0x1f) == 31
+                    && ((self.code >> 16u8) & 0x1f) == 0
+                    && ((self.code >> 11u8) & 0x1f) == 0
+                {
+                    return SimplifiedIns {
+                        mnemonic: "trap",
+                        suffix: String::new(),
+                        args: vec![],
+                        ins: self,
+                    };
+                }
+            }
             Opcode::Twi => {
                 if ((self.code >> 21u8) & 0x1f) == 8 {
                     return SimplifiedIns {
@@ -7611,6 +7646,20 @@ impl Ins {
                 if ((self.code >> 21u8) & 0x1f) == 6 {
                     return SimplifiedIns {
                         mnemonic: "twllei",
+                        suffix: String::new(),
+                        args: vec![
+                            Argument::GPR(GPR(((self.code >> 16u8) & 0x1f) as _)),
+                            Argument::Simm(Simm(
+                                ((((self.code & 0xffff) ^ 0x8000).wrapping_sub(0x8000)) as i32)
+                                    as _,
+                            )),
+                        ],
+                        ins: self,
+                    };
+                }
+                if ((self.code >> 21u8) & 0x1f) == 31 {
+                    return SimplifiedIns {
+                        mnemonic: "twui",
                         suffix: String::new(),
                         args: vec![
                             Argument::GPR(GPR(((self.code >> 16u8) & 0x1f) as _)),

@@ -531,6 +531,21 @@ fn test_ins_lwzx() {
 }
 
 #[test]
+fn test_ins_mcrf() {
+    assert_asm!(0x4E1C0000, "mcrf cr4, cr7");
+}
+
+#[test]
+fn test_ins_mcrfs() {
+    assert_asm!(0xFE1C0080, "mcrfs cr4, cr7");
+}
+
+#[test]
+fn test_ins_mcrxr() {
+    assert_asm!(0x7F800400, "mcrxr cr7");
+}
+
+#[test]
 fn test_ins_mfcr() {
     assert_asm!(0x7C000026, "mfcr r0");
 }
@@ -844,6 +859,7 @@ fn test_ins_rfi() {
 fn test_ins_rlwimi() {
     assert_asm!(0x500306FE, "rlwimi r3, r0, 0, 27, 31");
     assert_asm!(0x50032D74, "rlwimi r3, r0, 5, 21, 26");
+    assert_asm!(0x5400003F, "clrrwi. r0, r0, 0");
 }
 
 #[test]
@@ -1035,6 +1051,32 @@ fn test_ins_subfze() {
 #[test]
 fn test_ins_sync() {
     assert_asm!(0x7C0004AC, "sync");
+}
+
+#[test]
+fn test_tlbie() {
+    assert_asm!(0x7C001A64, "tlbie r3");
+}
+
+#[test]
+fn test_tlbsync() {
+    assert_asm!(0x7C00046C, "tlbsync");
+}
+
+#[test]
+fn test_tw() {
+    assert_asm!(0x7C063808, "tw 0, r6, r7");
+    assert_asm!(0x7C842808, "tweq r4, r5");
+    assert_asm!(0x7CA42808, "twlge r4, r5");
+    assert_asm!(0x7FE00008, "trap");
+}
+
+#[test]
+fn test_twi() {
+    assert_asm!(0x0C000000, "twi 0, r0, 0x0");
+    assert_asm!(0x0D07FFFF, "twgti r7, -0x1");
+    assert_asm!(0x0CC4FF01, "twllei r4, -0xff");
+    assert_asm!(0x0FE40003, "twui r4, 0x3");
 }
 
 #[test]

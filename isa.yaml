@@ -1058,7 +1058,7 @@ opcodes:
 
   - name: mcrf
     desc: Move Condition Register Field
-    bitmask: 0xfc300fff
+    bitmask: 0xfc63ffff
     pattern: 0x4c000000
     args: [ crfD, crfS ]
     defs: [ crfD ]
@@ -1066,7 +1066,7 @@ opcodes:
 
   - name: mcrfs
     desc: Move to Condition Register from FPSCR
-    bitmask: 0xfc30ffff
+    bitmask: 0xfc63ffff
     pattern: 0xfc000080
     args: [ crfD, crfS ]
     defs: [ crfD ]
@@ -1074,7 +1074,7 @@ opcodes:
 
   - name: mcrxr
     desc: Move to Condition Register from XER
-    bitmask: 0xfc30ffff
+    bitmask: 0xfc7fffff
     pattern: 0x7c000400
     args: [ crfD ]
     defs: [ crfD, xer ]
@@ -1938,7 +1938,7 @@ opcodes:
   - name: twi
     desc: Trap Word Immediate
     bitmask: 0xfc000000
-    pattern: 0xc0000000
+    pattern: 0x0c000000
     args: [ TO, rA, simm ]
     uses: [ rA ]
 
@@ -2118,6 +2118,17 @@ mnemonics:
     condition: crbA == crbB
 
   # Misc
+  - name: tweq
+    opcode: tw
+    args: [ rA, rB ]
+    condition: TO == 4
+  - name: twlge
+    opcode: tw
+    args: [ rA, rB ]
+    condition: TO == 5
+  - name: trap
+    opcode: tw
+    condition: TO == 31 && rA == 0 && rB == 0
   - name: twgti
     opcode: twi
     args: [ rA, simm ]
@@ -2127,6 +2138,7 @@ mnemonics:
     args: [ rA, simm ]
     condition: TO == 6
   - name: twui
+    opcode: twi
     args: [ rA, simm ]
     condition: TO == 31
 
