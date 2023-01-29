@@ -1,0 +1,12 @@
+[package]
+name = "ppc750cl-asm"
+version = "0.1.0"
+edition = "2021"
+authors = ["Luke Street <luke@street.dev>"]
+license = "GPL-3.0-or-later"
+description = "Assembler for PowerPC 750CL"
+keywords = ["powerpc", "wii", "gamecube"]
+repository = "https://github.com/encounter/ppc750cl"
+
+[dependencies]
+phf = "0.11.1"

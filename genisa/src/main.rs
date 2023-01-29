@@ -1,3 +1,7 @@
+#![feature(iterator_try_collect)]
+
+mod asm;
+
 use std::collections::HashMap;
 use std::fs::File;
 use std::io::Write;
@@ -10,6 +14,7 @@ use proc_macro2::{Group, Ident, Literal, Span, TokenStream, TokenTree};
 use quote::quote;
 use serde::{Deserialize, Deserializer};
 use syn::{LitChar, LitInt, LitStr};
+use crate::asm::asm_main;
 
 macro_rules! token_stream {
     ($stream:ident) => {
@@ -22,6 +27,10 @@ fn main() {
         eprintln!("{}", err);
         std::process::exit(1);
     }
+    // if let Err(err) = asm_main() {
+    //     eprintln!("{}", err);
+    //     std::process::exit(1);
+    // }
 }
 
 type Error = Box<dyn std::error::Error>;
@@ -238,7 +247,7 @@ pub(crate) struct Mnemonic {
     condition: String,
 }
 
-#[derive(Deserialize, Default)]
+#[derive(Deserialize, Default, Clone)]
 #[serde(default)]
 pub(crate) struct Modifier {
     name: String,
@@ -660,7 +669,7 @@ impl Isa {
 }
 
 /// Converts the given key into an identifier.
-fn to_rust_ident(prefix: &str, key: &str) -> TokenTree {
+pub(crate) fn to_rust_ident(prefix: &str, key: &str) -> TokenTree {
     TokenTree::Ident(Ident::new(
         &(prefix.to_owned() + &key.replace('.', "_")),
         Span::call_site(),
@@ -668,7 +677,7 @@ fn to_rust_ident(prefix: &str, key: &str) -> TokenTree {
 }
 
 /// Converts the given key into an enum variant key.
-fn to_rust_variant(key: &str) -> Result<TokenTree> {
+pub(crate) fn to_rust_variant(key: &str) -> Result<TokenTree> {
     Ok(TokenTree::Ident(Ident::new(
         &to_rust_variant_str(key)?,
         Span::call_site(),
