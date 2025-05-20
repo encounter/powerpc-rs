@@ -131,7 +131,7 @@ impl Ins {
 
 macro_rules! field_arg_no_display {
     ($name:ident, $typ:ident) => {
-        #[derive(Debug, Copy, Clone, Ord, PartialOrd, Eq, PartialEq)]
+        #[derive(Debug, Copy, Clone, Hash, Ord, PartialOrd, Eq, PartialEq)]
         pub struct $name(pub $typ);
         impl From<$name> for Argument {
             fn from(x: $name) -> Argument {
@@ -294,7 +294,7 @@ impl From<u8> for OpaqueU {
     }
 }
 
-#[derive(Debug, Default, Copy, Clone, Eq, PartialEq)]
+#[derive(Debug, Default, Copy, Clone, Eq, Hash, PartialEq)]
 pub enum Argument {
     #[default]
     None,
