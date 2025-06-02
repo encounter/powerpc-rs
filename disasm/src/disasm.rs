@@ -425,7 +425,7 @@ impl<'a> InsIter<'a> {
     }
 }
 
-impl<'a> Iterator for InsIter<'a> {
+impl Iterator for InsIter<'_> {
     type Item = (u32, Ins);
 
     fn next(&mut self) -> Option<Self::Item> {
