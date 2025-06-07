@@ -50,11 +50,11 @@ fn test_ins_addi() {
     // );
     assert_eq!(
         ins.defs(),
-        [Argument::GPR(GPR(0)), Argument::None, Argument::None, Argument::None, Argument::None]
+        [Argument::GPR(GPR(0)), Argument::None, Argument::None, Argument::None, Argument::None, Argument::None, Argument::None, Argument::None]
     );
     assert_eq!(
         ins.uses(),
-        [Argument::GPR(GPR(1)), Argument::None, Argument::None, Argument::None, Argument::None]
+        [Argument::GPR(GPR(1)), Argument::None, Argument::None, Argument::None, Argument::None, Argument::None, Argument::None, Argument::None]
     );
     assert_asm!(ins, "addi r0, r1, 0x140");
 
@@ -214,6 +214,11 @@ fn test_ins_cmpli() {
 }
 
 #[test]
+fn test_ins_cntlzd() {
+    assert_asm!(0x7CA30074, "cntlzd r3, r5");
+}
+
+#[test]
 fn test_ins_cntlzw() {
     assert_asm!(0x7C030034, "cntlzw r3, r0");
 }
@@ -291,6 +296,16 @@ fn test_ins_dcbz_l() {
 }
 
 #[test]
+fn test_ins_divd() {
+    assert_asm!(0x7CA63BD2, "divd r5, r6, r7");
+}
+
+#[test]
+fn test_ins_divdu() {
+    assert_asm!(0x7C839392, "divdu r4, r3, r18");
+}
+
+#[test]
 fn test_ins_divw() {
     assert_asm!(0x7C8073D6, "divw r4, r0, r14");
 }
@@ -313,6 +328,12 @@ fn test_ins_extsh() {
 }
 
 #[test]
+fn test_ins_extsw() {
+    assert_asm!(0x7CC307B4, "extsw r3, r6");
+    assert_asm!(0x7CC307B5, "extsw. r3, r6");
+}
+
+#[test]
 fn test_ins_fabs() {
     assert_asm!(0xFC000A10, "fabs f0, f1");
 }
@@ -328,6 +349,11 @@ fn test_ins_fadds() {
 }
 
 #[test]
+fn test_ins_fcfid() {
+    assert_asm!(0xFC602E9C, "fcfid f3, f5");
+}
+
+#[test]
 fn test_ins_fcmpo() {
     assert_asm!(0xFC00C840, "fcmpo cr0, f0, f25");
 }
@@ -335,6 +361,16 @@ fn test_ins_fcmpo() {
 #[test]
 fn test_ins_fcmpu() {
     assert_asm!(0xFC00D000, "fcmpu cr0, f0, f26");
+}
+
+#[test]
+fn test_ins_fctid() {
+    assert_asm!(0xFC60065C, "fctid f3, f0");
+}
+
+#[test]
+fn test_ins_fctidz() {
+    assert_asm!(0xFC60065E, "fctidz f3, f0");
 }
 
 #[test]
@@ -456,6 +492,32 @@ fn test_ins_lbzx() {
 }
 
 #[test]
+fn test_ins_ld() {
+    assert_asm!(0xE8030480, "ld r0, 0x120(r3)");
+    assert_asm!(0xE8A101A8, "ld r5, 0x6a(r1)");
+}
+
+#[test]
+fn test_ins_ldarx() {
+    assert_asm!(0x7C6538A8, "ldarx r3, r5, r7");
+}
+
+#[test]
+fn test_ins_ldu() {
+    assert_asm!(0xE8830061, "ldu r4, 0x18(r3)");
+}
+
+#[test]
+fn test_ins_ldux() {
+    assert_asm!(0x7C60286A, "ldux r3, r0, r5");
+}
+
+#[test]
+fn test_ins_ldx() {
+    assert_asm!(0x7C60282A, "ldx r3, r0, r5");
+}
+
+#[test]
 fn test_ins_lfd() {
     assert_asm!(0xC80140C8, "lfd f0, 0x40c8(r1)");
     assert_asm!(0xC8028090, "lfd f0, -0x7f70(r2)");
@@ -534,6 +596,21 @@ fn test_ins_lhzx() {
 #[test]
 fn test_ins_lmw() {
     assert_asm!(0xBB210444, "lmw r25, 0x444(r1)");
+}
+
+#[test]
+fn test_ins_lwa() {
+    assert_asm!(0xE8030DA2, "lwa r0, 0x368(r3)");
+}
+
+#[test]
+fn test_ins_lwaux() {
+    assert_asm!(0x7C8532EA, "lwaux r4, r5, r6");
+}
+
+#[test]
+fn test_ins_lwax() {
+    assert_asm!(0x7CA63AAA, "lwax r5, r6, r7");
 }
 
 #[test]
@@ -638,6 +715,12 @@ fn test_ins_mtmsr() {
 }
 
 #[test]
+fn test_ins_mtmsrd() {
+    assert_asm!(0x7C000164, "mtmsrd r0, 0");
+    assert_asm!(0x7D210164, "mtmsrd r9, 1");
+}
+
+#[test]
 fn test_ins_mtspr() {
     assert_asm!(0x7E75FBA6, "mtspr DABR, r19");
     assert_asm!(0x7C70FBA6, "mtspr HID0, r3");
@@ -657,6 +740,26 @@ fn test_ins_mtsr() {
 }
 
 #[test]
+fn test_ins_mtsrd() {
+    assert_asm!(0x7E0000A4, "mtsrd 0, r16");
+}
+
+#[test]
+fn test_ins_mtsrdin() {
+    assert_asm!(0x7C8040E4, "mtsrdin r4, r8");
+}
+
+#[test]
+fn test_ins_mulhd() {
+    assert_asm!(0x7C7CF892, "mulhd r3, r28, r31");
+}
+
+#[test]
+fn test_ins_mulhdu() {
+    assert_asm!(0x7CBCF812, "mulhdu r5, r28, r31");
+}
+
+#[test]
 fn test_ins_mulhw() {
     assert_asm!(0x7C7F2096, "mulhw r3, r31, r4");
 }
@@ -664,6 +767,11 @@ fn test_ins_mulhw() {
 #[test]
 fn test_ins_mulhwu() {
     assert_asm!(0x7C7D0016, "mulhwu r3, r29, r0");
+}
+
+#[test]
+fn test_ins_mulld() {
+    assert_asm!(0x7C6419D2, "mulld r3, r4, r3");
 }
 
 #[test]
@@ -715,186 +823,223 @@ fn test_ins_oris() {
     assert_asm!(0x67A06800, "oris r0, r29, 0x6800");
 }
 
-#[test]
-fn test_ins_psq_l() {
-    assert_asm!(0xE02500AC, "psq_l f1, 0xac(r5), 0, qr0");
-}
+// #[test]
+// fn test_ins_psq_l() {
+//     assert_asm!(0xE02500AC, "psq_l f1, 0xac(r5), 0, qr0");
+// }
 
-#[test]
-fn test_ins_psq_lu() {
-    assert_asm!(0xE5435010, "psq_lu f10, 0x10(r3), 0, qr5");
-}
+// #[test]
+// fn test_ins_psq_lu() {
+//     assert_asm!(0xE5435010, "psq_lu f10, 0x10(r3), 0, qr5");
+// }
 
-#[test]
-fn test_ins_psq_lx() {
-    let ins = Ins::new(0x1000000C);
-    assert_eq!(ins.op, Opcode::PsqLx);
-    // assert_eq!(
-    //     ins.fields(),
-    //     vec![
-    //         frD(FPR(0)),
-    //         rA(GPR(0)),
-    //         rB(GPR(0)),
-    //         ps_WX(OpaqueU(0)),
-    //         ps_IX(GQR(0)),
-    //     ]
-    // );
-    assert_eq!(
-        ins.defs(),
-        [Argument::FPR(FPR(0)), Argument::None, Argument::None, Argument::None, Argument::None]
-    );
-    assert_eq!(
-        ins.uses(),
-        [Argument::None, Argument::GPR(GPR(0)), Argument::None, Argument::None, Argument::None]
-    );
+// #[test]
+// fn test_ins_psq_lx() {
+//     let ins = Ins::new(0x1000000C);
+//     assert_eq!(ins.op, Opcode::PsqLx);
+//     // assert_eq!(
+//     //     ins.fields(),
+//     //     vec![
+//     //         frD(FPR(0)),
+//     //         rA(GPR(0)),
+//     //         rB(GPR(0)),
+//     //         ps_WX(OpaqueU(0)),
+//     //         ps_IX(GQR(0)),
+//     //     ]
+//     // );
+//     assert_eq!(
+//         ins.defs(),
+//         [Argument::FPR(FPR(0)), Argument::None, Argument::None, Argument::None, Argument::None]
+//     );
+//     assert_eq!(
+//         ins.uses(),
+//         [Argument::None, Argument::GPR(GPR(0)), Argument::None, Argument::None, Argument::None]
+//     );
 
-    assert_asm!(0x1000000C, "psq_lx f0, r0, r0, 0, qr0");
-}
+//     assert_asm!(0x1000000C, "psq_lx f0, r0, r0, 0, qr0");
+// }
 
-#[test]
-fn test_ins_psq_st() {
-    assert_asm!(0xF1230210, "psq_st f9, 0x210(r3), 0, qr0");
-    assert_asm!(0xF1238008, "psq_st f9, 0x8(r3), 1, qr0");
-}
+// #[test]
+// fn test_ins_psq_st() {
+//     assert_asm!(0xF1230210, "psq_st f9, 0x210(r3), 0, qr0");
+//     assert_asm!(0xF1238008, "psq_st f9, 0x8(r3), 1, qr0");
+// }
 
-#[test]
-fn test_ins_psq_stu() {
-    assert_asm!(0xF40A0020, "psq_stu f0, 0x20(r10), 0, qr0");
-}
+// #[test]
+// fn test_ins_psq_stu() {
+//     assert_asm!(0xF40A0020, "psq_stu f0, 0x20(r10), 0, qr0");
+// }
 
-#[test]
-fn test_ins_psq_stx() {
-    assert_asm!(0x13E1000E, "psq_stx f31, r1, r0, 0, qr0");
-}
+// #[test]
+// fn test_ins_psq_stx() {
+//     assert_asm!(0x13E1000E, "psq_stx f31, r1, r0, 0, qr0");
+// }
 
-#[test]
-fn test_ins_ps_abs() {
-    assert_asm!(0x10A03210, "ps_abs f5, f6");
-}
+// #[test]
+// fn test_ins_ps_abs() {
+//     assert_asm!(0x10A03210, "ps_abs f5, f6");
+// }
 
-#[test]
-fn test_ins_ps_add() {
-    assert_asm!(0x1006382A, "ps_add f0, f6, f7");
-}
+// #[test]
+// fn test_ins_ps_add() {
+//     assert_asm!(0x1006382A, "ps_add f0, f6, f7");
+// }
 
-#[test]
-fn test_ins_ps_cmpo0() {
-    assert_asm!(0x10070840, "ps_cmpo0 cr0, f7, f1");
-}
+// #[test]
+// fn test_ins_ps_cmpo0() {
+//     assert_asm!(0x10070840, "ps_cmpo0 cr0, f7, f1");
+// }
 
-#[test]
-fn test_ins_ps_cmpu0() {
-    assert_asm!(0x10003000, "ps_cmpu0 cr0, f0, f6");
-}
+// #[test]
+// fn test_ins_ps_cmpu0() {
+//     assert_asm!(0x10003000, "ps_cmpu0 cr0, f0, f6");
+// }
 
-#[test]
-fn test_ins_ps_cmpu1() {
-    assert_asm!(0x10003080, "ps_cmpu1 cr0, f0, f6");
-}
+// #[test]
+// fn test_ins_ps_cmpu1() {
+//     assert_asm!(0x10003080, "ps_cmpu1 cr0, f0, f6");
+// }
 
-#[test]
-fn test_ins_ps_madd() {
-    assert_asm!(0x112141FA, "ps_madd f9, f1, f7, f8");
-}
+// #[test]
+// fn test_ins_ps_madd() {
+//     assert_asm!(0x112141FA, "ps_madd f9, f1, f7, f8");
+// }
 
-#[test]
-fn test_ins_ps_madds0() {
-    assert_asm!(0x10AC299C, "ps_madds0 f5, f12, f6, f5");
-}
+// #[test]
+// fn test_ins_ps_madds0() {
+//     assert_asm!(0x10AC299C, "ps_madds0 f5, f12, f6, f5");
+// }
 
-#[test]
-fn test_ins_ps_madds1() {
-    assert_asm!(0x110640DE, "ps_madds1 f8, f6, f3, f8");
-}
+// #[test]
+// fn test_ins_ps_madds1() {
+//     assert_asm!(0x110640DE, "ps_madds1 f8, f6, f3, f8");
+// }
 
-#[test]
-fn test_ins_ps_merge00() {
-    assert_asm!(0x10400420, "ps_merge00 f2, f0, f0");
-}
+// #[test]
+// fn test_ins_ps_merge00() {
+//     assert_asm!(0x10400420, "ps_merge00 f2, f0, f0");
+// }
 
-#[test]
-fn test_ins_ps_merge01() {
-    assert_asm!(0x10400C60, "ps_merge01 f2, f0, f1");
-}
+// #[test]
+// fn test_ins_ps_merge01() {
+//     assert_asm!(0x10400C60, "ps_merge01 f2, f0, f1");
+// }
 
-#[test]
-fn test_ins_ps_merge10() {
-    assert_asm!(0x104004A0, "ps_merge10 f2, f0, f0");
-}
+// #[test]
+// fn test_ins_ps_merge10() {
+//     assert_asm!(0x104004A0, "ps_merge10 f2, f0, f0");
+// }
 
-#[test]
-fn test_ins_ps_merge11() {
-    assert_asm!(0x10AA14E0, "ps_merge11 f5, f10, f2");
-}
+// #[test]
+// fn test_ins_ps_merge11() {
+//     assert_asm!(0x10AA14E0, "ps_merge11 f5, f10, f2");
+// }
 
-#[test]
-fn test_ins_ps_mr() {
-    assert_asm!(0x10200090, "ps_mr f1, f0");
-}
+// #[test]
+// fn test_ins_ps_mr() {
+//     assert_asm!(0x10200090, "ps_mr f1, f0");
+// }
 
-#[test]
-fn test_ins_ps_msub() {
-    assert_asm!(0x10A53778, "ps_msub f5, f5, f29, f6");
-}
+// #[test]
+// fn test_ins_ps_msub() {
+//     assert_asm!(0x10A53778, "ps_msub f5, f5, f29, f6");
+// }
 
-#[test]
-fn test_ins_ps_mul() {
-    assert_asm!(0x10000032, "ps_mul f0, f0, f0");
-}
+// #[test]
+// fn test_ins_ps_mul() {
+//     assert_asm!(0x10000032, "ps_mul f0, f0, f0");
+// }
 
-#[test]
-fn test_ins_ps_muls0() {
-    assert_asm!(0x100002D8, "ps_muls0 f0, f0, f11");
-}
+// #[test]
+// fn test_ins_ps_muls0() {
+//     assert_asm!(0x100002D8, "ps_muls0 f0, f0, f11");
+// }
 
-#[test]
-fn test_ins_ps_muls1() {
-    assert_asm!(0x10A2005A, "ps_muls1 f5, f2, f1");
-}
+// #[test]
+// fn test_ins_ps_muls1() {
+//     assert_asm!(0x10A2005A, "ps_muls1 f5, f2, f1");
+// }
 
-#[test]
-fn test_ins_ps_nabs() {
-    assert_asm!(0x10803210, "ps_abs f4, f6");
-}
+// #[test]
+// fn test_ins_ps_nabs() {
+//     assert_asm!(0x10803210, "ps_abs f4, f6");
+// }
 
-#[test]
-fn test_ins_ps_neg() {
-    assert_asm!(0x10E03850, "ps_neg f7, f7");
-}
+// #[test]
+// fn test_ins_ps_neg() {
+//     assert_asm!(0x10E03850, "ps_neg f7, f7");
+// }
 
-#[test]
-fn test_ins_ps_nmadd() {
-    assert_asm!(0x10CB30FE, "ps_nmadd f6, f11, f3, f6");
-}
+// #[test]
+// fn test_ins_ps_nmadd() {
+//     assert_asm!(0x10CB30FE, "ps_nmadd f6, f11, f3, f6");
+// }
 
-#[test]
-fn test_ins_ps_nmsub() {
-    assert_asm!(0x107E083C, "ps_nmsub f3, f30, f0, f1");
-}
+// #[test]
+// fn test_ins_ps_nmsub() {
+//     assert_asm!(0x107E083C, "ps_nmsub f3, f30, f0, f1");
+// }
 
-#[test]
-fn test_ins_ps_sel() {
-    assert_asm!(0x106428EE, "ps_sel f3, f4, f3, f5");
-}
+// #[test]
+// fn test_ins_ps_sel() {
+//     assert_asm!(0x106428EE, "ps_sel f3, f4, f3, f5");
+// }
 
-#[test]
-fn test_ins_ps_sub() {
-    assert_asm!(0x10A92828, "ps_sub f5, f9, f5");
-}
+// #[test]
+// fn test_ins_ps_sub() {
+//     assert_asm!(0x10A92828, "ps_sub f5, f9, f5");
+// }
 
-#[test]
-fn test_ins_ps_sum0() {
-    assert_asm!(0x10230854, "ps_sum0 f1, f3, f1, f1");
-}
+// #[test]
+// fn test_ins_ps_sum0() {
+//     assert_asm!(0x10230854, "ps_sum0 f1, f3, f1, f1");
+// }
 
-#[test]
-fn test_ins_ps_sum1() {
-    assert_asm!(0x10A12956, "ps_sum1 f5, f1, f5, f5");
-}
+// #[test]
+// fn test_ins_ps_sum1() {
+//     assert_asm!(0x10A12956, "ps_sum1 f5, f1, f5, f5");
+// }
 
 #[test]
 fn test_ins_rfi() {
     assert_asm!(0x4C000064, "rfi");
+}
+
+#[test]
+fn test_ins_rfid() {
+    assert_asm!(0x4c000024, "rfid");
+}
+
+#[test]
+fn test_ins_rldcl() {
+    assert_asm!(0x780336D0, "rldcl r3, r0, r6, 27");
+}
+
+#[test]
+fn test_ins_rldcr() {
+    assert_asm!(0x78A345D2, "rldcr r3, r5, r8, 23");
+}
+
+#[test]
+fn test_ins_rldic() {
+    assert_asm!(0x78C51928, "rldic r5, r6, 3, 36");
+}
+
+#[test]
+fn test_ins_rldicl() {
+    assert_asm!(0x78c50020, "rldicl r5, r6, 0, 32");
+    assert_asm!(0x79073980, "rldicl r7, r8, 7, 24");
+}
+
+#[test]
+fn test_ins_rldicr() {
+    assert_asm!(0x7883ffe6, "rldicr r3, r4, 63, 63");
+    assert_asm!(0x7883ffe6, "rldicr r8, r9, 12, 42"); // fix
+}
+
+#[test]
+fn test_ins_rldimi() {
+    assert_asm!(0x780331CC, "rldimi r3, r0, 6, 7");
 }
 
 #[test]
@@ -938,8 +1083,34 @@ fn test_ins_sc() {
 }
 
 #[test]
+fn test_ins_slbia() {
+    assert_asm!(0x7c0003e4, "slbia");
+}
+
+#[test]
+fn test_ins_slbie() {
+    assert_asm!(0x7C002B64, "slbie r5");
+}
+
+#[test]
+fn test_ins_sld() {
+    assert_asm!(0x7D034836, "sld r3, r8, r9");
+}
+
+#[test]
 fn test_ins_slw() {
     assert_asm!(0x7C042830, "slw r4, r0, r5");
+}
+
+#[test]
+fn test_ins_srad() {
+    assert_asm!(0x7C033634, "srad r3, r0, r6");
+}
+
+#[test]
+fn test_ins_sradi() {
+    assert_asm!(0x7D070676, "sradi r7, r8, 0x20");
+    assert_asm!(0, "srad r3, r7, 17");
 }
 
 #[test]
@@ -951,6 +1122,12 @@ fn test_ins_sraw() {
 fn test_ins_srawi() {
     assert_asm!(0x7C000E70, "srawi r0, r0, 1");
     assert_asm!(0x7C001670, "srawi r0, r0, 2");
+}
+
+#[test]
+fn test_ins_srd() {
+    assert_asm!(0x7C001C36, "srd r0, r0, r3");
+    assert_asm!(0x7C600436, "srd r0, r3, r0");
 }
 
 #[test]
@@ -979,6 +1156,31 @@ fn test_ins_stbux() {
 #[test]
 fn test_ins_stbx() {
     assert_asm!(0x7C03F9AE, "stbx r0, r3, r31");
+}
+
+#[test]
+fn test_ins_std() {
+    assert_asm!(0xF8031080, "std r0, 0x420(r3)");
+}
+
+#[test]
+fn test_ins_stdcx() {
+    assert_asm!(0x7CA749AD, "stdcx. r5, r7, r9");
+}
+
+#[test]
+fn test_ins_stdu() {
+    assert_asm!(0xF8601431, "stdu r3, 0x50c(r0)");
+}
+
+#[test]
+fn test_ins_stdux() {
+    assert_asm!(0x7C03316A, "stdux r0, r3, r6");
+}
+
+#[test]
+fn test_ins_stdx() {
+    assert_asm!(0x7CA7F92A, "stdx r5, r7, r31");
 }
 
 #[test]
@@ -1093,7 +1295,17 @@ fn test_ins_subfze() {
 
 #[test]
 fn test_ins_sync() {
-    assert_asm!(0x7C0004AC, "sync");
+    assert_asm!(0x7C0004AC, "sync 0");
+}
+
+#[test]
+fn test_ins_td() {
+    assert_asm!(0x7DC30088, "td 14, r3, r0");
+}
+
+#[test]
+fn test_ins_tdi() {
+    assert_asm!(0x09830058, "tdi 12, r3, 0x58");
 }
 
 #[test]

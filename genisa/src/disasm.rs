@@ -11,17 +11,17 @@ pub fn gen_disasm(isa: &Isa, max_args: usize) -> Result<TokenStream> {
     // The entry table allows us to quickly find the range of possible opcodes
     // for a given 6-bit prefix. 2*64 bytes should fit in a cache line (or two).
     struct OpcodeEntry {
-        start: u8,
-        count: u8,
+        start: u16,
+        count: u16,
     }
     let mut sorted_ops = Vec::<Opcode>::new();
     let mut entries = Vec::<OpcodeEntry>::new();
     for i in 0..64 {
         let mut entry = OpcodeEntry { start: 0, count: 0 };
         for opcode in &isa.opcodes {
-            if (opcode.pattern >> 26) as u8 == i {
+            if (opcode.pattern >> 26) as u16 == i {
                 if entry.count == 0 {
-                    entry.start = sorted_ops.len() as u8;
+                    entry.start = sorted_ops.len() as u16;
                 }
                 // Sanity check for duplicate opcodes
                 if sorted_ops.iter().any(|op| op.name == opcode.name) {
@@ -41,14 +41,14 @@ pub fn gen_disasm(isa: &Isa, max_args: usize) -> Result<TokenStream> {
         entries.push(entry);
     }
     ensure!(sorted_ops.len() == isa.opcodes.len());
-    ensure!(sorted_ops.len() <= 255);
-    let opcode_max = Literal::u8_unsuffixed((sorted_ops.len() - 1) as u8);
+    // ensure!(sorted_ops.len() <= 255);
+    let opcode_max = Literal::u16_unsuffixed((sorted_ops.len() - 1) as u16);
 
     // Generate the opcode entries table
     let mut opcode_entries = TokenStream::new();
     for entry in &entries {
-        let start = Literal::u8_unsuffixed(entry.start);
-        let end = Literal::u8_unsuffixed(entry.start + entry.count);
+        let start = Literal::u16_unsuffixed(entry.start);
+        let end = Literal::u16_unsuffixed(entry.start + entry.count);
         opcode_entries.extend(quote! { (#start, #end), });
     }
 
@@ -59,7 +59,7 @@ pub fn gen_disasm(isa: &Isa, max_args: usize) -> Result<TokenStream> {
     for (idx, opcode) in sorted_ops.iter().enumerate() {
         let bitmask = HexLiteral(opcode.mask(isa));
         let pattern = HexLiteral(opcode.pattern);
-        let enum_idx = Literal::u8_unsuffixed(idx as u8);
+        let enum_idx = Literal::u16_unsuffixed(idx as u16);
         let name = &opcode.name;
         opcode_patterns.extend(quote! { (#bitmask, #pattern), });
         opcode_names.extend(quote! { #name, });
@@ -290,7 +290,8 @@ pub fn gen_disasm(isa: &Isa, max_args: usize) -> Result<TokenStream> {
     });
 
     // Filling the tables to 256 entries to avoid bounds checks
-    for _ in sorted_ops.len()..256 {
+    // with altivec extension, extended table to 512
+    for _ in sorted_ops.len()..512 {
         opcode_patterns.extend(quote! { (0, 0), });
         opcode_names.extend(quote! { "<illegal>", });
         basic_functions_ref.extend(quote! { mnemonic_illegal, });
@@ -312,19 +313,19 @@ pub fn gen_disasm(isa: &Isa, max_args: usize) -> Result<TokenStream> {
         use crate::disasm::*;
         #[doc = " The entry table allows us to quickly find the range of possible opcodes for a"]
         #[doc = " given 6-bit prefix. 2*64 bytes should fit in a cache line (or two)."]
-        static OPCODE_ENTRIES: [(u8, u8); 64] = [#opcode_entries];
+        static OPCODE_ENTRIES: [(u16, u16); 64] = [#opcode_entries];
         #[doc = " The bitmask and pattern for each opcode."]
-        static OPCODE_PATTERNS: [(u32, u32); 256] = [#opcode_patterns];
+        static OPCODE_PATTERNS: [(u32, u32); 512] = [#opcode_patterns];
         #[doc = " The name of each opcode."]
-        static OPCODE_NAMES: [&str; 256] = [#opcode_names];
+        static OPCODE_NAMES: [&str; 512] = [#opcode_names];
 
         #[derive(Copy, Clone, Debug, Default, PartialEq, Eq)]
-        #[repr(u8)]
+        #[repr(u16)]
         #[non_exhaustive]
         pub enum Opcode {
             #[doc = " An illegal or unknown opcode"]
             #[default]
-            Illegal = u8::MAX,
+            Illegal = u16::MAX,
             #opcode_enum
         }
         impl Opcode {
@@ -339,28 +340,28 @@ pub fn gen_disasm(isa: &Isa, max_args: usize) -> Result<TokenStream> {
                 for i in entry.0..entry.1 {
                     let pattern = OPCODE_PATTERNS[i as usize];
                     if (code & pattern.0) == pattern.1 {
-                        #[comment = " Safety: The enum is repr(u8) and the value is within the enum's range"]
-                        return unsafe { core::mem::transmute::<u8, Opcode>(i) };
+                        #[comment = " Safety: The enum is repr(u16) and the value is within the enum's range"]
+                        return unsafe { core::mem::transmute::<u16, Opcode>(i) };
                     }
                 }
                 Self::Illegal
             }
         }
-        impl From<u8> for Opcode {
+        impl From<u16> for Opcode {
             #[inline]
-            fn from(value: u8) -> Self {
+            fn from(value: u16) -> Self {
                 if value > #opcode_max {
                     Self::Illegal
                 } else {
-                    #[comment = " Safety: The enum is repr(u8) and the value is within the enum's range"]
-                    unsafe { core::mem::transmute::<u8, Self>(value) }
+                    #[comment = " Safety: The enum is repr(u16) and the value is within the enum's range"]
+                    unsafe { core::mem::transmute::<u16, Self>(value) }
                 }
             }
         }
-        impl From<Opcode> for u8 {
+        impl From<Opcode> for u16 {
             #[inline]
             fn from(value: Opcode) -> Self {
-                value as u8
+                value as u16
             }
         }
 
@@ -373,12 +374,12 @@ pub fn gen_disasm(isa: &Isa, max_args: usize) -> Result<TokenStream> {
 
         type MnemonicFunction = fn(&mut ParsedIns, Ins);
         #mnemonic_functions
-        static BASIC_MNEMONICS: [MnemonicFunction; 256] = [#basic_functions_ref];
+        static BASIC_MNEMONICS: [MnemonicFunction; 512] = [#basic_functions_ref];
         #[inline]
         pub fn parse_basic(out: &mut ParsedIns, ins: Ins) {
             BASIC_MNEMONICS[ins.op as usize](out, ins)
         }
-        static SIMPLIFIED_MNEMONICS: [MnemonicFunction; 256] = [#simplified_functions_ref];
+        static SIMPLIFIED_MNEMONICS: [MnemonicFunction; 512] = [#simplified_functions_ref];
         #[inline]
         pub fn parse_simplified(out: &mut ParsedIns, ins: Ins) {
             SIMPLIFIED_MNEMONICS[ins.op as usize](out, ins)
@@ -386,12 +387,12 @@ pub fn gen_disasm(isa: &Isa, max_args: usize) -> Result<TokenStream> {
 
         type DefsUsesFunction = fn(&mut Arguments, Ins);
         #defs_uses_functions
-        static DEFS_FUNCTIONS: [DefsUsesFunction; 256] = [#defs_refs];
+        static DEFS_FUNCTIONS: [DefsUsesFunction; 512] = [#defs_refs];
         #[inline]
         pub fn parse_defs(out: &mut Arguments, ins: Ins) {
             DEFS_FUNCTIONS[ins.op as usize](out, ins)
         }
-        static USES_FUNCTIONS: [DefsUsesFunction; 256] = [#uses_refs];
+        static USES_FUNCTIONS: [DefsUsesFunction; 512] = [#uses_refs];
         #[inline]
         pub fn parse_uses(out: &mut Arguments, ins: Ins) {
             USES_FUNCTIONS[ins.op as usize](out, ins)

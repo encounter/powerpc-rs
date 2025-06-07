@@ -4,109 +4,296 @@
 use crate::disasm::*;
 /// The entry table allows us to quickly find the range of possible opcodes for a
 /// given 6-bit prefix. 2*64 bytes should fit in a cache line (or two).
-static OPCODE_ENTRIES: [(u8, u8); 64] = [
-    (0, 0),
+static OPCODE_ENTRIES: [(u16, u16); 64] = [
     (0, 0),
     (0, 0),
     (0, 1),
-    (1, 35),
+    (1, 2),
+    (2, 164),
+    (164, 189),
+    (189, 222),
+    (222, 223),
+    (223, 224),
+    (0, 0),
+    (224, 225),
+    (225, 226),
+    (226, 227),
+    (227, 228),
+    (228, 229),
+    (229, 230),
+    (230, 231),
+    (231, 232),
+    (232, 233),
+    (233, 247),
+    (247, 248),
+    (248, 249),
+    (0, 0),
+    (249, 250),
+    (250, 251),
+    (251, 252),
+    (252, 253),
+    (253, 254),
+    (254, 255),
+    (255, 256),
+    (256, 262),
+    (262, 394),
+    (394, 395),
+    (395, 396),
+    (396, 397),
+    (397, 398),
+    (398, 399),
+    (399, 400),
+    (400, 401),
+    (401, 402),
+    (402, 403),
+    (403, 404),
+    (404, 405),
+    (405, 406),
+    (406, 407),
+    (407, 408),
+    (408, 409),
+    (409, 410),
+    (410, 411),
+    (411, 412),
+    (412, 413),
+    (413, 414),
+    (414, 415),
+    (415, 416),
+    (416, 417),
+    (417, 418),
     (0, 0),
     (0, 0),
-    (35, 36),
-    (36, 37),
+    (418, 421),
+    (421, 430),
     (0, 0),
-    (37, 38),
-    (38, 39),
-    (39, 40),
-    (40, 41),
-    (41, 42),
-    (42, 43),
-    (43, 44),
-    (44, 45),
-    (45, 46),
-    (46, 59),
-    (59, 60),
-    (60, 61),
     (0, 0),
-    (61, 62),
-    (62, 63),
-    (63, 64),
-    (64, 65),
-    (65, 66),
-    (66, 67),
-    (67, 68),
-    (0, 0),
-    (68, 160),
-    (160, 161),
-    (161, 162),
-    (162, 163),
-    (163, 164),
-    (164, 165),
-    (165, 166),
-    (166, 167),
-    (167, 168),
-    (168, 169),
-    (169, 170),
-    (170, 171),
-    (171, 172),
-    (172, 173),
-    (173, 174),
-    (174, 175),
-    (175, 176),
-    (176, 177),
-    (177, 178),
-    (178, 179),
-    (179, 180),
-    (180, 181),
-    (181, 182),
-    (182, 183),
-    (183, 184),
-    (184, 185),
-    (185, 186),
-    (0, 0),
-    (186, 195),
-    (195, 196),
-    (196, 197),
-    (0, 0),
-    (197, 222),
+    (430, 432),
+    (432, 460),
 ];
 /// The bitmask and pattern for each opcode.
-static OPCODE_PATTERNS: [(u32, u32); 256] = [
+static OPCODE_PATTERNS: [(u32, u32); 512] = [
+    (0xfc000000, 0x8000000),
     (0xfc000000, 0xc000000),
     (0xffe007ff, 0x100007ec),
-    (0xfc00007f, 0x1000004c),
-    (0xfc00007f, 0x1000000c),
-    (0xfc00007f, 0x1000004e),
-    (0xfc00007f, 0x1000000e),
-    (0xfc1f07fe, 0x10000210),
-    (0xfc0007fe, 0x1000002a),
-    (0xfc6007ff, 0x10000040),
-    (0xfc6007ff, 0x100000c0),
-    (0xfc6007ff, 0x10000000),
-    (0xfc6007ff, 0x10000080),
-    (0xfc0007fe, 0x10000024),
-    (0xfc00003e, 0x1000003a),
-    (0xfc00003e, 0x1000001c),
-    (0xfc00003e, 0x1000001e),
-    (0xfc0007fe, 0x10000420),
-    (0xfc0007fe, 0x10000460),
-    (0xfc0007fe, 0x100004a0),
-    (0xfc0007fe, 0x100004e0),
-    (0xfc1f07fe, 0x10000090),
-    (0xfc00003e, 0x10000038),
-    (0xfc00f83e, 0x10000032),
-    (0xfc00f83e, 0x10000018),
-    (0xfc00f83e, 0x1000001a),
-    (0xfc1f07fe, 0x10000110),
-    (0xfc1f07fe, 0x10000050),
-    (0xfc00003e, 0x1000003e),
-    (0xfc00003e, 0x1000003c),
-    (0xfc1f07fe, 0x10000030),
-    (0xfc1f07fe, 0x10000034),
-    (0xfc00003e, 0x1000002e),
-    (0xfc0007fe, 0x10000028),
-    (0xfc00003e, 0x10000014),
-    (0xfc00003e, 0x10000016),
+    (0xfc1fffff, 0x10000604),
+    (0xffff07ff, 0x10000c44),
+    (0xfc0007ff, 0x10000180),
+    (0xfc0007ff, 0x1000000a),
+    (0xfc0007ff, 0x10000300),
+    (0xfc0007ff, 0x10000340),
+    (0xfc0007ff, 0x10000380),
+    (0xfc0007ff, 0x10000000),
+    (0xfc0007ff, 0x10000200),
+    (0xfc0007ff, 0x10000040),
+    (0xfc0007ff, 0x10000240),
+    (0xfc0007ff, 0x10000080),
+    (0xfc0007ff, 0x10000280),
+    (0xfc0007ff, 0x10000404),
+    (0xfc0007ff, 0x10000444),
+    (0xfc0007ff, 0x10000502),
+    (0xfc0007ff, 0x10000542),
+    (0xfc0007ff, 0x10000582),
+    (0xfc0007ff, 0x10000402),
+    (0xfc0007ff, 0x10000442),
+    (0xfc0007ff, 0x10000482),
+    (0xfc0007ff, 0x1000034a),
+    (0xfc0007ff, 0x1000030a),
+    (0xfc0003ff, 0x100003c6),
+    (0xfc0003ff, 0x100000c6),
+    (0xfc0003ff, 0x10000006),
+    (0xfc0003ff, 0x10000046),
+    (0xfc0003ff, 0x10000086),
+    (0xfc0003ff, 0x100001c6),
+    (0xfc0003ff, 0x100002c6),
+    (0xfc0003ff, 0x10000306),
+    (0xfc0003ff, 0x10000346),
+    (0xfc0003ff, 0x10000386),
+    (0xfc0003ff, 0x10000206),
+    (0xfc0003ff, 0x10000246),
+    (0xfc0003ff, 0x10000286),
+    (0xfc0007ff, 0x100003ca),
+    (0xfc0007ff, 0x1000038a),
+    (0xfc1f07ff, 0x1000018a),
+    (0xfc1f07ff, 0x100001ca),
+    (0xfc00003f, 0x1000002e),
+    (0xfc0007ff, 0x1000040a),
+    (0xfc0007ff, 0x10000102),
+    (0xfc0007ff, 0x10000142),
+    (0xfc0007ff, 0x10000182),
+    (0xfc0007ff, 0x10000002),
+    (0xfc0007ff, 0x10000042),
+    (0xfc0007ff, 0x10000082),
+    (0xfc00003f, 0x10000020),
+    (0xfc00003f, 0x10000021),
+    (0xfc0007ff, 0x1000044a),
+    (0xfc0007ff, 0x10000302),
+    (0xfc0007ff, 0x10000342),
+    (0xfc0007ff, 0x10000382),
+    (0xfc0007ff, 0x10000202),
+    (0xfc0007ff, 0x10000242),
+    (0xfc0007ff, 0x10000282),
+    (0xfc00003f, 0x10000022),
+    (0xfc0007ff, 0x1000000c),
+    (0xfc0007ff, 0x1000004c),
+    (0xfc0007ff, 0x1000008c),
+    (0xfc0007ff, 0x1000010c),
+    (0xfc0007ff, 0x1000014c),
+    (0xfc0007ff, 0x1000018c),
+    (0xfc00003f, 0x10000025),
+    (0xfc00003f, 0x10000028),
+    (0xfc00003f, 0x10000029),
+    (0xfc00003f, 0x10000024),
+    (0xfc00003f, 0x10000026),
+    (0xfc00003f, 0x10000027),
+    (0xfc0007ff, 0x10000308),
+    (0xfc0007ff, 0x10000348),
+    (0xfc0007ff, 0x10000208),
+    (0xfc0007ff, 0x10000248),
+    (0xfc0007ff, 0x10000108),
+    (0xfc0007ff, 0x10000148),
+    (0xfc0007ff, 0x10000008),
+    (0xfc0007ff, 0x10000048),
+    (0xfc00003f, 0x1000002f),
+    (0xfc0007ff, 0x10000504),
+    (0xfc0007ff, 0x10000484),
+    (0xfc00003f, 0x1000002b),
+    (0xfc0007ff, 0x1000030e),
+    (0xfc0007ff, 0x1000018e),
+    (0xfc0007ff, 0x1000010e),
+    (0xfc0007ff, 0x100001ce),
+    (0xfc0007ff, 0x1000014e),
+    (0xfc0007ff, 0x1000000e),
+    (0xfc0007ff, 0x1000008e),
+    (0xfc0007ff, 0x1000004e),
+    (0xfc0007ff, 0x100000ce),
+    (0xfc1f07ff, 0x1000010a),
+    (0xfc1f07ff, 0x100002ca),
+    (0xfc1f07ff, 0x1000020a),
+    (0xfc1f07ff, 0x1000028a),
+    (0xfc1f07ff, 0x1000024a),
+    (0xfc0007ff, 0x10000004),
+    (0xfc0007ff, 0x10000044),
+    (0xfc0007ff, 0x10000084),
+    (0xfc1f07ff, 0x1000014a),
+    (0xfc00003f, 0x1000002a),
+    (0xfc0007ff, 0x100001c4),
+    (0xfc0007ff, 0x10000104),
+    (0xfc00043f, 0x1000002c),
+    (0xfc0007ff, 0x10000144),
+    (0xfc0007ff, 0x1000040c),
+    (0xfc0007ff, 0x10000184),
+    (0xfc0007ff, 0x1000020c),
+    (0xfc0007ff, 0x1000024c),
+    (0xfc00ffff, 0x1000030c),
+    (0xfc00ffff, 0x1000034c),
+    (0xfc00ffff, 0x1000038c),
+    (0xfc0007ff, 0x1000028c),
+    (0xfc0007ff, 0x100002c4),
+    (0xfc0007ff, 0x10000304),
+    (0xfc0007ff, 0x10000344),
+    (0xfc0007ff, 0x10000384),
+    (0xfc0007ff, 0x10000204),
+    (0xfc0007ff, 0x10000244),
+    (0xfc0007ff, 0x1000044c),
+    (0xfc0007ff, 0x10000284),
+    (0xfc0007ff, 0x10000580),
+    (0xfc0007ff, 0x1000004a),
+    (0xfc0007ff, 0x10000700),
+    (0xfc0007ff, 0x10000740),
+    (0xfc0007ff, 0x10000780),
+    (0xfc0007ff, 0x10000400),
+    (0xfc0007ff, 0x10000600),
+    (0xfc0007ff, 0x10000440),
+    (0xfc0007ff, 0x10000640),
+    (0xfc0007ff, 0x10000480),
+    (0xfc0007ff, 0x10000680),
+    (0xfc0007ff, 0x10000788),
+    (0xfc0007ff, 0x10000688),
+    (0xfc0007ff, 0x10000708),
+    (0xfc0007ff, 0x10000648),
+    (0xfc0007ff, 0x10000608),
+    (0xfc1f07ff, 0x1000034e),
+    (0xfc1f07ff, 0x1000020e),
+    (0xfc1f07ff, 0x1000024e),
+    (0xfc1f07ff, 0x100003ce),
+    (0xfc1f07ff, 0x1000028e),
+    (0xfc1f07ff, 0x100002ce),
+    (0xfc0007ff, 0x100004c4),
+    (0xfc0007f3, 0x10000083),
+    (0xfc0007f3, 0x10000403),
+    (0xfc0007f3, 0x10000443),
+    (0xfc0007f3, 0x10000603),
+    (0xfc0007f3, 0x10000643),
+    (0xfc0007f3, 0x10000003),
+    (0xfc0007f3, 0x10000043),
+    (0xfc0007f3, 0x100000c3),
+    (0xfc0007f3, 0x100002c3),
+    (0xfc0007f3, 0x10000303),
+    (0xfc0007f3, 0x10000503),
+    (0xfc0007f3, 0x10000703),
+    (0xfc0007f3, 0x10000543),
+    (0xfc0007f3, 0x10000743),
+    (0xfc0007f3, 0x100001c3),
+    (0xfc0007f3, 0x100003c3),
+    (0xfc000010, 0x10000010),
+    (0xfc0003d0, 0x14000010),
+    (0xfc0003d0, 0x14000210),
+    (0xfc0003d0, 0x14000290),
+    (0xfc0003d0, 0x14000110),
+    (0xfc0003d0, 0x140000d0),
+    (0xfc0003d0, 0x14000190),
+    (0xfc0003d0, 0x140001d0),
+    (0xfc0003d0, 0x14000090),
+    (0xfc0003d0, 0x14000150),
+    (0xfc0003d0, 0x14000290),
+    (0xfc0003d0, 0x140002d0),
+    (0xfc000210, 0x14000000),
+    (0xfc0003d0, 0x14000200),
+    (0xfc0003d0, 0x14000240),
+    (0xfc0003d0, 0x14000280),
+    (0xfc0003d0, 0x140002c0),
+    (0xfc0003d0, 0x14000300),
+    (0xfc0003d0, 0x14000340),
+    (0xfc0003d0, 0x14000380),
+    (0xfc0003d0, 0x140003c0),
+    (0xfc0003d0, 0x14000050),
+    (0xfc0003d0, 0x14000350),
+    (0xfc0003d0, 0x14000390),
+    (0xfc0003d0, 0x14000050),
+    (0xfc0003d0, 0x14000310),
+    (0xfc0007f0, 0x18000230),
+    (0xfc0007f0, 0x18000270),
+    (0xfc000390, 0x18000180),
+    (0xfc000390, 0x18000000),
+    (0xfc000390, 0x18000200),
+    (0xfc000390, 0x18000080),
+    (0xfc000390, 0x18000100),
+    (0xfc0007f0, 0x180002b0),
+    (0xfc0007f0, 0x180002f0),
+    (0xfc1f07f0, 0x180006b0),
+    (0xfc1f07f0, 0x180006f0),
+    (0xfc0003d0, 0x18000280),
+    (0xfc0003d0, 0x180002c0),
+    (0xfc0003d0, 0x18000300),
+    (0xfc0003d0, 0x18000340),
+    (0xfc000630, 0x18000210),
+    (0xfc000730, 0x18000610),
+    (0xfc1f07f0, 0x18000630),
+    (0xfc1f07f0, 0x18000330),
+    (0xfc1f07f0, 0x18000370),
+    (0xfc1f07f0, 0x180003b0),
+    (0xfc1f07f0, 0x180003f0),
+    (0xfc000730, 0x18000710),
+    (0xfc1f07f0, 0x18000670),
+    (0xfc0003d0, 0x180000d0),
+    (0xfc0007f0, 0x18000770),
+    (0xfc0007f0, 0x18000730),
+    (0xfc0003d0, 0x18000150),
+    (0xfc0003d0, 0x180003d0),
+    (0xfc0003d0, 0x180001d0),
+    (0xfc0007f0, 0x180007f0),
+    (0xfc1f07f0, 0x18000380),
+    (0xfc1f07f0, 0x180003c0),
     (0xfc000000, 0x1c000000),
     (0xfc000000, 0x20000000),
     (0xfc400000, 0x28000000),
@@ -131,6 +318,7 @@ static OPCODE_PATTERNS: [(u32, u32); 256] = [
     (0xffffffff, 0x4c00012c),
     (0xfc63ffff, 0x4c000000),
     (0xffffffff, 0x4c000064),
+    (0xffffffff, 0x4c000024),
     (0xfc000000, 0x50000000),
     (0xfc000000, 0x54000000),
     (0xfc000000, 0x5c000000),
@@ -140,6 +328,12 @@ static OPCODE_PATTERNS: [(u32, u32); 256] = [
     (0xfc000000, 0x6c000000),
     (0xfc000000, 0x70000000),
     (0xfc000000, 0x74000000),
+    (0xfc00001e, 0x78000010),
+    (0xfc00001e, 0x78000012),
+    (0xfc00001c, 0x78000008),
+    (0xfc00001c, 0x78000000),
+    (0xfc00001c, 0x78000004),
+    (0xfc00001c, 0x7800000c),
     (0xfc0003fe, 0x7c000214),
     (0xfc0003fe, 0x7c000014),
     (0xfc0003fe, 0x7c000114),
@@ -149,6 +343,7 @@ static OPCODE_PATTERNS: [(u32, u32); 256] = [
     (0xfc0007fe, 0x7c000078),
     (0xfc4007ff, 0x7c000000),
     (0xfc4007ff, 0x7c000040),
+    (0xfc00fffe, 0x7c000074),
     (0xfc00fffe, 0x7c000034),
     (0xffe007ff, 0x7c0000ac),
     (0xffe007ff, 0x7c0003ac),
@@ -156,6 +351,8 @@ static OPCODE_PATTERNS: [(u32, u32); 256] = [
     (0xffe007ff, 0x7c00022c),
     (0xffe007ff, 0x7c0001ec),
     (0xffe007ff, 0x7c0007ec),
+    (0xfc0003fe, 0x7c0003d2),
+    (0xfc0003fe, 0x7c000392),
     (0xfc0003fe, 0x7c0003d6),
     (0xfc0003fe, 0x7c000396),
     (0xfc0007ff, 0x7c00026c),
@@ -164,9 +361,13 @@ static OPCODE_PATTERNS: [(u32, u32); 256] = [
     (0xfc0007fe, 0x7c000238),
     (0xfc00fffe, 0x7c000774),
     (0xfc00fffe, 0x7c000734),
+    (0xfc00fffe, 0x7c0007b4),
     (0xffe007fe, 0x7c0007ac),
     (0xfc0007ff, 0x7c0000ee),
     (0xfc0007ff, 0x7c0000ae),
+    (0xfc0007ff, 0x7c0000a8),
+    (0xfc0007ff, 0x7c00006a),
+    (0xfc0007ff, 0x7c00002a),
     (0xfc0007ff, 0x7c0004ee),
     (0xfc0007ff, 0x7c0004ae),
     (0xfc0007ff, 0x7c00046e),
@@ -179,6 +380,8 @@ static OPCODE_PATTERNS: [(u32, u32); 256] = [
     (0xfc0007ff, 0x7c0004aa),
     (0xfc0007ff, 0x7c00042a),
     (0xfc0007ff, 0x7c000028),
+    (0xfc0007ff, 0x7c0002ea),
+    (0xfc0007ff, 0x7c0002aa),
     (0xfc0007ff, 0x7c00042c),
     (0xfc0007ff, 0x7c00006e),
     (0xfc0007ff, 0x7c00002e),
@@ -191,23 +394,38 @@ static OPCODE_PATTERNS: [(u32, u32); 256] = [
     (0xfc0007ff, 0x7c0002e6),
     (0xfc100fff, 0x7c000120),
     (0xfc1fffff, 0x7c000124),
+    (0xfc1effff, 0x7c000164),
     (0xfc0007ff, 0x7c0003a6),
     (0xfc10ffff, 0x7c0001a4),
+    (0xfc10ffff, 0x7c0000a4),
+    (0xfc1f07ff, 0x7c0000e4),
     (0xfc1f07ff, 0x7c0001e4),
+    (0xfc0007fe, 0x7c000092),
+    (0xfc0007fe, 0x7c000012),
     (0xfc0007fe, 0x7c000096),
     (0xfc0007fe, 0x7c000016),
+    (0xfc0003fe, 0x7c0001d2),
     (0xfc0003fe, 0x7c0001d6),
     (0xfc0007fe, 0x7c0003b8),
     (0xfc00fbfe, 0x7c0000d0),
     (0xfc0007fe, 0x7c0000f8),
     (0xfc0007fe, 0x7c000378),
     (0xfc0007fe, 0x7c000338),
+    (0xffffffff, 0x7c0003e4),
+    (0xffff07ff, 0x7c000364),
+    (0xfc0007fe, 0x7c000036),
     (0xfc0007fe, 0x7c000030),
+    (0xfc0007fe, 0x7c000634),
+    (0xfc0007fc, 0x7c000674),
     (0xfc0007fe, 0x7c000630),
     (0xfc0007fe, 0x7c000670),
+    (0xfc0007fe, 0x7c000436),
     (0xfc0007fe, 0x7c000430),
     (0xfc0007ff, 0x7c0001ee),
     (0xfc0007ff, 0x7c0001ae),
+    (0xfc0007ff, 0x7c0001ad),
+    (0xfc0007ff, 0x7c00016a),
+    (0xfc0007ff, 0x7c00012a),
     (0xfc0007ff, 0x7c0005ee),
     (0xfc0007ff, 0x7c0005ae),
     (0xfc0007ff, 0x7c0007ae),
@@ -227,11 +445,27 @@ static OPCODE_PATTERNS: [(u32, u32); 256] = [
     (0xfc0003fe, 0x7c000110),
     (0xfc00fbfe, 0x7c0001d0),
     (0xfc00fbfe, 0x7c000190),
-    (0xffffffff, 0x7c0004ac),
+    (0xff9fffff, 0x7c0004ac),
+    (0xfc0007ff, 0x7c000088),
     (0xffff07ff, 0x7c000264),
     (0xffffffff, 0x7c00046c),
     (0xfc0007ff, 0x7c000008),
     (0xfc0007fe, 0x7c000278),
+    (0xfd9fffff, 0x7c00066c),
+    (0xfd8007ff, 0x7c0002ac),
+    (0xfd8007ff, 0x7c0002ec),
+    (0xfc0007ff, 0x7c00000e),
+    (0xfc0007ff, 0x7c00004e),
+    (0xfc0007ff, 0x7c00008e),
+    (0xfc0007ff, 0x7c00000c),
+    (0xfc0007ff, 0x7c00004c),
+    (0xfc0007ff, 0x7c0000ce),
+    (0xfc0007ff, 0x7c0002ce),
+    (0xfc0007ff, 0x7c00010e),
+    (0xfc0007ff, 0x7c00014e),
+    (0xfc0007ff, 0x7c00018e),
+    (0xfc0007ff, 0x7c0001ce),
+    (0xfc0007ff, 0x7c0003ce),
     (0xfc000000, 0x80000000),
     (0xfc000000, 0x84000000),
     (0xfc000000, 0x88000000),
@@ -256,8 +490,9 @@ static OPCODE_PATTERNS: [(u32, u32); 256] = [
     (0xfc000000, 0xd4000000),
     (0xfc000000, 0xd8000000),
     (0xfc000000, 0xdc000000),
-    (0xfc000000, 0xe0000000),
-    (0xfc000000, 0xe4000000),
+    (0xfc000003, 0xe8000000),
+    (0xfc000003, 0xe8000001),
+    (0xfc000003, 0xe8000002),
     (0xfc0007fe, 0xec00002a),
     (0xfc0007fe, 0xec000024),
     (0xfc00003e, 0xec00003a),
@@ -267,12 +502,15 @@ static OPCODE_PATTERNS: [(u32, u32); 256] = [
     (0xfc00003e, 0xec00003c),
     (0xfc1f07fe, 0xec000030),
     (0xfc0007fe, 0xec000028),
-    (0xfc000000, 0xf0000000),
-    (0xfc000000, 0xf4000000),
+    (0xfc000003, 0xf8000000),
+    (0xfc000003, 0xf8000001),
     (0xfc1f07fe, 0xfc000210),
     (0xfc0007fe, 0xfc00002a),
+    (0xfc1f07fe, 0xfc00069c),
     (0xfc6007ff, 0xfc000040),
     (0xfc6007ff, 0xfc000000),
+    (0xfc1f07fe, 0xfc00065c),
+    (0xfc1f07fe, 0xfc00065e),
     (0xfc1f07fe, 0xfc00001c),
     (0xfc1f07fe, 0xfc00001e),
     (0xfc0007fe, 0xfc000024),
@@ -328,44 +566,249 @@ static OPCODE_PATTERNS: [(u32, u32); 256] = [
     (0, 0),
     (0, 0),
     (0, 0),
+    (0, 0),
+    (0, 0),
+    (0, 0),
+    (0, 0),
+    (0, 0),
+    (0, 0),
+    (0, 0),
+    (0, 0),
+    (0, 0),
+    (0, 0),
+    (0, 0),
+    (0, 0),
+    (0, 0),
+    (0, 0),
+    (0, 0),
+    (0, 0),
+    (0, 0),
+    (0, 0),
 ];
 /// The name of each opcode.
-static OPCODE_NAMES: [&str; 256] = [
+static OPCODE_NAMES: [&str; 512] = [
+    "tdi",
     "twi",
     "dcbz_l",
-    "psq_lux",
-    "psq_lx",
-    "psq_stux",
-    "psq_stx",
-    "ps_abs",
-    "ps_add",
-    "ps_cmpo0",
-    "ps_cmpo1",
-    "ps_cmpu0",
-    "ps_cmpu1",
-    "ps_div",
-    "ps_madd",
-    "ps_madds0",
-    "ps_madds1",
-    "ps_merge00",
-    "ps_merge01",
-    "ps_merge10",
-    "ps_merge11",
-    "ps_mr",
-    "ps_msub",
-    "ps_mul",
-    "ps_muls0",
-    "ps_muls1",
-    "ps_nabs",
-    "ps_neg",
-    "ps_nmadd",
-    "ps_nmsub",
-    "ps_res",
-    "ps_rsqrte",
-    "ps_sel",
-    "ps_sub",
-    "ps_sum0",
-    "ps_sum1",
+    "mfvscr",
+    "mtvscr",
+    "vaddcuw",
+    "vaddfp",
+    "vaddsbs",
+    "vaddshs",
+    "vaddsws",
+    "vaddubm",
+    "vaddubs",
+    "vadduhm",
+    "vadduhs",
+    "vadduwm",
+    "vadduws",
+    "vand",
+    "vandc",
+    "vavgsb",
+    "vavgsh",
+    "vavgsw",
+    "vavgub",
+    "vavguh",
+    "vavguw",
+    "vcfsx",
+    "vcfux",
+    "vcmpbfp",
+    "vcmpeqfp",
+    "vcmpequb",
+    "vcmpequh",
+    "vcmpequw",
+    "vcmpgefp",
+    "vcmpgtfp",
+    "vcmpgtsb",
+    "vcmpgtsh",
+    "vcmpgtsw",
+    "vcmpgtub",
+    "vcmpgtuh",
+    "vcmpgtuw",
+    "vctsxs",
+    "vctuxs",
+    "vexptefp",
+    "vlogefp",
+    "vmaddfp",
+    "vmaxfp",
+    "vmaxsb",
+    "vmaxsh",
+    "vmaxsw",
+    "vmaxub",
+    "vmaxuh",
+    "vmaxuw",
+    "vmhaddshs",
+    "vmhraddshs",
+    "vminfp",
+    "vminsb",
+    "vminsh",
+    "vminsw",
+    "vminub",
+    "vminuh",
+    "vminuw",
+    "vmladduhm",
+    "vmrghb",
+    "vmrghh",
+    "vmrghw",
+    "vmrglb",
+    "vmrglh",
+    "vmrglw",
+    "vmsummbm",
+    "vmsumshm",
+    "vmsumshs",
+    "vmsumubm",
+    "vmsumuhm",
+    "vmsumuhs",
+    "vmulesb",
+    "vmulesh",
+    "vmuleub",
+    "vmuleuh",
+    "vmulosb",
+    "vmulosh",
+    "vmuloub",
+    "vmulouh",
+    "vnmsubfp",
+    "vnor",
+    "vor",
+    "vperm",
+    "vpkpx",
+    "vpkshss",
+    "vpkshus",
+    "vpkswss",
+    "vpkswus",
+    "vpkuhum",
+    "vpkuhus",
+    "vpkuwum",
+    "vpkuwus",
+    "vrefp",
+    "vrfim",
+    "vrfin",
+    "vrfip",
+    "vrfiz",
+    "vrlb",
+    "vrlh",
+    "vrlw",
+    "vrsqrtefp",
+    "vsel",
+    "vsl",
+    "vslb",
+    "vsldoi",
+    "vslh",
+    "vslo",
+    "vslw",
+    "vspltb",
+    "vsplth",
+    "vspltisb",
+    "vspltish",
+    "vspltisw",
+    "vspltw",
+    "vsr",
+    "vsrab",
+    "vsrah",
+    "vsraw",
+    "vsrb",
+    "vsrh",
+    "vsro",
+    "vsrw",
+    "vsubcuw",
+    "vsubfp",
+    "vsubsbs",
+    "vsubshs",
+    "vsubsws",
+    "vsububm",
+    "vsububs",
+    "vsubuhm",
+    "vsubuhs",
+    "vsubuwm",
+    "vsubuws",
+    "vsumsws",
+    "vsum2sws",
+    "vsum4sbs",
+    "vsum4shs",
+    "vsum4ubs",
+    "vupkhpx",
+    "vupkhsb",
+    "vupkhsh",
+    "vupklpx",
+    "vupklsb",
+    "vupklsh",
+    "vxor",
+    "lvewx128",
+    "lvlx128",
+    "lvrx128",
+    "lvlxl128",
+    "lvrxl128",
+    "lvsl128",
+    "lvsr128",
+    "lvx128",
+    "lvxl128",
+    "stvewx128",
+    "stvlx128",
+    "stvlxl128",
+    "stvrx128",
+    "stvrxl128",
+    "stvx128",
+    "stvxl128",
+    "vsldoi128",
+    "vaddfp128",
+    "vand128",
+    "vandc128",
+    "vmaddcfp128",
+    "vmaddfp128",
+    "vmsum3fp128",
+    "vmsum4fp128",
+    "vmulfp128",
+    "vnmsubfp128",
+    "vnor128",
+    "vor128",
+    "vperm128",
+    "vpkshss128",
+    "vpkshus128",
+    "vpkswss128",
+    "vpkswus128",
+    "vpkuhum128",
+    "vpkuhus128",
+    "vpkuwum128",
+    "vpkuwus128",
+    "vrlw128",
+    "vsel128",
+    "vslo128",
+    "vsubfp128",
+    "vxor128",
+    "vcfpsxws128",
+    "vcfpuxws128",
+    "vcmpbfp128",
+    "vcmpeqfp128",
+    "vcmpequw128",
+    "vcmpgefp128",
+    "vcmpgtfp128",
+    "vcsxwfp128",
+    "vcuxwfp128",
+    "vexptefp128",
+    "vlogefp128",
+    "vmaxfp128",
+    "vminfp128",
+    "vmrghw128",
+    "vmrglw128",
+    "vpermwi128",
+    "vpkd3d128",
+    "vrefp128",
+    "vrfim128",
+    "vrfin128",
+    "vrfip128",
+    "vrfiz128",
+    "vrlimi128",
+    "vrsqrtefp128",
+    "vslw128",
+    "vspltisw128",
+    "vspltw128",
+    "vsraw128",
+    "vsro128",
+    "vsrw128",
+    "vupkd3d128",
+    "vupkhsb128",
+    "vupklsb128",
     "mulli",
     "subfic",
     "cmpli",
@@ -390,6 +833,7 @@ static OPCODE_NAMES: [&str; 256] = [
     "isync",
     "mcrf",
     "rfi",
+    "rfid",
     "rlwimi",
     "rlwinm",
     "rlwnm",
@@ -399,6 +843,12 @@ static OPCODE_NAMES: [&str; 256] = [
     "xoris",
     "andi.",
     "andis.",
+    "rldcl",
+    "rldcr",
+    "rldic",
+    "rldicl",
+    "rldicr",
+    "rldimi",
     "add",
     "addc",
     "adde",
@@ -408,6 +858,7 @@ static OPCODE_NAMES: [&str; 256] = [
     "andc",
     "cmp",
     "cmpl",
+    "cntlzd",
     "cntlzw",
     "dcbf",
     "dcbi",
@@ -415,6 +866,8 @@ static OPCODE_NAMES: [&str; 256] = [
     "dcbt",
     "dcbtst",
     "dcbz",
+    "divd",
+    "divdu",
     "divw",
     "divwu",
     "eciwx",
@@ -423,9 +876,13 @@ static OPCODE_NAMES: [&str; 256] = [
     "eqv",
     "extsb",
     "extsh",
+    "extsw",
     "icbi",
     "lbzux",
     "lbzx",
+    "ldarx",
+    "ldux",
+    "ldx",
     "lfdux",
     "lfdx",
     "lfsux",
@@ -438,6 +895,8 @@ static OPCODE_NAMES: [&str; 256] = [
     "lswi",
     "lswx",
     "lwarx",
+    "lwaux",
+    "lwax",
     "lwbrx",
     "lwzux",
     "lwzx",
@@ -450,23 +909,38 @@ static OPCODE_NAMES: [&str; 256] = [
     "mftb",
     "mtcrf",
     "mtmsr",
+    "mtmsrd",
     "mtspr",
     "mtsr",
+    "mtsrd",
+    "mtsrdin",
     "mtsrin",
+    "mulhd",
+    "mulhdu",
     "mulhw",
     "mulhwu",
+    "mulld",
     "mullw",
     "nand",
     "neg",
     "nor",
     "or",
     "orc",
+    "slbia",
+    "slbie",
+    "sld",
     "slw",
+    "srad",
+    "sradi",
     "sraw",
     "srawi",
+    "srd",
     "srw",
     "stbux",
     "stbx",
+    "stdcx.",
+    "stdux",
+    "stdx",
     "stfdux",
     "stfdx",
     "stfiwx",
@@ -487,10 +961,26 @@ static OPCODE_NAMES: [&str; 256] = [
     "subfme",
     "subfze",
     "sync",
+    "td",
     "tlbie",
     "tlbsync",
     "tw",
     "xor",
+    "dss",
+    "dst",
+    "dstst",
+    "lvebx",
+    "lvehx",
+    "lvewx",
+    "lvsl",
+    "lvsr",
+    "lvx",
+    "lvxl",
+    "stvebx",
+    "stvehx",
+    "stvewx",
+    "stvx",
+    "stvxl",
     "lwz",
     "lwzu",
     "lbz",
@@ -515,8 +1005,9 @@ static OPCODE_NAMES: [&str; 256] = [
     "stfsu",
     "stfd",
     "stfdu",
-    "psq_l",
-    "psq_lu",
+    "ld",
+    "ldu",
+    "lwa",
     "fadds",
     "fdivs",
     "fmadds",
@@ -526,12 +1017,15 @@ static OPCODE_NAMES: [&str; 256] = [
     "fnmsubs",
     "fres",
     "fsubs",
-    "psq_st",
-    "psq_stu",
+    "std",
+    "stdu",
     "fabs",
     "fadd",
+    "fcfid",
     "fcmpo",
     "fcmpu",
+    "fctid",
+    "fctidz",
     "fctiw",
     "fctiwz",
     "fdiv",
@@ -587,458 +1081,952 @@ static OPCODE_NAMES: [&str; 256] = [
     "<illegal>",
     "<illegal>",
     "<illegal>",
+    "<illegal>",
+    "<illegal>",
+    "<illegal>",
+    "<illegal>",
+    "<illegal>",
+    "<illegal>",
+    "<illegal>",
+    "<illegal>",
+    "<illegal>",
+    "<illegal>",
+    "<illegal>",
+    "<illegal>",
+    "<illegal>",
+    "<illegal>",
+    "<illegal>",
+    "<illegal>",
+    "<illegal>",
+    "<illegal>",
 ];
 #[derive(Copy, Clone, Debug, Default, PartialEq, Eq)]
-#[repr(u8)]
+#[repr(u16)]
 #[non_exhaustive]
 pub enum Opcode {
     /// An illegal or unknown opcode
     #[default]
-    Illegal = u8::MAX,
+    Illegal = u16::MAX,
+    /// tdi: Trap Double Word Immediate
+    Tdi = 0,
     /// twi: Trap Word Immediate
-    Twi = 0,
+    Twi = 1,
     /// dcbz_l: Data Cache Block Set to Zero Locked
-    DcbzL = 1,
-    /// psq_lux: Paired Single Quantized Load with Update Indexed
-    PsqLux = 2,
-    /// psq_lx: Paired Single Quantized Load Indexed
-    PsqLx = 3,
-    /// psq_stux: Paired Single Quantized Store with Update Indexed
-    PsqStux = 4,
-    /// psq_stx: Paired Single Quantized Store Indexed
-    PsqStx = 5,
-    /// ps_abs: Paired Single Absolute Value
-    PsAbs = 6,
-    /// ps_add: Paired Single Add
-    PsAdd = 7,
-    /// ps_cmpo0: Paired Singles Compare Ordered High
-    PsCmpo0 = 8,
-    /// ps_cmpo1: Paired Singles Compare Ordered Low
-    PsCmpo1 = 9,
-    /// ps_cmpu0: Paired Singles Compare Unordered High
-    PsCmpu0 = 10,
-    /// ps_cmpu1: Paired Singles Compare Unordered Low
-    PsCmpu1 = 11,
-    /// ps_div: Paired Single Divide
-    PsDiv = 12,
-    /// ps_madd: Paired Single Multiply-Add
-    PsMadd = 13,
-    /// ps_madds0: Paired Single Multiply-Add Scalar high
-    PsMadds0 = 14,
-    /// ps_madds1: Paired Single Multiply-Add Scalar low
-    PsMadds1 = 15,
-    /// ps_merge00: Paired Single MERGE high
-    PsMerge00 = 16,
-    /// ps_merge01: Paired Single MERGE direct
-    PsMerge01 = 17,
-    /// ps_merge10: Paired Single MERGE swapped
-    PsMerge10 = 18,
-    /// ps_merge11: Paired Single MERGE low
-    PsMerge11 = 19,
-    /// ps_mr: Paired Single Move Register
-    PsMr = 20,
-    /// ps_msub: Paired Single Multiply-Subtract
-    PsMsub = 21,
-    /// ps_mul: Paired Single Multiply
-    PsMul = 22,
-    /// ps_muls0: Paired Single Multiply Scalar high
-    PsMuls0 = 23,
-    /// ps_muls1: Paired Single Multiply Scalar low
-    PsMuls1 = 24,
-    /// ps_nabs: Paired Single Negative Absolute Value
-    PsNabs = 25,
-    /// ps_neg: Paired Single Negate
-    PsNeg = 26,
-    /// ps_nmadd: Paired Single Negative Multiply-Add
-    PsNmadd = 27,
-    /// ps_nmsub: Paired Single Negative Multiply-Subtract
-    PsNmsub = 28,
-    /// ps_res: Paired Single Reciprocal Estimate
-    PsRes = 29,
-    /// ps_rsqrte: Paired Single Reciprocal Square Root Estimate
-    PsRsqrte = 30,
-    /// ps_sel: Paired Single Select
-    PsSel = 31,
-    /// ps_sub: Paired Single Subtract
-    PsSub = 32,
-    /// ps_sum0: Paired Single vector SUM high
-    PsSum0 = 33,
-    /// ps_sum1: Paired Single vector SUM low
-    PsSum1 = 34,
+    DcbzL = 2,
+    /// mfvscr: Move from Vector Status and Control Register
+    Mfvscr = 3,
+    /// mtvscr: Move to Vector Status and Control Register
+    Mtvscr = 4,
+    /// vaddcuw: Vector Add Carryout Unsigned Word
+    Vaddcuw = 5,
+    /// vaddfp: Vector Add Floating Point
+    Vaddfp = 6,
+    /// vaddsbs: Vector Add Signed Byte Saturate
+    Vaddsbs = 7,
+    /// vaddshs: Vector Add Signed Half Word Saturate
+    Vaddshs = 8,
+    /// vaddsws: Vector Add Signed Word Saturate
+    Vaddsws = 9,
+    /// vaddubm: Vector Add Unsigned Byte Modulo
+    Vaddubm = 10,
+    /// vaddubs: Vector Add Unsigned Byte Saturate
+    Vaddubs = 11,
+    /// vadduhm: Vector Add Unsigned Half Word Modulo
+    Vadduhm = 12,
+    /// vadduhs: Vector Add Unsigned Half Word Saturate
+    Vadduhs = 13,
+    /// vadduwm: Vector Add Unsigned Word Modulo
+    Vadduwm = 14,
+    /// vadduws: Vector Add Unsigned Word Saturate
+    Vadduws = 15,
+    /// vand: Vector Logical AND
+    Vand = 16,
+    /// vandc: Vector Logical AND with Complement
+    Vandc = 17,
+    /// vavgsb: Vector Average Signed Byte
+    Vavgsb = 18,
+    /// vavgsh: Vector Average Signed Half Word
+    Vavgsh = 19,
+    /// vavgsw: Vector Average Signed Word
+    Vavgsw = 20,
+    /// vavgub: Vector Average Unsigned Byte
+    Vavgub = 21,
+    /// vavguh: Vector Average Unsigned Half Word
+    Vavguh = 22,
+    /// vavguw: Vector Average Unsigned Word
+    Vavguw = 23,
+    /// vcfsx: Vector Convert from Signed Fixed-Point Word
+    Vcfsx = 24,
+    /// vcfux: Vector Convert from Unsigned Fixed-Point Word
+    Vcfux = 25,
+    /// vcmpbfp: Vector Compare Bounds Floating Point
+    Vcmpbfp = 26,
+    /// vcmpeqfp: Vector Compare Equal-to-Floating Point
+    Vcmpeqfp = 27,
+    /// vcmpequb: Vector Compare Equal-to Unsigned Byte
+    Vcmpequb = 28,
+    /// vcmpequh: Vector Compare Equal-to Unsigned Half Word
+    Vcmpequh = 29,
+    /// vcmpequw: Vector Compare Equal-to Unsigned Word
+    Vcmpequw = 30,
+    /// vcmpgefp: Vector Compare Greater-Than-or-Equal-to Floating Point
+    Vcmpgefp = 31,
+    /// vcmpgtfp: Vector Compare Greater-Than Floating Point
+    Vcmpgtfp = 32,
+    /// vcmpgtsb: Vector Compare Greater-Than Signed Byte
+    Vcmpgtsb = 33,
+    /// vcmpgtsh: Vector Compare Greater-Than Condition Register Signed Half Word
+    Vcmpgtsh = 34,
+    /// vcmpgtsw: Vector Compare Greater-Than Signed Word
+    Vcmpgtsw = 35,
+    /// vcmpgtub: Vector Compare Greater-Than Unsigned Byte
+    Vcmpgtub = 36,
+    /// vcmpgtuh: Vector Compare Greater-Than Unsigned Half Word
+    Vcmpgtuh = 37,
+    /// vcmpgtuw: Vector Compare Greater-Than Unsigned Word
+    Vcmpgtuw = 38,
+    /// vctsxs: Vector Convert to Signed Fixed-Point Word Saturate
+    Vctsxs = 39,
+    /// vctuxs: Vector Convert to Unsigned Fixed-Point Word Saturate
+    Vctuxs = 40,
+    /// vexptefp: Vector 2 Raised to the Exponent Estimate Floating Point
+    Vexptefp = 41,
+    /// vlogefp: Vector Log2 Estimate Floating Point
+    Vlogefp = 42,
+    /// vmaddfp: Vector Multiply Add Floating Point
+    Vmaddfp = 43,
+    /// vmaxfp: Vector Maximum Floating Point
+    Vmaxfp = 44,
+    /// vmaxsb: Vector Maximum Signed Byte
+    Vmaxsb = 45,
+    /// vmaxsh: Vector Maximum Signed Half Word
+    Vmaxsh = 46,
+    /// vmaxsw: Vector Maximum Signed Word
+    Vmaxsw = 47,
+    /// vmaxub: Vector Maximum Unsigned Byte
+    Vmaxub = 48,
+    /// vmaxuh: Vector Maximum Unsigned Half Word
+    Vmaxuh = 49,
+    /// vmaxuw: Vector Maximum Unsigned Word
+    Vmaxuw = 50,
+    /// vmhaddshs: Vector Multiply High and Add Signed Half Word Saturate
+    Vmhaddshs = 51,
+    /// vmhraddshs: Vector Multiply High Round and Add Signed Half Word Saturate
+    Vmhraddshs = 52,
+    /// vminfp: Vector Minimum Floating Point
+    Vminfp = 53,
+    /// vminsb: Vector Minimum Signed Byte
+    Vminsb = 54,
+    /// vminsh: Vector Minimum Signed Half Word
+    Vminsh = 55,
+    /// vminsw: Vector Minimum Signed Word
+    Vminsw = 56,
+    /// vminub: Vector Minimum Unsigned Byte
+    Vminub = 57,
+    /// vminuh: Vector Minimum Unsigned Half Word
+    Vminuh = 58,
+    /// vminuw: Vector Minimum Unsigned Word
+    Vminuw = 59,
+    /// vmladduhm: Vector Multiply Low and Add Unsigned Half Word Modulo
+    Vmladduhm = 60,
+    /// vmrghb: Vector Merge High Byte
+    Vmrghb = 61,
+    /// vmrghh: Vector Merge High Half Word
+    Vmrghh = 62,
+    /// vmrghw: Vector Merge High Word
+    Vmrghw = 63,
+    /// vmrglb: Vector Merge Low Byte
+    Vmrglb = 64,
+    /// vmrglh: Vector Merge Low Half Word
+    Vmrglh = 65,
+    /// vmrglw: Vector Merge Low Word
+    Vmrglw = 66,
+    /// vmsummbm: Vector Multiply Sum Mixed-Sign Byte Modulo
+    Vmsummbm = 67,
+    /// vmsumshm: Vector Multiply Sum Signed Half Word Modulo
+    Vmsumshm = 68,
+    /// vmsumshs: Vector Multiply Sum Signed Half Word Saturate
+    Vmsumshs = 69,
+    /// vmsumubm: Vector Multiply Sum Unsigned Byte Modulo
+    Vmsumubm = 70,
+    /// vmsumuhm: Vector Multiply Sum Unsigned Half Word Modulo
+    Vmsumuhm = 71,
+    /// vmsumuhs: Vector Multiply Sum Unsigned Half Word Saturate
+    Vmsumuhs = 72,
+    /// vmulesb: Vector Multiply Even Signed Byte
+    Vmulesb = 73,
+    /// vmulesh: Vector Multiply Even Signed Half Word
+    Vmulesh = 74,
+    /// vmuleub: Vector Multiply Even Unsigned Byte
+    Vmuleub = 75,
+    /// vmuleuh: Vector Multiply Even Unsigned Half Word
+    Vmuleuh = 76,
+    /// vmulosb: Vector Multiply Odd Signed Byte
+    Vmulosb = 77,
+    /// vmulosh: Vector Multiply Odd Signed Half Word
+    Vmulosh = 78,
+    /// vmuloub: Vector Multiply Odd Unsigned Byte
+    Vmuloub = 79,
+    /// vmulouh: Vector Multiply Odd Unsigned Half Word
+    Vmulouh = 80,
+    /// vnmsubfp: Vector Negative Multiply-Subtract Floating Point
+    Vnmsubfp = 81,
+    /// vnor: Vector Logical NOR
+    Vnor = 82,
+    /// vor: Vector Logical OR
+    Vor = 83,
+    /// vperm: Vector Permute
+    Vperm = 84,
+    /// vpkpx: Vector Pack Pixel32
+    Vpkpx = 85,
+    /// vpkshss: Vector Pack Signed Half Word Signed Saturate
+    Vpkshss = 86,
+    /// vpkshus: Vector Pack Signed Half Word Unsigned Saturate
+    Vpkshus = 87,
+    /// vpkswss: Vector Pack Signed Word Signed Saturate
+    Vpkswss = 88,
+    /// vpkswus: Vector Pack Signed Word Unsigned Saturate
+    Vpkswus = 89,
+    /// vpkuhum: Vector Pack Unsigned Half Word Unsigned Modulo
+    Vpkuhum = 90,
+    /// vpkuhus: Vector Pack Unsigned Half Word Unsigned Saturate
+    Vpkuhus = 91,
+    /// vpkuwum: Vector Pack Unsigned Word Unsigned Modulo
+    Vpkuwum = 92,
+    /// vpkuwus: Vector Pack Unsigned Word Unsigned Saturate
+    Vpkuwus = 93,
+    /// vrefp: Vector Reciprocal Estimate Floating Point
+    Vrefp = 94,
+    /// vrfim: Vector Round to Floating-Point Integer toward Minus Infinity
+    Vrfim = 95,
+    /// vrfin: Vector Round to Floating-Point Integer Nearest
+    Vrfin = 96,
+    /// vrfip: Vector Round to Floating-Point Integer toward Plus Infinity
+    Vrfip = 97,
+    /// vrfiz: Vector Round to Floating-Point Integer toward Zero
+    Vrfiz = 98,
+    /// vrlb: Vector Rotate Left Integer Byte
+    Vrlb = 99,
+    /// vrlh: Vector Rotate Left Integer Half Word
+    Vrlh = 100,
+    /// vrlw: Vector Rotate Left Integer Word
+    Vrlw = 101,
+    /// vrsqrtefp: Vector Reciprocal Square Root Estimate Floating Point
+    Vrsqrtefp = 102,
+    /// vsel: Vector Conditional Select
+    Vsel = 103,
+    /// vsl: Vector Shift Left
+    Vsl = 104,
+    /// vslb: Vector Shift Left Integer Byte
+    Vslb = 105,
+    /// vsldoi: Vector Shift Left Double by Octet Immediate
+    Vsldoi = 106,
+    /// vslh: Vector Shift Left Integer Half Word
+    Vslh = 107,
+    /// vslo: Vector Shift Left by Octet
+    Vslo = 108,
+    /// vslw: Vector Shift Left Integer Word
+    Vslw = 109,
+    /// vspltb: Vector Splat Byte
+    Vspltb = 110,
+    /// vsplth: Vector Splat Half Word
+    Vsplth = 111,
+    /// vspltisb: Vector Splat Immediate Signed Byte
+    Vspltisb = 112,
+    /// vspltish: Vector Splat Immediate Signed Half Word
+    Vspltish = 113,
+    /// vspltisw: Vector Splat Immediate Signed Word
+    Vspltisw = 114,
+    /// vspltw: Vector Splat Word
+    Vspltw = 115,
+    /// vsr: Vector Shift Right
+    Vsr = 116,
+    /// vsrab: Vector Shift Right Algebraic Byte
+    Vsrab = 117,
+    /// vsrah: Vector Shift Right Algebraic Half Word
+    Vsrah = 118,
+    /// vsraw: Vector Shift Right Algebraic Word
+    Vsraw = 119,
+    /// vsrb: Vector Shift Right Byte
+    Vsrb = 120,
+    /// vsrh: Vector Shift Right Half Word
+    Vsrh = 121,
+    /// vsro: Vector Shift Right by Octet
+    Vsro = 122,
+    /// vsrw: Vector Shift Right Word
+    Vsrw = 123,
+    /// vsubcuw: Vector Subtract Carryout Unsigned Word
+    Vsubcuw = 124,
+    /// vsubfp: Vector Subtract Floating Point
+    Vsubfp = 125,
+    /// vsubsbs: Vector Subtract Signed Byte Saturate
+    Vsubsbs = 126,
+    /// vsubshs: Vector Subtract Signed Half Word Saturate
+    Vsubshs = 127,
+    /// vsubsws: Vector Subtract Signed Word Saturate
+    Vsubsws = 128,
+    /// vsububm: Vector Subtract Unsigned Byte Modulo
+    Vsububm = 129,
+    /// vsububs: Vector Subtract Unsigned Byte Saturate
+    Vsububs = 130,
+    /// vsubuhm: Vector Subtract Unsigned Half Word Modulo
+    Vsubuhm = 131,
+    /// vsubuhs: Vector Subtract Unsigned Half Word Saturate
+    Vsubuhs = 132,
+    /// vsubuwm: Vector Subtract Unsigned Word Modulo
+    Vsubuwm = 133,
+    /// vsubuws: Vector Subtract Unsigned Word Saturate
+    Vsubuws = 134,
+    /// vsumsws: Vector Sum Across Signed Word Saturate
+    Vsumsws = 135,
+    /// vsum2sws: Vector Sum Across Partial (1/2) Signed Word Saturate
+    Vsum2sws = 136,
+    /// vsum4sbs: Vector Sum Across Partial (1/4) Signed Byte Saturate
+    Vsum4sbs = 137,
+    /// vsum4shs: Vector Sum Across Partial (1/4) Signed Half Word Saturate
+    Vsum4shs = 138,
+    /// vsum4ubs: Vector Sum Across Partial (1/4) Unsigned Byte Saturate
+    Vsum4ubs = 139,
+    /// vupkhpx: Vector Unpack High Pixel16
+    Vupkhpx = 140,
+    /// vupkhsb: Vector Unpack High Signed Byte
+    Vupkhsb = 141,
+    /// vupkhsh: Vector Unpack High Signed Half Word
+    Vupkhsh = 142,
+    /// vupklpx: Vector Unpack Low Pixel16
+    Vupklpx = 143,
+    /// vupklsb: Vector Unpack Low Signed Byte
+    Vupklsb = 144,
+    /// vupklsh: Vector Unpack Low Signed Half Word
+    Vupklsh = 145,
+    /// vxor: Vector Logical XOR
+    Vxor = 146,
+    /// lvewx128: Load Vector128 Element Word Indexed
+    Lvewx128 = 147,
+    /// lvlx128: Load Vector128 Left Indexed
+    Lvlx128 = 148,
+    /// lvrx128: Load Vector128 Right Indexed
+    Lvrx128 = 149,
+    /// lvlxl128: Load Vector128 Left Indexed LRU
+    Lvlxl128 = 150,
+    /// lvrxl128: Load Vector128 Right Indexed LRU
+    Lvrxl128 = 151,
+    /// lvsl128: Load Vector128 for Shift Left
+    Lvsl128 = 152,
+    /// lvsr128: Load Vector128 for Shift Right
+    Lvsr128 = 153,
+    /// lvx128: Load Vector128 Indexed
+    Lvx128 = 154,
+    /// lvxl128: Load Vector128 Indexed LRU
+    Lvxl128 = 155,
+    /// stvewx128: Store Vector128 Element Word Indexed
+    Stvewx128 = 156,
+    /// stvlx128: Store Vector128 Left Indexed
+    Stvlx128 = 157,
+    /// stvlxl128: Store Vector128 Left Indexed LRU
+    Stvlxl128 = 158,
+    /// stvrx128: Store Vector128 Right Indexed
+    Stvrx128 = 159,
+    /// stvrxl128: Store Vector128 Right Indexed LRU
+    Stvrxl128 = 160,
+    /// stvx128: Store Vector128 Indexed
+    Stvx128 = 161,
+    /// stvxl128: Store Vector128 Indexed LRU
+    Stvxl128 = 162,
+    /// vsldoi128: Vector128 Shift Left Double by Octet Immediate
+    Vsldoi128 = 163,
+    /// vaddfp128: Vector128 Add Floating Point
+    Vaddfp128 = 164,
+    /// vand128: Vector128 Logical AND
+    Vand128 = 165,
+    /// vandc128: Vector128 Logical AND with Complement
+    Vandc128 = 166,
+    /// vmaddcfp128: Vector128 Multiply Add Carryout Floating Point
+    Vmaddcfp128 = 167,
+    /// vmaddfp128: Vector128 Multiply Add Floating Point
+    Vmaddfp128 = 168,
+    /// vmsum3fp128: Vector128 Multiply Sum 3-way Floating Point
+    Vmsum3fp128 = 169,
+    /// vmsum4fp128: Vector128 Multiply Sum 4-way Floating Point
+    Vmsum4fp128 = 170,
+    /// vmulfp128: Vector128 Multiply Floating-Point
+    Vmulfp128 = 171,
+    /// vnmsubfp128: Vector128 Negative Multiply-Subtract Floating Point
+    Vnmsubfp128 = 172,
+    /// vnor128: Vector128 Logical NOR
+    Vnor128 = 173,
+    /// vor128: Vector128 Logical OR
+    Vor128 = 174,
+    /// vperm128: Vector128 Permutation
+    Vperm128 = 175,
+    /// vpkshss128: Vector128 Pack Signed Half Word Signed Saturate
+    Vpkshss128 = 176,
+    /// vpkshus128: Vector128 Pack Signed Half Word Unsigned Saturate
+    Vpkshus128 = 177,
+    /// vpkswss128: Vector128 Pack Signed Word Signed Saturate
+    Vpkswss128 = 178,
+    /// vpkswus128: Vector128 Pack Signed Word Unsigned Saturate
+    Vpkswus128 = 179,
+    /// vpkuhum128: Vector128 Pack Unsigned Half Word Unsigned Modulo
+    Vpkuhum128 = 180,
+    /// vpkuhus128: Vector128 Pack Unsigned Half Word Unsigned Saturate
+    Vpkuhus128 = 181,
+    /// vpkuwum128: Vector128 Pack Unsigned Word Unsigned Modulo
+    Vpkuwum128 = 182,
+    /// vpkuwus128: Vector128 Pack Unsigned Word Unsigned Saturate
+    Vpkuwus128 = 183,
+    /// vrlw128: Vector128 Rotate Left Word
+    Vrlw128 = 184,
+    /// vsel128: Vector128 Select
+    Vsel128 = 185,
+    /// vslo128: Vector128 Shift Left Octet
+    Vslo128 = 186,
+    /// vsubfp128: Vector128 Subtract Floating Point
+    Vsubfp128 = 187,
+    /// vxor128: Vector128 Logical XOR
+    Vxor128 = 188,
+    /// vcfpsxws128: Vector128 Convert From Floating-Point to Signed Fixed-Point Word Saturate
+    Vcfpsxws128 = 189,
+    /// vcfpuxws128: Vector128 Convert From Floating-Point to Unsigned Fixed-Point Word Saturate
+    Vcfpuxws128 = 190,
+    /// vcmpbfp128: Vector128 Compare Bounds Floating Point
+    Vcmpbfp128 = 191,
+    /// vcmpeqfp128: Vector128 Compare Equal-to Floating Point
+    Vcmpeqfp128 = 192,
+    /// vcmpequw128: Vector128 Compare Equal-to Unsigned Word
+    Vcmpequw128 = 193,
+    /// vcmpgefp128: Vector128 Compare Greater-Than-or-Equal-to Floating Point
+    Vcmpgefp128 = 194,
+    /// vcmpgtfp128: Vector128 Compare Greater-Than Floating-Point
+    Vcmpgtfp128 = 195,
+    /// vcsxwfp128: Vector128 Convert From Signed Fixed-Point Word to Floating-Point
+    Vcsxwfp128 = 196,
+    /// vcuxwfp128: Vector128 Convert From Unsigned Fixed-Point Word to Floating-Point
+    Vcuxwfp128 = 197,
+    /// vexptefp128: Vector128 2 Raised to the Exponent Estimate Floating Point
+    Vexptefp128 = 198,
+    /// vlogefp128: Vector128 Log2 Estimate Floating Point
+    Vlogefp128 = 199,
+    /// vmaxfp128: Vector128 Maximum Floating Point
+    Vmaxfp128 = 200,
+    /// vminfp128: Vector128 Minimum Floating Point
+    Vminfp128 = 201,
+    /// vmrghw128: Vector128 Merge High Word
+    Vmrghw128 = 202,
+    /// vmrglw128: Vector128 Merge Low Word
+    Vmrglw128 = 203,
+    /// vpermwi128: Vector128 Permutate Word Immediate
+    Vpermwi128 = 204,
+    /// vpkd3d128: Vector128 Pack D3Dtype, Rotate Left Immediate and Mask Insert
+    Vpkd3d128 = 205,
+    /// vrefp128: Vector128 Reciprocal Estimate Floating Point
+    Vrefp128 = 206,
+    /// vrfim128: Vector128 Round to Floating-Point Integer toward -oo
+    Vrfim128 = 207,
+    /// vrfin128: Vector128 Round to Floating-Point Integer toward Nearest
+    Vrfin128 = 208,
+    /// vrfip128: Vector128 Round to Floating-Point Integer toward +oo
+    Vrfip128 = 209,
+    /// vrfiz128: Vector128 Round to Floating-Point Integer toward Zero
+    Vrfiz128 = 210,
+    /// vrlimi128: Vector128 Rotate Left Immediate and Mask Insert
+    Vrlimi128 = 211,
+    /// vrsqrtefp128: Vector128 Reciprocal Square Root Estimate Floating Point
+    Vrsqrtefp128 = 212,
+    /// vslw128: Vector128 Shift Left Word
+    Vslw128 = 213,
+    /// vspltisw128: Vector128 Splat Immediate Signed Word
+    Vspltisw128 = 214,
+    /// vspltw128: Vector128 Splat Word
+    Vspltw128 = 215,
+    /// vsraw128: Vector128 Shift Right Arithmetic Word
+    Vsraw128 = 216,
+    /// vsro128: Vector128 Shift Right Octet
+    Vsro128 = 217,
+    /// vsrw128: Vector128 Shift Right Word
+    Vsrw128 = 218,
+    /// vupkd3d128: Vector128 Unpack D3Dtype
+    Vupkd3d128 = 219,
+    /// vupkhsb128: Vector128 Unpack High Signed Byte
+    Vupkhsb128 = 220,
+    /// vupklsb128: Vector128 Unpack Low Signed Byte
+    Vupklsb128 = 221,
     /// mulli: Multiply Low Immediate
-    Mulli = 35,
+    Mulli = 222,
     /// subfic: Subtract from Immediate Carrying
-    Subfic = 36,
+    Subfic = 223,
     /// cmpli: Compare Logical Immediate
-    Cmpli = 37,
+    Cmpli = 224,
     /// cmpi: Compare Immediate
-    Cmpi = 38,
+    Cmpi = 225,
     /// addic: Add Immediate Carrying
-    Addic = 39,
+    Addic = 226,
     /// addic.: Add Immediate Carrying and Record
-    Addic_ = 40,
+    Addic_ = 227,
     /// addi: Add Immediate
-    Addi = 41,
+    Addi = 228,
     /// addis: Add Immediate Shifted
-    Addis = 42,
+    Addis = 229,
     /// bc: Branch Conditional
-    Bc = 43,
+    Bc = 230,
     /// sc: System Call
-    Sc = 44,
+    Sc = 231,
     /// b: Branch
-    B = 45,
+    B = 232,
     /// bcctr: Branch Conditional to Count Register
-    Bcctr = 46,
+    Bcctr = 233,
     /// bclr: Branch Conditional to Link Register
-    Bclr = 47,
+    Bclr = 234,
     /// crand: Condition Register AND
-    Crand = 48,
+    Crand = 235,
     /// crandc: Condition Register AND with Complement
-    Crandc = 49,
+    Crandc = 236,
     /// creqv: Condition Register Equivalent
-    Creqv = 50,
+    Creqv = 237,
     /// crnand: Condition Register NAND
-    Crnand = 51,
+    Crnand = 238,
     /// crnor: Condition Register NOR
-    Crnor = 52,
+    Crnor = 239,
     /// cror: Condition Register OR
-    Cror = 53,
+    Cror = 240,
     /// crorc: Condition Register OR with Complement
-    Crorc = 54,
+    Crorc = 241,
     /// crxor: Condition Register XOR
-    Crxor = 55,
+    Crxor = 242,
     /// isync: Instruction Synchronize
-    Isync = 56,
+    Isync = 243,
     /// mcrf: Move Condition Register Field
-    Mcrf = 57,
+    Mcrf = 244,
     /// rfi: Return from Interrupt
-    Rfi = 58,
+    Rfi = 245,
+    /// rfid: Return from Interrupt Double Word
+    Rfid = 246,
     /// rlwimi: Rotate Left Word Immediate then Mask Insert
-    Rlwimi = 59,
+    Rlwimi = 247,
     /// rlwinm: Rotate Left Word Immediate then AND with Mask
-    Rlwinm = 60,
+    Rlwinm = 248,
     /// rlwnm: Rotate Left Word then AND with Mask
-    Rlwnm = 61,
+    Rlwnm = 249,
     /// ori: OR Immediate
-    Ori = 62,
+    Ori = 250,
     /// oris: OR Immediate Shifted
-    Oris = 63,
+    Oris = 251,
     /// xori: XOR Immediate
-    Xori = 64,
+    Xori = 252,
     /// xoris: XOR Immediate Shifted
-    Xoris = 65,
+    Xoris = 253,
     /// andi.: AND Immediate
-    Andi_ = 66,
+    Andi_ = 254,
     /// andis.: AND Immediate Shifted
-    Andis_ = 67,
+    Andis_ = 255,
+    /// rldcl: Rotate Left Double Word then Clear Left
+    Rldcl = 256,
+    /// rldcr: Rotate Left Double Word then Clear Right
+    Rldcr = 257,
+    /// rldic: Rotate Left Double Word Immediate then Clear
+    Rldic = 258,
+    /// rldicl: Rotate Left Double Word Immediate then Clear Left
+    Rldicl = 259,
+    /// rldicr: Rotate Left Double Word Immediate then Clear Right
+    Rldicr = 260,
+    /// rldimi: Rotate Left Double Word Immediate then Mask Insert
+    Rldimi = 261,
     /// add: Add
-    Add = 68,
+    Add = 262,
     /// addc: Add Carrying
-    Addc = 69,
+    Addc = 263,
     /// adde: Add Extended
-    Adde = 70,
+    Adde = 264,
     /// addme: Add to Minus One Extended
-    Addme = 71,
+    Addme = 265,
     /// addze: Add to Zero Extended
-    Addze = 72,
+    Addze = 266,
     /// and: AND
-    And = 73,
+    And = 267,
     /// andc: AND with Complement
-    Andc = 74,
+    Andc = 268,
     /// cmp: Compare
-    Cmp = 75,
+    Cmp = 269,
     /// cmpl: Compare Logical
-    Cmpl = 76,
+    Cmpl = 270,
+    /// cntlzd: Count Leading Zeros Double Word
+    Cntlzd = 271,
     /// cntlzw: Count Leading Zeros Word
-    Cntlzw = 77,
+    Cntlzw = 272,
     /// dcbf: Data Cache Block Flush
-    Dcbf = 78,
+    Dcbf = 273,
     /// dcbi: Data Cache Block Invalidate
-    Dcbi = 79,
+    Dcbi = 274,
     /// dcbst: Data Cache Block Store
-    Dcbst = 80,
+    Dcbst = 275,
     /// dcbt: Data Cache Block Touch
-    Dcbt = 81,
+    Dcbt = 276,
     /// dcbtst: Data Cache Block Touch for Store
-    Dcbtst = 82,
+    Dcbtst = 277,
     /// dcbz: Data Cache Block Clear to Zero
-    Dcbz = 83,
+    Dcbz = 278,
+    /// divd: Divide Double Word
+    Divd = 279,
+    /// divdu: Divide Double Word Unsigned
+    Divdu = 280,
     /// divw: Divide Word
-    Divw = 84,
+    Divw = 281,
     /// divwu: Divide Word Unsigned
-    Divwu = 85,
+    Divwu = 282,
     /// eciwx: External Control In Word Indexed
-    Eciwx = 86,
+    Eciwx = 283,
     /// ecowx: External Control Out Word Indexed
-    Ecowx = 87,
+    Ecowx = 284,
     /// eieio: Enforce In-Order Execution of I/O
-    Eieio = 88,
+    Eieio = 285,
     /// eqv: Equivalent
-    Eqv = 89,
+    Eqv = 286,
     /// extsb: Extend Sign Byte
-    Extsb = 90,
+    Extsb = 287,
     /// extsh: Extend Sign Half Word
-    Extsh = 91,
+    Extsh = 288,
+    /// extsw: Extend Sign Word
+    Extsw = 289,
     /// icbi: Instruction Cache Block Invalidate
-    Icbi = 92,
+    Icbi = 290,
     /// lbzux: Load Byte and Zero with Update Indexed
-    Lbzux = 93,
+    Lbzux = 291,
     /// lbzx: Load Byte and Zero Indexed
-    Lbzx = 94,
+    Lbzx = 292,
+    /// ldarx: Load Double Word and Reserve Indexed
+    Ldarx = 293,
+    /// ldux: Load Double Word with Update Indexed
+    Ldux = 294,
+    /// ldx: Load Double Word Indexed
+    Ldx = 295,
     /// lfdux: Load Floating-Point Double with Update Indexed
-    Lfdux = 95,
+    Lfdux = 296,
     /// lfdx: Load Floating-Point Double Indexed
-    Lfdx = 96,
+    Lfdx = 297,
     /// lfsux: Load Floating-Point Single with Update Indexed
-    Lfsux = 97,
+    Lfsux = 298,
     /// lfsx: Load Floating-Point Single Indexed
-    Lfsx = 98,
+    Lfsx = 299,
     /// lhaux: Load Half Word Algebraic with Update Indexed
-    Lhaux = 99,
+    Lhaux = 300,
     /// lhax: Load Half Word Algebraic Indexed
-    Lhax = 100,
+    Lhax = 301,
     /// lhbrx: Load Half Word Byte-Reverse Indexed
-    Lhbrx = 101,
+    Lhbrx = 302,
     /// lhzux: Load Half Word and Zero with Update Indexed
-    Lhzux = 102,
+    Lhzux = 303,
     /// lhzx: Load Half Word and Zero Indexed
-    Lhzx = 103,
+    Lhzx = 304,
     /// lswi: Load String Word Immediate
-    Lswi = 104,
+    Lswi = 305,
     /// lswx: Load String Word Indexed
-    Lswx = 105,
+    Lswx = 306,
     /// lwarx: Load String Word and Reverse Indexed
-    Lwarx = 106,
+    Lwarx = 307,
+    /// lwaux: Load Word Algebraic with Update Indexed
+    Lwaux = 308,
+    /// lwax: Load Word Algebraic Indexed
+    Lwax = 309,
     /// lwbrx: Load String Word and Byte-Reverse Indexed
-    Lwbrx = 107,
+    Lwbrx = 310,
     /// lwzux: Load Word and Zero with Update Indexed
-    Lwzux = 108,
+    Lwzux = 311,
     /// lwzx: Load Word and Zero Indexed
-    Lwzx = 109,
+    Lwzx = 312,
     /// mcrxr: Move to Condition Register from XER
-    Mcrxr = 110,
+    Mcrxr = 313,
     /// mfcr: Move from Condition Register
-    Mfcr = 111,
+    Mfcr = 314,
     /// mfmsr: Move from Machine State Register
-    Mfmsr = 112,
+    Mfmsr = 315,
     /// mfspr: Move from Special-Purpose Register
-    Mfspr = 113,
+    Mfspr = 316,
     /// mfsr: Move from Segment Register
-    Mfsr = 114,
+    Mfsr = 317,
     /// mfsrin: Move from Segment Register Indirect
-    Mfsrin = 115,
+    Mfsrin = 318,
     /// mftb: Move from Time Base
-    Mftb = 116,
+    Mftb = 319,
     /// mtcrf: Move to Condition Register Fields
-    Mtcrf = 117,
+    Mtcrf = 320,
     /// mtmsr: Move to Machine State Register
-    Mtmsr = 118,
+    Mtmsr = 321,
+    /// mtmsrd: Move to Machine State Register Double Word
+    Mtmsrd = 322,
     /// mtspr: Move to Special-Purpose Register
-    Mtspr = 119,
+    Mtspr = 323,
     /// mtsr: Move to Segment Register
-    Mtsr = 120,
+    Mtsr = 324,
+    /// mtsrd: Move to Segment Register Double Word
+    Mtsrd = 325,
+    /// mtsrdin: Move to Segment Register Double Word Indirect
+    Mtsrdin = 326,
     /// mtsrin: Move to Segment Register Indirect
-    Mtsrin = 121,
+    Mtsrin = 327,
+    /// mulhd: Multiply High Double Word
+    Mulhd = 328,
+    /// mulhdu: Multiply High Double Word Unsigned
+    Mulhdu = 329,
     /// mulhw: Multiply High Word
-    Mulhw = 122,
+    Mulhw = 330,
     /// mulhwu: Multiply High Word Unsigned
-    Mulhwu = 123,
+    Mulhwu = 331,
+    /// mulld: Multiply Low Double Word
+    Mulld = 332,
     /// mullw: Multiply Low Word
-    Mullw = 124,
+    Mullw = 333,
     /// nand: NAND
-    Nand = 125,
+    Nand = 334,
     /// neg: Negate
-    Neg = 126,
+    Neg = 335,
     /// nor: NOR
-    Nor = 127,
+    Nor = 336,
     /// or: OR
-    Or = 128,
+    Or = 337,
     /// orc: OR with Complement
-    Orc = 129,
+    Orc = 338,
+    /// slbia: SLB Invalidate All
+    Slbia = 339,
+    /// slbie: SLB Invalidate Entry
+    Slbie = 340,
+    /// sld: Shift Left Double Word
+    Sld = 341,
     /// slw: Shift Left Word
-    Slw = 130,
+    Slw = 342,
+    /// srad: Shift Right Algebraic Double Word
+    Srad = 343,
+    /// sradi: Shift Right Algebraic Double Word Immediate
+    Sradi = 344,
     /// sraw: Shift Right Algebraic Word
-    Sraw = 131,
+    Sraw = 345,
     /// srawi: Shift Right Algebraic Word Immediate
-    Srawi = 132,
+    Srawi = 346,
+    /// srd: Shift Right Double Word
+    Srd = 347,
     /// srw: Shift Right Word
-    Srw = 133,
+    Srw = 348,
     /// stbux: Store Byte with Update Indexed
-    Stbux = 134,
+    Stbux = 349,
     /// stbx: Store Byte Indexed
-    Stbx = 135,
+    Stbx = 350,
+    /// stdcx.: Store Double Word Conditional Indexed
+    Stdcx_ = 351,
+    /// stdux: Store Double Word with Update Indexed
+    Stdux = 352,
+    /// stdx: Store Double Word Indexed
+    Stdx = 353,
     /// stfdux: Store Floating-Point Double with Update Indexed
-    Stfdux = 136,
+    Stfdux = 354,
     /// stfdx: Store Floating-Point Double Indexed
-    Stfdx = 137,
+    Stfdx = 355,
     /// stfiwx: Store Floating-Point as Integer Word Indexed
-    Stfiwx = 138,
+    Stfiwx = 356,
     /// stfsux: Store Floating-Point Single with Update Indexed
-    Stfsux = 139,
+    Stfsux = 357,
     /// stfsx: Store Floating-Point Single Indexed
-    Stfsx = 140,
+    Stfsx = 358,
     /// sthbrx: Store Half Word Byte-Reverse Indexed
-    Sthbrx = 141,
+    Sthbrx = 359,
     /// sthux: Store Half Word with Update Indexed
-    Sthux = 142,
+    Sthux = 360,
     /// sthx: Store Half Word Indexed
-    Sthx = 143,
+    Sthx = 361,
     /// stswi: Store String Word Immediate
-    Stswi = 144,
+    Stswi = 362,
     /// stswx: Store String Word Indexed
-    Stswx = 145,
+    Stswx = 363,
     /// stwbrx: Store Word Byte-Reverse Indexed
-    Stwbrx = 146,
+    Stwbrx = 364,
     /// stwcx.: Store Word Conditional Indexed
-    Stwcx_ = 147,
+    Stwcx_ = 365,
     /// stwux: Store Word Indexed
-    Stwux = 148,
+    Stwux = 366,
     /// stwx: Store Word Indexed
-    Stwx = 149,
+    Stwx = 367,
     /// subf: Subtract From Carrying
-    Subf = 150,
+    Subf = 368,
     /// subfc: Subtract from Carrying
-    Subfc = 151,
+    Subfc = 369,
     /// subfe: Subtract from Extended
-    Subfe = 152,
+    Subfe = 370,
     /// subfme: Subtract from Minus One Extended
-    Subfme = 153,
+    Subfme = 371,
     /// subfze: Subtract from Zero Extended
-    Subfze = 154,
+    Subfze = 372,
     /// sync: Synchronize
-    Sync = 155,
+    Sync = 373,
+    /// td: Trap Double Word
+    Td = 374,
     /// tlbie: Translation Lookaside Buffer Invalidate Entry
-    Tlbie = 156,
+    Tlbie = 375,
     /// tlbsync: TLB Synchronize
-    Tlbsync = 157,
+    Tlbsync = 376,
     /// tw: Trap Word
-    Tw = 158,
+    Tw = 377,
     /// xor: XOR
-    Xor = 159,
+    Xor = 378,
+    /// dss: Data Stream Stop
+    Dss = 379,
+    /// dst: Data Stream Touch
+    Dst = 380,
+    /// dstst: Data Stream Touch for Store
+    Dstst = 381,
+    /// lvebx: Load Vector Element Byte Indexed
+    Lvebx = 382,
+    /// lvehx: Load Vector Element Half Word Indexed
+    Lvehx = 383,
+    /// lvewx: Load Vector Element Word Indexed
+    Lvewx = 384,
+    /// lvsl: Load Vector for Shift Left
+    Lvsl = 385,
+    /// lvsr: Load Vector for Shift Right
+    Lvsr = 386,
+    /// lvx: Load Vector Indexed
+    Lvx = 387,
+    /// lvxl: Load Vector Indexed LRU
+    Lvxl = 388,
+    /// stvebx: Store Vector Element Byte Indexed
+    Stvebx = 389,
+    /// stvehx: Store Vector Element Half Word Indexed
+    Stvehx = 390,
+    /// stvewx: Store Vector Element Word Indexed
+    Stvewx = 391,
+    /// stvx: Store Vector Indexed
+    Stvx = 392,
+    /// stvxl: Store Vector Indexed LRU
+    Stvxl = 393,
     /// lwz: Load Word and Zero
-    Lwz = 160,
+    Lwz = 394,
     /// lwzu: Load Word and Zero with Update
-    Lwzu = 161,
+    Lwzu = 395,
     /// lbz: Load Byte and Zero
-    Lbz = 162,
+    Lbz = 396,
     /// lbzu: Load Byte and Zero with Update
-    Lbzu = 163,
+    Lbzu = 397,
     /// stw: Store Word
-    Stw = 164,
+    Stw = 398,
     /// stwu: Store Word with Update
-    Stwu = 165,
+    Stwu = 399,
     /// stb: Store Byte
-    Stb = 166,
+    Stb = 400,
     /// stbu: Store Byte with Update
-    Stbu = 167,
+    Stbu = 401,
     /// lhz: Load Half Word and Zero
-    Lhz = 168,
+    Lhz = 402,
     /// lhzu: Load Half Word and Zero with Update
-    Lhzu = 169,
+    Lhzu = 403,
     /// lha: Load Half Word Algebraic
-    Lha = 170,
+    Lha = 404,
     /// lhau: Load Half Word Algebraic with Update
-    Lhau = 171,
+    Lhau = 405,
     /// sth: Store Half Word
-    Sth = 172,
+    Sth = 406,
     /// sthu: Store Half Word with Update
-    Sthu = 173,
+    Sthu = 407,
     /// lmw: Load Multiple Word
-    Lmw = 174,
+    Lmw = 408,
     /// stmw: Store Multiple Word
-    Stmw = 175,
+    Stmw = 409,
     /// lfs: Load Floating-Point Single
-    Lfs = 176,
+    Lfs = 410,
     /// lfsu: Load Floating-Point Single with Update
-    Lfsu = 177,
+    Lfsu = 411,
     /// lfd: Load Floating-Point Double
-    Lfd = 178,
+    Lfd = 412,
     /// lfdu: Load Floating-Point Double with Update
-    Lfdu = 179,
+    Lfdu = 413,
     /// stfs: Store Floating-Point Single
-    Stfs = 180,
+    Stfs = 414,
     /// stfsu: Store Floating-Point Single with Update
-    Stfsu = 181,
+    Stfsu = 415,
     /// stfd: Store Floating-Point Double
-    Stfd = 182,
+    Stfd = 416,
     /// stfdu: Store Floating-Point Double with Update
-    Stfdu = 183,
-    /// psq_l: Paired Single Quantized Load
-    PsqL = 184,
-    /// psq_lu: Paired Single Quantized Load with Update
-    PsqLu = 185,
+    Stfdu = 417,
+    /// ld: Load Double Word
+    Ld = 418,
+    /// ldu: Load Double Word with Update
+    Ldu = 419,
+    /// lwa: Load Word Algebraic
+    Lwa = 420,
     /// fadds: Floating Add (Single-Precision)
-    Fadds = 186,
+    Fadds = 421,
     /// fdivs: Floating Divide (Single-Precision)
-    Fdivs = 187,
+    Fdivs = 422,
     /// fmadds: Floating Multiply-Add (Single-Precision)
-    Fmadds = 188,
+    Fmadds = 423,
     /// fmsubs: Floating Multiply-Subtract (Single-Precision)
-    Fmsubs = 189,
+    Fmsubs = 424,
     /// fmuls: Floating Multiply (Single-Precision)
-    Fmuls = 190,
+    Fmuls = 425,
     /// fnmadds: Floating Negative Multiply-Add (Single-Precision)
-    Fnmadds = 191,
+    Fnmadds = 426,
     /// fnmsubs: Floating Negative Multiply-Subtract (Single-Precision)
-    Fnmsubs = 192,
+    Fnmsubs = 427,
     /// fres: Floating Reciprocal Estimate Single
-    Fres = 193,
+    Fres = 428,
     /// fsubs: Floating Subtract (Single-Precision)
-    Fsubs = 194,
-    /// psq_st: Paired Single Quantized Store
-    PsqSt = 195,
-    /// psq_stu: Paired Single Quantized Store with Update
-    PsqStu = 196,
+    Fsubs = 429,
+    /// std: Store Double Word
+    Std = 430,
+    /// stdu: Store Double Word with Update
+    Stdu = 431,
     /// fabs: Floating Absolute Value
-    Fabs = 197,
+    Fabs = 432,
     /// fadd: Floating Add (Double-Precision)
-    Fadd = 198,
+    Fadd = 433,
+    /// fcfid: Floating Convert from Integer Double Word
+    Fcfid = 434,
     /// fcmpo: Floating Compare Ordered
-    Fcmpo = 199,
+    Fcmpo = 435,
     /// fcmpu: Floating Compare Unordered
-    Fcmpu = 200,
+    Fcmpu = 436,
+    /// fctid: Floating Convert to Integer Double Word
+    Fctid = 437,
+    /// fctidz: Floating Convert to Integer Double Word with Round toward Zero
+    Fctidz = 438,
     /// fctiw: Floating Convert to Integer Word
-    Fctiw = 201,
+    Fctiw = 439,
     /// fctiwz: Floating Convert to Integer Word with Round toward Zero
-    Fctiwz = 202,
+    Fctiwz = 440,
     /// fdiv: Floating Divide (Double-Precision)
-    Fdiv = 203,
+    Fdiv = 441,
     /// fmadd: Floating Multiply-Add (Double-Precision)
-    Fmadd = 204,
+    Fmadd = 442,
     /// fmr: Floating Move Register (Double-Precision)
-    Fmr = 205,
+    Fmr = 443,
     /// fmsub: Floating Multiply-Subtract (Double-Precision)
-    Fmsub = 206,
+    Fmsub = 444,
     /// fmul: Floating Multiply (Double-Precision)
-    Fmul = 207,
+    Fmul = 445,
     /// fnabs: Floating Negative Absolute Value
-    Fnabs = 208,
+    Fnabs = 446,
     /// fneg: Floating Negate
-    Fneg = 209,
+    Fneg = 447,
     /// fnmadd: Floating Negative Multiply-Add (Double-Precision)
-    Fnmadd = 210,
+    Fnmadd = 448,
     /// fnmsub: Floating Negative Multiply-Subtract (Double-Precision)
-    Fnmsub = 211,
+    Fnmsub = 449,
     /// frsp: Floating Round to Single
-    Frsp = 212,
+    Frsp = 450,
     /// frsqrte: Floating Reciprocal Square Root Estimate
-    Frsqrte = 213,
+    Frsqrte = 451,
     /// fsel: Floating Select
-    Fsel = 214,
+    Fsel = 452,
     /// fsub: Floating Subtract (Double-Precision)
-    Fsub = 215,
+    Fsub = 453,
     /// mcrfs: Move to Condition Register from FPSCR
-    Mcrfs = 216,
+    Mcrfs = 454,
     /// mffs: Move from FPSCR
-    Mffs = 217,
+    Mffs = 455,
     /// mtfsb0: Move to FPSCR Bit 0
-    Mtfsb0 = 218,
+    Mtfsb0 = 456,
     /// mtfsb1: Move to FPSCR Bit 1
-    Mtfsb1 = 219,
+    Mtfsb1 = 457,
     /// mtfsf: Move to FPSCR Fields
-    Mtfsf = 220,
+    Mtfsf = 458,
     /// mtfsfi: Move to FPSCR Field Immediate
-    Mtfsfi = 221,
+    Mtfsfi = 459,
 }
 impl Opcode {
     #[inline]
@@ -1051,28 +2039,28 @@ impl Opcode {
         for i in entry.0..entry.1 {
             let pattern = OPCODE_PATTERNS[i as usize];
             if (code & pattern.0) == pattern.1 {
-                // Safety: The enum is repr(u8) and the value is within the enum's range
-                return unsafe { core::mem::transmute::<u8, Opcode>(i) };
+                // Safety: The enum is repr(u16) and the value is within the enum's range
+                return unsafe { core::mem::transmute::<u16, Opcode>(i) };
             }
         }
         Self::Illegal
     }
 }
-impl From<u8> for Opcode {
+impl From<u16> for Opcode {
     #[inline]
-    fn from(value: u8) -> Self {
-        if value > 221 {
+    fn from(value: u16) -> Self {
+        if value > 459 {
             Self::Illegal
         } else {
-            // Safety: The enum is repr(u8) and the value is within the enum's range
-            unsafe { core::mem::transmute::<u8, Self>(value) }
+            // Safety: The enum is repr(u16) and the value is within the enum's range
+            unsafe { core::mem::transmute::<u16, Self>(value) }
         }
     }
 }
-impl From<Opcode> for u8 {
+impl From<Opcode> for u16 {
     #[inline]
     fn from(value: Opcode) -> Self {
-        value as u8
+        value as u16
     }
 }
 impl Ins {
@@ -1086,15 +2074,25 @@ impl Ins {
     pub const fn field_uimm(&self) -> u16 {
         (self.code & 0xffff) as u16
     }
+    /// vsimm: Vector Signed Immediate
+    #[inline(always)]
+    pub const fn field_vsimm(&self) -> i8 {
+        ((((self.code >> 16) & 0x1f) << 3) as i8) >> 3
+    }
+    /// vuimm: Vector Unsigned Immediate
+    #[inline(always)]
+    pub const fn field_vuimm(&self) -> u8 {
+        ((self.code >> 16) & 0x1f) as u8
+    }
     /// offset: Branch Offset
     #[inline(always)]
     pub const fn field_offset(&self) -> i16 {
         (self.code & 0xffff) as i16
     }
-    /// ps_offset: Paired Single Offset
+    /// offset64: Branch Offset for 64 bit instructions
     #[inline(always)]
-    pub const fn field_ps_offset(&self) -> i16 {
-        (((self.code & 0xfff) << 4) as i16) >> 4
+    pub const fn field_offset64(&self) -> i16 {
+        ((((self.code >> 2) & 0x3fff) << 2) as i16) >> 2
     }
     /// BO: Branch Options
     #[inline(always)]
@@ -1121,15 +2119,37 @@ impl Ins {
     pub const fn field_sh(&self) -> u8 {
         ((self.code >> 11) & 0x1f) as u8
     }
+    /// SH1: Shift Amount (for 64 bit implementations)
+    #[inline(always)]
+    pub const fn field_sh1(&self) -> u8 {
+        ((self.code >> 11) & 0x1f) as u8
+    }
+    /// SH2: Shift Amount (for 64 bit implementations)
+    #[inline(always)]
+    pub const fn field_sh2(&self) -> u8 {
+        ((self.code >> 1) & 0x1) as u8
+    }
     /// MB: Mask Begin
     #[inline(always)]
     pub const fn field_mb(&self) -> u8 {
         ((self.code >> 6) & 0x1f) as u8
     }
+    /// MB64: Mask Begin (for 64 bit implementations)
+    #[inline(always)]
+    pub const fn field_mb64(&self) -> u8 {
+        let value = ((self.code >> 5) & 0x3f) as u8;
+        ((value ) >> 5) | ((value & 0b00000_11111) << 5)
+    }
     /// ME: Mask End
     #[inline(always)]
     pub const fn field_me(&self) -> u8 {
         ((self.code >> 1) & 0x1f) as u8
+    }
+    /// ME64: Mask End (for 64 bit implementations)
+    #[inline(always)]
+    pub const fn field_me64(&self) -> u8 {
+        let value = ((self.code >> 5) & 0x3f) as u8;
+        ((value ) >> 5) | ((value & 0b00000_11111) << 5)
     }
     /// rS: Source Register
     #[inline(always)]
@@ -1187,6 +2207,31 @@ impl Ins {
     pub const fn field_frc(&self) -> u8 {
         ((self.code >> 6) & 0x1f) as u8
     }
+    /// vS: Vector Source Register
+    #[inline(always)]
+    pub const fn field_vs(&self) -> u8 {
+        ((self.code >> 21) & 0x1f) as u8
+    }
+    /// vD: Vector Destination Register
+    #[inline(always)]
+    pub const fn field_vd(&self) -> u8 {
+        ((self.code >> 21) & 0x1f) as u8
+    }
+    /// vA: Vector Register A
+    #[inline(always)]
+    pub const fn field_va(&self) -> u8 {
+        ((self.code >> 16) & 0x1f) as u8
+    }
+    /// vB: Vector Register B
+    #[inline(always)]
+    pub const fn field_vb(&self) -> u8 {
+        ((self.code >> 11) & 0x1f) as u8
+    }
+    /// vC: Vector Register C
+    #[inline(always)]
+    pub const fn field_vc(&self) -> u8 {
+        ((self.code >> 6) & 0x1f) as u8
+    }
     /// crbD: Condition Register Bit Destination
     #[inline(always)]
     pub const fn field_crbd(&self) -> u8 {
@@ -1216,26 +2261,6 @@ impl Ins {
     #[inline(always)]
     pub const fn field_crm(&self) -> u8 {
         ((self.code >> 12) & 0xff) as u8
-    }
-    /// ps_I
-    #[inline(always)]
-    pub const fn field_ps_i(&self) -> u8 {
-        ((self.code >> 12) & 0x7) as u8
-    }
-    /// ps_IX
-    #[inline(always)]
-    pub const fn field_ps_ix(&self) -> u8 {
-        ((self.code >> 7) & 0x7) as u8
-    }
-    /// ps_W
-    #[inline(always)]
-    pub const fn field_ps_w(&self) -> u8 {
-        ((self.code >> 15) & 0x1) as u8
-    }
-    /// ps_WX
-    #[inline(always)]
-    pub const fn field_ps_wx(&self) -> u8 {
-        ((self.code >> 10) & 0x1) as u8
     }
     /// NB
     #[inline(always)]
@@ -1278,6 +2303,101 @@ impl Ins {
     pub const fn field_l(&self) -> u8 {
         ((self.code >> 21) & 0x1) as u8
     }
+    /// mtmsrd_L: L field for mtmsrd
+    #[inline(always)]
+    pub const fn field_mtmsrd_l(&self) -> u8 {
+        ((self.code >> 16) & 0x1) as u8
+    }
+    /// sync_L: L field for sync
+    #[inline(always)]
+    pub const fn field_sync_l(&self) -> u8 {
+        ((self.code >> 21) & 0x3) as u8
+    }
+    /// STRM: Stream ID
+    #[inline(always)]
+    pub const fn field_strm(&self) -> u8 {
+        ((self.code >> 21) & 0x3) as u8
+    }
+    /// SHB
+    #[inline(always)]
+    pub const fn field_shb(&self) -> u8 {
+        ((self.code >> 6) & 0xf) as u8
+    }
+    /// VD128: VMX128 Dest Register, lower 5 bits
+    #[inline(always)]
+    pub const fn field_vd128(&self) -> u8 {
+        ((self.code >> 21) & 0x1f) as u8
+    }
+    /// VDh: VMX128 Dest Register, upper 2 bits
+    #[inline(always)]
+    pub const fn field_vdh(&self) -> u8 {
+        ((self.code >> 2) & 0x3) as u8
+    }
+    /// VS128: VMX128 Source Register, lower 5 bits
+    #[inline(always)]
+    pub const fn field_vs128(&self) -> u8 {
+        ((self.code >> 21) & 0x1f) as u8
+    }
+    /// VSh: VMX128 Source Register, upper 2 bits
+    #[inline(always)]
+    pub const fn field_vsh(&self) -> u8 {
+        ((self.code >> 2) & 0x3) as u8
+    }
+    /// VA128: VMX128 Register A, lower 5 bits
+    #[inline(always)]
+    pub const fn field_va128(&self) -> u8 {
+        ((self.code >> 16) & 0x1f) as u8
+    }
+    /// VA128_5: VMX128 Register A, bit 6
+    #[inline(always)]
+    pub const fn field_va128_5(&self) -> u8 {
+        ((self.code >> 5) & 0x1) as u8
+    }
+    /// VA128_6: VMX128 Register A, bit 7
+    #[inline(always)]
+    pub const fn field_va128_6(&self) -> u8 {
+        ((self.code >> 10) & 0x1) as u8
+    }
+    /// VB128: VMX128 Register B, lower 5 bits
+    #[inline(always)]
+    pub const fn field_vb128(&self) -> u8 {
+        ((self.code >> 11) & 0x1f) as u8
+    }
+    /// VBh: VMX128 Register B, upper 2 bits
+    #[inline(always)]
+    pub const fn field_vbh(&self) -> u8 {
+        (self.code & 0x3) as u8
+    }
+    /// VC128: VMX128 Register C (must be within 3 bits)
+    #[inline(always)]
+    pub const fn field_vc128(&self) -> u8 {
+        ((self.code >> 6) & 0x7) as u8
+    }
+    /// PERMh: upper 3 bits of a permutation
+    #[inline(always)]
+    pub const fn field_permh(&self) -> u8 {
+        ((self.code >> 6) & 0x7) as u8
+    }
+    /// PERMl: lower 5 bits of a permutation
+    #[inline(always)]
+    pub const fn field_perml(&self) -> u8 {
+        ((self.code >> 16) & 0x1f) as u8
+    }
+    /// Ximm: unknown immediate
+    #[inline(always)]
+    pub const fn field_ximm(&self) -> u8 {
+        ((self.code >> 18) & 0x7) as u8
+    }
+    /// Yimm: unknown immediate
+    #[inline(always)]
+    pub const fn field_yimm(&self) -> u8 {
+        ((self.code >> 16) & 0x3) as u8
+    }
+    /// Zimm: unknown immediate
+    #[inline(always)]
+    pub const fn field_zimm(&self) -> u8 {
+        ((self.code >> 6) & 0x3) as u8
+    }
     /// OE: Field used by XO-form instructions to enable setting OV and SO in the XER.
     #[inline(always)]
     pub const fn field_oe(&self) -> bool {
@@ -1313,9 +2433,32 @@ impl Ins {
     pub const fn field_bp_nd(&self) -> bool {
         (self.code & 0x200000) == 0x200000
     }
+    /// A: All bit
+    #[inline(always)]
+    pub const fn field_a(&self) -> bool {
+        (self.code & 0x2000000) == 0x2000000
+    }
+    /// T: Transient bit
+    #[inline(always)]
+    pub const fn field_t(&self) -> bool {
+        (self.code & 0x2000000) == 0x2000000
+    }
+    /// RcAV: Record Bit (AltiVec)
+    #[inline(always)]
+    pub const fn field_rcav(&self) -> bool {
+        (self.code & 0x400) == 0x400
+    }
+    /// Rc128: Record Bit (VMX128)
+    #[inline(always)]
+    pub const fn field_rc128(&self) -> bool {
+        (self.code & 0x40) == 0x40
+    }
 }
-pub type Arguments = [Argument; 5];
+pub type Arguments = [Argument; 8];
 pub const EMPTY_ARGS: Arguments = [
+    Argument::None,
+    Argument::None,
+    Argument::None,
     Argument::None,
     Argument::None,
     Argument::None,
@@ -1323,6 +2466,56 @@ pub const EMPTY_ARGS: Arguments = [
     Argument::None,
 ];
 type MnemonicFunction = fn(&mut ParsedIns, Ins);
+fn basic_tdi(out: &mut ParsedIns, ins: Ins) {
+    *out = ParsedIns {
+        mnemonic: "tdi",
+        args: [
+            Argument::OpaqueU(OpaqueU(ins.field_to() as _)),
+            Argument::GPR(GPR(ins.field_ra() as _)),
+            Argument::Simm(Simm(ins.field_simm() as _)),
+            Argument::None,
+            Argument::None,
+            Argument::None,
+            Argument::None,
+            Argument::None,
+        ],
+    };
+}
+fn simplified_tdi(out: &mut ParsedIns, ins: Ins) {
+    if ins.field_to() == 0x10 {
+        *out = ParsedIns {
+            mnemonic: "tdlti",
+            args: [
+                Argument::GPR(GPR(ins.field_ra() as _)),
+                Argument::Simm(Simm(ins.field_simm() as _)),
+                Argument::None,
+                Argument::None,
+                Argument::None,
+                Argument::None,
+                Argument::None,
+                Argument::None,
+            ],
+        };
+        return;
+    }
+    if ins.field_to() == 0x18 {
+        *out = ParsedIns {
+            mnemonic: "tdnei",
+            args: [
+                Argument::GPR(GPR(ins.field_ra() as _)),
+                Argument::Simm(Simm(ins.field_simm() as _)),
+                Argument::None,
+                Argument::None,
+                Argument::None,
+                Argument::None,
+                Argument::None,
+                Argument::None,
+            ],
+        };
+        return;
+    }
+    basic_tdi(out, ins)
+}
 fn basic_twi(out: &mut ParsedIns, ins: Ins) {
     *out = ParsedIns {
         mnemonic: "twi",
@@ -1330,6 +2523,9 @@ fn basic_twi(out: &mut ParsedIns, ins: Ins) {
             Argument::OpaqueU(OpaqueU(ins.field_to() as _)),
             Argument::GPR(GPR(ins.field_ra() as _)),
             Argument::Simm(Simm(ins.field_simm() as _)),
+            Argument::None,
+            Argument::None,
+            Argument::None,
             Argument::None,
             Argument::None,
         ],
@@ -1342,6 +2538,9 @@ fn simplified_twi(out: &mut ParsedIns, ins: Ins) {
             args: [
                 Argument::GPR(GPR(ins.field_ra() as _)),
                 Argument::Simm(Simm(ins.field_simm() as _)),
+                Argument::None,
+                Argument::None,
+                Argument::None,
                 Argument::None,
                 Argument::None,
                 Argument::None,
@@ -1358,6 +2557,9 @@ fn simplified_twi(out: &mut ParsedIns, ins: Ins) {
                 Argument::None,
                 Argument::None,
                 Argument::None,
+                Argument::None,
+                Argument::None,
+                Argument::None,
             ],
         };
         return;
@@ -1368,6 +2570,9 @@ fn simplified_twi(out: &mut ParsedIns, ins: Ins) {
             args: [
                 Argument::GPR(GPR(ins.field_ra() as _)),
                 Argument::Simm(Simm(ins.field_simm() as _)),
+                Argument::None,
+                Argument::None,
+                Argument::None,
                 Argument::None,
                 Argument::None,
                 Argument::None,
@@ -1386,478 +2591,3349 @@ fn basic_dcbz_l(out: &mut ParsedIns, ins: Ins) {
             Argument::None,
             Argument::None,
             Argument::None,
+            Argument::None,
+            Argument::None,
+            Argument::None,
         ],
     };
 }
-fn basic_psq_lux(out: &mut ParsedIns, ins: Ins) {
+fn basic_mfvscr(out: &mut ParsedIns, ins: Ins) {
     *out = ParsedIns {
-        mnemonic: "psq_lux",
+        mnemonic: "mfvscr",
         args: [
-            Argument::FPR(FPR(ins.field_frd() as _)),
+            Argument::GPR(GPR(ins.field_vd() as _)),
+            Argument::None,
+            Argument::None,
+            Argument::None,
+            Argument::None,
+            Argument::None,
+            Argument::None,
+            Argument::None,
+        ],
+    };
+}
+fn basic_mtvscr(out: &mut ParsedIns, ins: Ins) {
+    *out = ParsedIns {
+        mnemonic: "mtvscr",
+        args: [
+            Argument::GPR(GPR(ins.field_vb() as _)),
+            Argument::None,
+            Argument::None,
+            Argument::None,
+            Argument::None,
+            Argument::None,
+            Argument::None,
+            Argument::None,
+        ],
+    };
+}
+fn basic_vaddcuw(out: &mut ParsedIns, ins: Ins) {
+    *out = ParsedIns {
+        mnemonic: "vaddcuw",
+        args: [
+            Argument::GPR(GPR(ins.field_vd() as _)),
+            Argument::GPR(GPR(ins.field_va() as _)),
+            Argument::GPR(GPR(ins.field_vb() as _)),
+            Argument::None,
+            Argument::None,
+            Argument::None,
+            Argument::None,
+            Argument::None,
+        ],
+    };
+}
+fn basic_vaddfp(out: &mut ParsedIns, ins: Ins) {
+    *out = ParsedIns {
+        mnemonic: "vaddfp",
+        args: [
+            Argument::GPR(GPR(ins.field_vd() as _)),
+            Argument::GPR(GPR(ins.field_va() as _)),
+            Argument::GPR(GPR(ins.field_vb() as _)),
+            Argument::None,
+            Argument::None,
+            Argument::None,
+            Argument::None,
+            Argument::None,
+        ],
+    };
+}
+fn basic_vaddsbs(out: &mut ParsedIns, ins: Ins) {
+    *out = ParsedIns {
+        mnemonic: "vaddsbs",
+        args: [
+            Argument::GPR(GPR(ins.field_vd() as _)),
+            Argument::GPR(GPR(ins.field_va() as _)),
+            Argument::GPR(GPR(ins.field_vb() as _)),
+            Argument::None,
+            Argument::None,
+            Argument::None,
+            Argument::None,
+            Argument::None,
+        ],
+    };
+}
+fn basic_vaddshs(out: &mut ParsedIns, ins: Ins) {
+    *out = ParsedIns {
+        mnemonic: "vaddshs",
+        args: [
+            Argument::GPR(GPR(ins.field_vd() as _)),
+            Argument::GPR(GPR(ins.field_va() as _)),
+            Argument::GPR(GPR(ins.field_vb() as _)),
+            Argument::None,
+            Argument::None,
+            Argument::None,
+            Argument::None,
+            Argument::None,
+        ],
+    };
+}
+fn basic_vaddsws(out: &mut ParsedIns, ins: Ins) {
+    *out = ParsedIns {
+        mnemonic: "vaddsws",
+        args: [
+            Argument::GPR(GPR(ins.field_vd() as _)),
+            Argument::GPR(GPR(ins.field_va() as _)),
+            Argument::GPR(GPR(ins.field_vb() as _)),
+            Argument::None,
+            Argument::None,
+            Argument::None,
+            Argument::None,
+            Argument::None,
+        ],
+    };
+}
+fn basic_vaddubm(out: &mut ParsedIns, ins: Ins) {
+    *out = ParsedIns {
+        mnemonic: "vaddubm",
+        args: [
+            Argument::GPR(GPR(ins.field_vd() as _)),
+            Argument::GPR(GPR(ins.field_va() as _)),
+            Argument::GPR(GPR(ins.field_vb() as _)),
+            Argument::None,
+            Argument::None,
+            Argument::None,
+            Argument::None,
+            Argument::None,
+        ],
+    };
+}
+fn basic_vaddubs(out: &mut ParsedIns, ins: Ins) {
+    *out = ParsedIns {
+        mnemonic: "vaddubs",
+        args: [
+            Argument::GPR(GPR(ins.field_vd() as _)),
+            Argument::GPR(GPR(ins.field_va() as _)),
+            Argument::GPR(GPR(ins.field_vb() as _)),
+            Argument::None,
+            Argument::None,
+            Argument::None,
+            Argument::None,
+            Argument::None,
+        ],
+    };
+}
+fn basic_vadduhm(out: &mut ParsedIns, ins: Ins) {
+    *out = ParsedIns {
+        mnemonic: "vadduhm",
+        args: [
+            Argument::GPR(GPR(ins.field_vd() as _)),
+            Argument::GPR(GPR(ins.field_va() as _)),
+            Argument::GPR(GPR(ins.field_vb() as _)),
+            Argument::None,
+            Argument::None,
+            Argument::None,
+            Argument::None,
+            Argument::None,
+        ],
+    };
+}
+fn basic_vadduhs(out: &mut ParsedIns, ins: Ins) {
+    *out = ParsedIns {
+        mnemonic: "vadduhs",
+        args: [
+            Argument::GPR(GPR(ins.field_vd() as _)),
+            Argument::GPR(GPR(ins.field_va() as _)),
+            Argument::GPR(GPR(ins.field_vb() as _)),
+            Argument::None,
+            Argument::None,
+            Argument::None,
+            Argument::None,
+            Argument::None,
+        ],
+    };
+}
+fn basic_vadduwm(out: &mut ParsedIns, ins: Ins) {
+    *out = ParsedIns {
+        mnemonic: "vadduwm",
+        args: [
+            Argument::GPR(GPR(ins.field_vd() as _)),
+            Argument::GPR(GPR(ins.field_va() as _)),
+            Argument::GPR(GPR(ins.field_vb() as _)),
+            Argument::None,
+            Argument::None,
+            Argument::None,
+            Argument::None,
+            Argument::None,
+        ],
+    };
+}
+fn basic_vadduws(out: &mut ParsedIns, ins: Ins) {
+    *out = ParsedIns {
+        mnemonic: "vadduws",
+        args: [
+            Argument::GPR(GPR(ins.field_vd() as _)),
+            Argument::GPR(GPR(ins.field_va() as _)),
+            Argument::GPR(GPR(ins.field_vb() as _)),
+            Argument::None,
+            Argument::None,
+            Argument::None,
+            Argument::None,
+            Argument::None,
+        ],
+    };
+}
+fn basic_vand(out: &mut ParsedIns, ins: Ins) {
+    *out = ParsedIns {
+        mnemonic: "vand",
+        args: [
+            Argument::GPR(GPR(ins.field_vd() as _)),
+            Argument::GPR(GPR(ins.field_va() as _)),
+            Argument::GPR(GPR(ins.field_vb() as _)),
+            Argument::None,
+            Argument::None,
+            Argument::None,
+            Argument::None,
+            Argument::None,
+        ],
+    };
+}
+fn basic_vandc(out: &mut ParsedIns, ins: Ins) {
+    *out = ParsedIns {
+        mnemonic: "vandc",
+        args: [
+            Argument::GPR(GPR(ins.field_vd() as _)),
+            Argument::GPR(GPR(ins.field_va() as _)),
+            Argument::GPR(GPR(ins.field_vb() as _)),
+            Argument::None,
+            Argument::None,
+            Argument::None,
+            Argument::None,
+            Argument::None,
+        ],
+    };
+}
+fn basic_vavgsb(out: &mut ParsedIns, ins: Ins) {
+    *out = ParsedIns {
+        mnemonic: "vavgsb",
+        args: [
+            Argument::GPR(GPR(ins.field_vd() as _)),
+            Argument::GPR(GPR(ins.field_va() as _)),
+            Argument::GPR(GPR(ins.field_vb() as _)),
+            Argument::None,
+            Argument::None,
+            Argument::None,
+            Argument::None,
+            Argument::None,
+        ],
+    };
+}
+fn basic_vavgsh(out: &mut ParsedIns, ins: Ins) {
+    *out = ParsedIns {
+        mnemonic: "vavgsh",
+        args: [
+            Argument::GPR(GPR(ins.field_vd() as _)),
+            Argument::GPR(GPR(ins.field_va() as _)),
+            Argument::GPR(GPR(ins.field_vb() as _)),
+            Argument::None,
+            Argument::None,
+            Argument::None,
+            Argument::None,
+            Argument::None,
+        ],
+    };
+}
+fn basic_vavgsw(out: &mut ParsedIns, ins: Ins) {
+    *out = ParsedIns {
+        mnemonic: "vavgsw",
+        args: [
+            Argument::GPR(GPR(ins.field_vd() as _)),
+            Argument::GPR(GPR(ins.field_va() as _)),
+            Argument::GPR(GPR(ins.field_vb() as _)),
+            Argument::None,
+            Argument::None,
+            Argument::None,
+            Argument::None,
+            Argument::None,
+        ],
+    };
+}
+fn basic_vavgub(out: &mut ParsedIns, ins: Ins) {
+    *out = ParsedIns {
+        mnemonic: "vavgub",
+        args: [
+            Argument::GPR(GPR(ins.field_vd() as _)),
+            Argument::GPR(GPR(ins.field_va() as _)),
+            Argument::GPR(GPR(ins.field_vb() as _)),
+            Argument::None,
+            Argument::None,
+            Argument::None,
+            Argument::None,
+            Argument::None,
+        ],
+    };
+}
+fn basic_vavguh(out: &mut ParsedIns, ins: Ins) {
+    *out = ParsedIns {
+        mnemonic: "vavguh",
+        args: [
+            Argument::GPR(GPR(ins.field_vd() as _)),
+            Argument::GPR(GPR(ins.field_va() as _)),
+            Argument::GPR(GPR(ins.field_vb() as _)),
+            Argument::None,
+            Argument::None,
+            Argument::None,
+            Argument::None,
+            Argument::None,
+        ],
+    };
+}
+fn basic_vavguw(out: &mut ParsedIns, ins: Ins) {
+    *out = ParsedIns {
+        mnemonic: "vavguw",
+        args: [
+            Argument::GPR(GPR(ins.field_vd() as _)),
+            Argument::GPR(GPR(ins.field_va() as _)),
+            Argument::GPR(GPR(ins.field_vb() as _)),
+            Argument::None,
+            Argument::None,
+            Argument::None,
+            Argument::None,
+            Argument::None,
+        ],
+    };
+}
+fn basic_vcfsx(out: &mut ParsedIns, ins: Ins) {
+    *out = ParsedIns {
+        mnemonic: "vcfsx",
+        args: [
+            Argument::GPR(GPR(ins.field_vd() as _)),
+            Argument::GPR(GPR(ins.field_vb() as _)),
+            Argument::Uimm(Uimm(ins.field_vuimm() as _)),
+            Argument::None,
+            Argument::None,
+            Argument::None,
+            Argument::None,
+            Argument::None,
+        ],
+    };
+}
+fn basic_vcfux(out: &mut ParsedIns, ins: Ins) {
+    *out = ParsedIns {
+        mnemonic: "vcfux",
+        args: [
+            Argument::GPR(GPR(ins.field_vd() as _)),
+            Argument::GPR(GPR(ins.field_vb() as _)),
+            Argument::Uimm(Uimm(ins.field_vuimm() as _)),
+            Argument::None,
+            Argument::None,
+            Argument::None,
+            Argument::None,
+            Argument::None,
+        ],
+    };
+}
+fn basic_vcmpbfp(out: &mut ParsedIns, ins: Ins) {
+    *out = {
+        const MODIFIERS: [&str; 2] = ["vcmpbfp", "vcmpbfp."];
+        ParsedIns {
+            mnemonic: MODIFIERS[ins.field_rcav() as usize],
+            args: [
+                Argument::GPR(GPR(ins.field_vd() as _)),
+                Argument::GPR(GPR(ins.field_va() as _)),
+                Argument::GPR(GPR(ins.field_vb() as _)),
+                Argument::None,
+                Argument::None,
+                Argument::None,
+                Argument::None,
+                Argument::None,
+            ],
+        }
+    };
+}
+fn basic_vcmpeqfp(out: &mut ParsedIns, ins: Ins) {
+    *out = {
+        const MODIFIERS: [&str; 2] = ["vcmpeqfp", "vcmpeqfp."];
+        ParsedIns {
+            mnemonic: MODIFIERS[ins.field_rcav() as usize],
+            args: [
+                Argument::GPR(GPR(ins.field_vd() as _)),
+                Argument::GPR(GPR(ins.field_va() as _)),
+                Argument::GPR(GPR(ins.field_vb() as _)),
+                Argument::None,
+                Argument::None,
+                Argument::None,
+                Argument::None,
+                Argument::None,
+            ],
+        }
+    };
+}
+fn basic_vcmpequb(out: &mut ParsedIns, ins: Ins) {
+    *out = {
+        const MODIFIERS: [&str; 2] = ["vcmpequb", "vcmpequb."];
+        ParsedIns {
+            mnemonic: MODIFIERS[ins.field_rcav() as usize],
+            args: [
+                Argument::GPR(GPR(ins.field_vd() as _)),
+                Argument::GPR(GPR(ins.field_va() as _)),
+                Argument::GPR(GPR(ins.field_vb() as _)),
+                Argument::None,
+                Argument::None,
+                Argument::None,
+                Argument::None,
+                Argument::None,
+            ],
+        }
+    };
+}
+fn basic_vcmpequh(out: &mut ParsedIns, ins: Ins) {
+    *out = {
+        const MODIFIERS: [&str; 2] = ["vcmpequh", "vcmpequh."];
+        ParsedIns {
+            mnemonic: MODIFIERS[ins.field_rcav() as usize],
+            args: [
+                Argument::GPR(GPR(ins.field_vd() as _)),
+                Argument::GPR(GPR(ins.field_va() as _)),
+                Argument::GPR(GPR(ins.field_vb() as _)),
+                Argument::None,
+                Argument::None,
+                Argument::None,
+                Argument::None,
+                Argument::None,
+            ],
+        }
+    };
+}
+fn basic_vcmpequw(out: &mut ParsedIns, ins: Ins) {
+    *out = {
+        const MODIFIERS: [&str; 2] = ["vcmpequw", "vcmpequw."];
+        ParsedIns {
+            mnemonic: MODIFIERS[ins.field_rcav() as usize],
+            args: [
+                Argument::GPR(GPR(ins.field_vd() as _)),
+                Argument::GPR(GPR(ins.field_va() as _)),
+                Argument::GPR(GPR(ins.field_vb() as _)),
+                Argument::None,
+                Argument::None,
+                Argument::None,
+                Argument::None,
+                Argument::None,
+            ],
+        }
+    };
+}
+fn basic_vcmpgefp(out: &mut ParsedIns, ins: Ins) {
+    *out = {
+        const MODIFIERS: [&str; 2] = ["vcmpgefp", "vcmpgefp."];
+        ParsedIns {
+            mnemonic: MODIFIERS[ins.field_rcav() as usize],
+            args: [
+                Argument::GPR(GPR(ins.field_vd() as _)),
+                Argument::GPR(GPR(ins.field_va() as _)),
+                Argument::GPR(GPR(ins.field_vb() as _)),
+                Argument::None,
+                Argument::None,
+                Argument::None,
+                Argument::None,
+                Argument::None,
+            ],
+        }
+    };
+}
+fn basic_vcmpgtfp(out: &mut ParsedIns, ins: Ins) {
+    *out = {
+        const MODIFIERS: [&str; 2] = ["vcmpgtfp", "vcmpgtfp."];
+        ParsedIns {
+            mnemonic: MODIFIERS[ins.field_rcav() as usize],
+            args: [
+                Argument::GPR(GPR(ins.field_vd() as _)),
+                Argument::GPR(GPR(ins.field_va() as _)),
+                Argument::GPR(GPR(ins.field_vb() as _)),
+                Argument::None,
+                Argument::None,
+                Argument::None,
+                Argument::None,
+                Argument::None,
+            ],
+        }
+    };
+}
+fn basic_vcmpgtsb(out: &mut ParsedIns, ins: Ins) {
+    *out = {
+        const MODIFIERS: [&str; 2] = ["vcmpgtsb", "vcmpgtsb."];
+        ParsedIns {
+            mnemonic: MODIFIERS[ins.field_rcav() as usize],
+            args: [
+                Argument::GPR(GPR(ins.field_vd() as _)),
+                Argument::GPR(GPR(ins.field_va() as _)),
+                Argument::GPR(GPR(ins.field_vb() as _)),
+                Argument::None,
+                Argument::None,
+                Argument::None,
+                Argument::None,
+                Argument::None,
+            ],
+        }
+    };
+}
+fn basic_vcmpgtsh(out: &mut ParsedIns, ins: Ins) {
+    *out = {
+        const MODIFIERS: [&str; 2] = ["vcmpgtsh", "vcmpgtsh."];
+        ParsedIns {
+            mnemonic: MODIFIERS[ins.field_rcav() as usize],
+            args: [
+                Argument::GPR(GPR(ins.field_vd() as _)),
+                Argument::GPR(GPR(ins.field_va() as _)),
+                Argument::GPR(GPR(ins.field_vb() as _)),
+                Argument::None,
+                Argument::None,
+                Argument::None,
+                Argument::None,
+                Argument::None,
+            ],
+        }
+    };
+}
+fn basic_vcmpgtsw(out: &mut ParsedIns, ins: Ins) {
+    *out = {
+        const MODIFIERS: [&str; 2] = ["vcmpgtsw", "vcmpgtsw."];
+        ParsedIns {
+            mnemonic: MODIFIERS[ins.field_rcav() as usize],
+            args: [
+                Argument::GPR(GPR(ins.field_vd() as _)),
+                Argument::GPR(GPR(ins.field_va() as _)),
+                Argument::GPR(GPR(ins.field_vb() as _)),
+                Argument::None,
+                Argument::None,
+                Argument::None,
+                Argument::None,
+                Argument::None,
+            ],
+        }
+    };
+}
+fn basic_vcmpgtub(out: &mut ParsedIns, ins: Ins) {
+    *out = {
+        const MODIFIERS: [&str; 2] = ["vcmpgtub", "vcmpgtub."];
+        ParsedIns {
+            mnemonic: MODIFIERS[ins.field_rcav() as usize],
+            args: [
+                Argument::GPR(GPR(ins.field_vd() as _)),
+                Argument::GPR(GPR(ins.field_va() as _)),
+                Argument::GPR(GPR(ins.field_vb() as _)),
+                Argument::None,
+                Argument::None,
+                Argument::None,
+                Argument::None,
+                Argument::None,
+            ],
+        }
+    };
+}
+fn basic_vcmpgtuh(out: &mut ParsedIns, ins: Ins) {
+    *out = {
+        const MODIFIERS: [&str; 2] = ["vcmpgtuh", "vcmpgtuh."];
+        ParsedIns {
+            mnemonic: MODIFIERS[ins.field_rcav() as usize],
+            args: [
+                Argument::GPR(GPR(ins.field_vd() as _)),
+                Argument::GPR(GPR(ins.field_va() as _)),
+                Argument::GPR(GPR(ins.field_vb() as _)),
+                Argument::None,
+                Argument::None,
+                Argument::None,
+                Argument::None,
+                Argument::None,
+            ],
+        }
+    };
+}
+fn basic_vcmpgtuw(out: &mut ParsedIns, ins: Ins) {
+    *out = {
+        const MODIFIERS: [&str; 2] = ["vcmpgtuw", "vcmpgtuw."];
+        ParsedIns {
+            mnemonic: MODIFIERS[ins.field_rcav() as usize],
+            args: [
+                Argument::GPR(GPR(ins.field_vd() as _)),
+                Argument::GPR(GPR(ins.field_va() as _)),
+                Argument::GPR(GPR(ins.field_vb() as _)),
+                Argument::None,
+                Argument::None,
+                Argument::None,
+                Argument::None,
+                Argument::None,
+            ],
+        }
+    };
+}
+fn basic_vctsxs(out: &mut ParsedIns, ins: Ins) {
+    *out = ParsedIns {
+        mnemonic: "vctsxs",
+        args: [
+            Argument::GPR(GPR(ins.field_vd() as _)),
+            Argument::GPR(GPR(ins.field_vb() as _)),
+            Argument::Uimm(Uimm(ins.field_vuimm() as _)),
+            Argument::None,
+            Argument::None,
+            Argument::None,
+            Argument::None,
+            Argument::None,
+        ],
+    };
+}
+fn basic_vctuxs(out: &mut ParsedIns, ins: Ins) {
+    *out = ParsedIns {
+        mnemonic: "vctuxs",
+        args: [
+            Argument::GPR(GPR(ins.field_vd() as _)),
+            Argument::GPR(GPR(ins.field_vb() as _)),
+            Argument::Uimm(Uimm(ins.field_vuimm() as _)),
+            Argument::None,
+            Argument::None,
+            Argument::None,
+            Argument::None,
+            Argument::None,
+        ],
+    };
+}
+fn basic_vexptefp(out: &mut ParsedIns, ins: Ins) {
+    *out = ParsedIns {
+        mnemonic: "vexptefp",
+        args: [
+            Argument::GPR(GPR(ins.field_vd() as _)),
+            Argument::GPR(GPR(ins.field_vb() as _)),
+            Argument::None,
+            Argument::None,
+            Argument::None,
+            Argument::None,
+            Argument::None,
+            Argument::None,
+        ],
+    };
+}
+fn basic_vlogefp(out: &mut ParsedIns, ins: Ins) {
+    *out = ParsedIns {
+        mnemonic: "vlogefp",
+        args: [
+            Argument::GPR(GPR(ins.field_vd() as _)),
+            Argument::GPR(GPR(ins.field_vb() as _)),
+            Argument::None,
+            Argument::None,
+            Argument::None,
+            Argument::None,
+            Argument::None,
+            Argument::None,
+        ],
+    };
+}
+fn basic_vmaddfp(out: &mut ParsedIns, ins: Ins) {
+    *out = ParsedIns {
+        mnemonic: "vmaddfp",
+        args: [
+            Argument::GPR(GPR(ins.field_vd() as _)),
+            Argument::GPR(GPR(ins.field_va() as _)),
+            Argument::GPR(GPR(ins.field_vc() as _)),
+            Argument::GPR(GPR(ins.field_vb() as _)),
+            Argument::None,
+            Argument::None,
+            Argument::None,
+            Argument::None,
+        ],
+    };
+}
+fn basic_vmaxfp(out: &mut ParsedIns, ins: Ins) {
+    *out = ParsedIns {
+        mnemonic: "vmaxfp",
+        args: [
+            Argument::GPR(GPR(ins.field_vd() as _)),
+            Argument::GPR(GPR(ins.field_va() as _)),
+            Argument::GPR(GPR(ins.field_vb() as _)),
+            Argument::None,
+            Argument::None,
+            Argument::None,
+            Argument::None,
+            Argument::None,
+        ],
+    };
+}
+fn basic_vmaxsb(out: &mut ParsedIns, ins: Ins) {
+    *out = ParsedIns {
+        mnemonic: "vmaxsb",
+        args: [
+            Argument::GPR(GPR(ins.field_vd() as _)),
+            Argument::GPR(GPR(ins.field_va() as _)),
+            Argument::GPR(GPR(ins.field_vb() as _)),
+            Argument::None,
+            Argument::None,
+            Argument::None,
+            Argument::None,
+            Argument::None,
+        ],
+    };
+}
+fn basic_vmaxsh(out: &mut ParsedIns, ins: Ins) {
+    *out = ParsedIns {
+        mnemonic: "vmaxsh",
+        args: [
+            Argument::GPR(GPR(ins.field_vd() as _)),
+            Argument::GPR(GPR(ins.field_va() as _)),
+            Argument::GPR(GPR(ins.field_vb() as _)),
+            Argument::None,
+            Argument::None,
+            Argument::None,
+            Argument::None,
+            Argument::None,
+        ],
+    };
+}
+fn basic_vmaxsw(out: &mut ParsedIns, ins: Ins) {
+    *out = ParsedIns {
+        mnemonic: "vmaxsw",
+        args: [
+            Argument::GPR(GPR(ins.field_vd() as _)),
+            Argument::GPR(GPR(ins.field_va() as _)),
+            Argument::GPR(GPR(ins.field_vb() as _)),
+            Argument::None,
+            Argument::None,
+            Argument::None,
+            Argument::None,
+            Argument::None,
+        ],
+    };
+}
+fn basic_vmaxub(out: &mut ParsedIns, ins: Ins) {
+    *out = ParsedIns {
+        mnemonic: "vmaxub",
+        args: [
+            Argument::GPR(GPR(ins.field_vd() as _)),
+            Argument::GPR(GPR(ins.field_va() as _)),
+            Argument::GPR(GPR(ins.field_vb() as _)),
+            Argument::None,
+            Argument::None,
+            Argument::None,
+            Argument::None,
+            Argument::None,
+        ],
+    };
+}
+fn basic_vmaxuh(out: &mut ParsedIns, ins: Ins) {
+    *out = ParsedIns {
+        mnemonic: "vmaxuh",
+        args: [
+            Argument::GPR(GPR(ins.field_vd() as _)),
+            Argument::GPR(GPR(ins.field_va() as _)),
+            Argument::GPR(GPR(ins.field_vb() as _)),
+            Argument::None,
+            Argument::None,
+            Argument::None,
+            Argument::None,
+            Argument::None,
+        ],
+    };
+}
+fn basic_vmaxuw(out: &mut ParsedIns, ins: Ins) {
+    *out = ParsedIns {
+        mnemonic: "vmaxuw",
+        args: [
+            Argument::GPR(GPR(ins.field_vd() as _)),
+            Argument::GPR(GPR(ins.field_va() as _)),
+            Argument::GPR(GPR(ins.field_vb() as _)),
+            Argument::None,
+            Argument::None,
+            Argument::None,
+            Argument::None,
+            Argument::None,
+        ],
+    };
+}
+fn basic_vmhaddshs(out: &mut ParsedIns, ins: Ins) {
+    *out = ParsedIns {
+        mnemonic: "vmhaddshs",
+        args: [
+            Argument::GPR(GPR(ins.field_vd() as _)),
+            Argument::GPR(GPR(ins.field_va() as _)),
+            Argument::GPR(GPR(ins.field_vb() as _)),
+            Argument::GPR(GPR(ins.field_vc() as _)),
+            Argument::None,
+            Argument::None,
+            Argument::None,
+            Argument::None,
+        ],
+    };
+}
+fn basic_vmhraddshs(out: &mut ParsedIns, ins: Ins) {
+    *out = ParsedIns {
+        mnemonic: "vmhraddshs",
+        args: [
+            Argument::GPR(GPR(ins.field_vd() as _)),
+            Argument::GPR(GPR(ins.field_va() as _)),
+            Argument::GPR(GPR(ins.field_vb() as _)),
+            Argument::GPR(GPR(ins.field_vc() as _)),
+            Argument::None,
+            Argument::None,
+            Argument::None,
+            Argument::None,
+        ],
+    };
+}
+fn basic_vminfp(out: &mut ParsedIns, ins: Ins) {
+    *out = ParsedIns {
+        mnemonic: "vminfp",
+        args: [
+            Argument::GPR(GPR(ins.field_vd() as _)),
+            Argument::GPR(GPR(ins.field_va() as _)),
+            Argument::GPR(GPR(ins.field_vb() as _)),
+            Argument::None,
+            Argument::None,
+            Argument::None,
+            Argument::None,
+            Argument::None,
+        ],
+    };
+}
+fn basic_vminsb(out: &mut ParsedIns, ins: Ins) {
+    *out = ParsedIns {
+        mnemonic: "vminsb",
+        args: [
+            Argument::GPR(GPR(ins.field_vd() as _)),
+            Argument::GPR(GPR(ins.field_va() as _)),
+            Argument::GPR(GPR(ins.field_vb() as _)),
+            Argument::None,
+            Argument::None,
+            Argument::None,
+            Argument::None,
+            Argument::None,
+        ],
+    };
+}
+fn basic_vminsh(out: &mut ParsedIns, ins: Ins) {
+    *out = ParsedIns {
+        mnemonic: "vminsh",
+        args: [
+            Argument::GPR(GPR(ins.field_vd() as _)),
+            Argument::GPR(GPR(ins.field_va() as _)),
+            Argument::GPR(GPR(ins.field_vb() as _)),
+            Argument::None,
+            Argument::None,
+            Argument::None,
+            Argument::None,
+            Argument::None,
+        ],
+    };
+}
+fn basic_vminsw(out: &mut ParsedIns, ins: Ins) {
+    *out = ParsedIns {
+        mnemonic: "vminsw",
+        args: [
+            Argument::GPR(GPR(ins.field_vd() as _)),
+            Argument::GPR(GPR(ins.field_va() as _)),
+            Argument::GPR(GPR(ins.field_vb() as _)),
+            Argument::None,
+            Argument::None,
+            Argument::None,
+            Argument::None,
+            Argument::None,
+        ],
+    };
+}
+fn basic_vminub(out: &mut ParsedIns, ins: Ins) {
+    *out = ParsedIns {
+        mnemonic: "vminub",
+        args: [
+            Argument::GPR(GPR(ins.field_vd() as _)),
+            Argument::GPR(GPR(ins.field_va() as _)),
+            Argument::GPR(GPR(ins.field_vb() as _)),
+            Argument::None,
+            Argument::None,
+            Argument::None,
+            Argument::None,
+            Argument::None,
+        ],
+    };
+}
+fn basic_vminuh(out: &mut ParsedIns, ins: Ins) {
+    *out = ParsedIns {
+        mnemonic: "vminuh",
+        args: [
+            Argument::GPR(GPR(ins.field_vd() as _)),
+            Argument::GPR(GPR(ins.field_va() as _)),
+            Argument::GPR(GPR(ins.field_vb() as _)),
+            Argument::None,
+            Argument::None,
+            Argument::None,
+            Argument::None,
+            Argument::None,
+        ],
+    };
+}
+fn basic_vminuw(out: &mut ParsedIns, ins: Ins) {
+    *out = ParsedIns {
+        mnemonic: "vminuw",
+        args: [
+            Argument::GPR(GPR(ins.field_vd() as _)),
+            Argument::GPR(GPR(ins.field_va() as _)),
+            Argument::GPR(GPR(ins.field_vb() as _)),
+            Argument::None,
+            Argument::None,
+            Argument::None,
+            Argument::None,
+            Argument::None,
+        ],
+    };
+}
+fn basic_vmladduhm(out: &mut ParsedIns, ins: Ins) {
+    *out = ParsedIns {
+        mnemonic: "vmladduhm",
+        args: [
+            Argument::GPR(GPR(ins.field_vd() as _)),
+            Argument::GPR(GPR(ins.field_va() as _)),
+            Argument::GPR(GPR(ins.field_vb() as _)),
+            Argument::GPR(GPR(ins.field_vc() as _)),
+            Argument::None,
+            Argument::None,
+            Argument::None,
+            Argument::None,
+        ],
+    };
+}
+fn basic_vmrghb(out: &mut ParsedIns, ins: Ins) {
+    *out = ParsedIns {
+        mnemonic: "vmrghb",
+        args: [
+            Argument::GPR(GPR(ins.field_vd() as _)),
+            Argument::GPR(GPR(ins.field_va() as _)),
+            Argument::GPR(GPR(ins.field_vb() as _)),
+            Argument::None,
+            Argument::None,
+            Argument::None,
+            Argument::None,
+            Argument::None,
+        ],
+    };
+}
+fn basic_vmrghh(out: &mut ParsedIns, ins: Ins) {
+    *out = ParsedIns {
+        mnemonic: "vmrghh",
+        args: [
+            Argument::GPR(GPR(ins.field_vd() as _)),
+            Argument::GPR(GPR(ins.field_va() as _)),
+            Argument::GPR(GPR(ins.field_vb() as _)),
+            Argument::None,
+            Argument::None,
+            Argument::None,
+            Argument::None,
+            Argument::None,
+        ],
+    };
+}
+fn basic_vmrghw(out: &mut ParsedIns, ins: Ins) {
+    *out = ParsedIns {
+        mnemonic: "vmrghw",
+        args: [
+            Argument::GPR(GPR(ins.field_vd() as _)),
+            Argument::GPR(GPR(ins.field_va() as _)),
+            Argument::GPR(GPR(ins.field_vb() as _)),
+            Argument::None,
+            Argument::None,
+            Argument::None,
+            Argument::None,
+            Argument::None,
+        ],
+    };
+}
+fn basic_vmrglb(out: &mut ParsedIns, ins: Ins) {
+    *out = ParsedIns {
+        mnemonic: "vmrglb",
+        args: [
+            Argument::GPR(GPR(ins.field_vd() as _)),
+            Argument::GPR(GPR(ins.field_va() as _)),
+            Argument::GPR(GPR(ins.field_vb() as _)),
+            Argument::None,
+            Argument::None,
+            Argument::None,
+            Argument::None,
+            Argument::None,
+        ],
+    };
+}
+fn basic_vmrglh(out: &mut ParsedIns, ins: Ins) {
+    *out = ParsedIns {
+        mnemonic: "vmrglh",
+        args: [
+            Argument::GPR(GPR(ins.field_vd() as _)),
+            Argument::GPR(GPR(ins.field_va() as _)),
+            Argument::GPR(GPR(ins.field_vb() as _)),
+            Argument::None,
+            Argument::None,
+            Argument::None,
+            Argument::None,
+            Argument::None,
+        ],
+    };
+}
+fn basic_vmrglw(out: &mut ParsedIns, ins: Ins) {
+    *out = ParsedIns {
+        mnemonic: "vmrglw",
+        args: [
+            Argument::GPR(GPR(ins.field_vd() as _)),
+            Argument::GPR(GPR(ins.field_va() as _)),
+            Argument::GPR(GPR(ins.field_vb() as _)),
+            Argument::None,
+            Argument::None,
+            Argument::None,
+            Argument::None,
+            Argument::None,
+        ],
+    };
+}
+fn basic_vmsummbm(out: &mut ParsedIns, ins: Ins) {
+    *out = ParsedIns {
+        mnemonic: "vmsummbm",
+        args: [
+            Argument::GPR(GPR(ins.field_vd() as _)),
+            Argument::GPR(GPR(ins.field_va() as _)),
+            Argument::GPR(GPR(ins.field_vb() as _)),
+            Argument::GPR(GPR(ins.field_vc() as _)),
+            Argument::None,
+            Argument::None,
+            Argument::None,
+            Argument::None,
+        ],
+    };
+}
+fn basic_vmsumshm(out: &mut ParsedIns, ins: Ins) {
+    *out = ParsedIns {
+        mnemonic: "vmsumshm",
+        args: [
+            Argument::GPR(GPR(ins.field_vd() as _)),
+            Argument::GPR(GPR(ins.field_va() as _)),
+            Argument::GPR(GPR(ins.field_vb() as _)),
+            Argument::GPR(GPR(ins.field_vc() as _)),
+            Argument::None,
+            Argument::None,
+            Argument::None,
+            Argument::None,
+        ],
+    };
+}
+fn basic_vmsumshs(out: &mut ParsedIns, ins: Ins) {
+    *out = ParsedIns {
+        mnemonic: "vmsumshs",
+        args: [
+            Argument::GPR(GPR(ins.field_vd() as _)),
+            Argument::GPR(GPR(ins.field_va() as _)),
+            Argument::GPR(GPR(ins.field_vb() as _)),
+            Argument::GPR(GPR(ins.field_vc() as _)),
+            Argument::None,
+            Argument::None,
+            Argument::None,
+            Argument::None,
+        ],
+    };
+}
+fn basic_vmsumubm(out: &mut ParsedIns, ins: Ins) {
+    *out = ParsedIns {
+        mnemonic: "vmsumubm",
+        args: [
+            Argument::GPR(GPR(ins.field_vd() as _)),
+            Argument::GPR(GPR(ins.field_va() as _)),
+            Argument::GPR(GPR(ins.field_vb() as _)),
+            Argument::GPR(GPR(ins.field_vc() as _)),
+            Argument::None,
+            Argument::None,
+            Argument::None,
+            Argument::None,
+        ],
+    };
+}
+fn basic_vmsumuhm(out: &mut ParsedIns, ins: Ins) {
+    *out = ParsedIns {
+        mnemonic: "vmsumuhm",
+        args: [
+            Argument::GPR(GPR(ins.field_vd() as _)),
+            Argument::GPR(GPR(ins.field_va() as _)),
+            Argument::GPR(GPR(ins.field_vb() as _)),
+            Argument::GPR(GPR(ins.field_vc() as _)),
+            Argument::None,
+            Argument::None,
+            Argument::None,
+            Argument::None,
+        ],
+    };
+}
+fn basic_vmsumuhs(out: &mut ParsedIns, ins: Ins) {
+    *out = ParsedIns {
+        mnemonic: "vmsumuhs",
+        args: [
+            Argument::GPR(GPR(ins.field_vd() as _)),
+            Argument::GPR(GPR(ins.field_va() as _)),
+            Argument::GPR(GPR(ins.field_vb() as _)),
+            Argument::GPR(GPR(ins.field_vc() as _)),
+            Argument::None,
+            Argument::None,
+            Argument::None,
+            Argument::None,
+        ],
+    };
+}
+fn basic_vmulesb(out: &mut ParsedIns, ins: Ins) {
+    *out = ParsedIns {
+        mnemonic: "vmulesb",
+        args: [
+            Argument::GPR(GPR(ins.field_vd() as _)),
+            Argument::GPR(GPR(ins.field_va() as _)),
+            Argument::GPR(GPR(ins.field_vb() as _)),
+            Argument::None,
+            Argument::None,
+            Argument::None,
+            Argument::None,
+            Argument::None,
+        ],
+    };
+}
+fn basic_vmulesh(out: &mut ParsedIns, ins: Ins) {
+    *out = ParsedIns {
+        mnemonic: "vmulesh",
+        args: [
+            Argument::GPR(GPR(ins.field_vd() as _)),
+            Argument::GPR(GPR(ins.field_va() as _)),
+            Argument::GPR(GPR(ins.field_vb() as _)),
+            Argument::None,
+            Argument::None,
+            Argument::None,
+            Argument::None,
+            Argument::None,
+        ],
+    };
+}
+fn basic_vmuleub(out: &mut ParsedIns, ins: Ins) {
+    *out = ParsedIns {
+        mnemonic: "vmuleub",
+        args: [
+            Argument::GPR(GPR(ins.field_vd() as _)),
+            Argument::GPR(GPR(ins.field_va() as _)),
+            Argument::GPR(GPR(ins.field_vb() as _)),
+            Argument::None,
+            Argument::None,
+            Argument::None,
+            Argument::None,
+            Argument::None,
+        ],
+    };
+}
+fn basic_vmuleuh(out: &mut ParsedIns, ins: Ins) {
+    *out = ParsedIns {
+        mnemonic: "vmuleuh",
+        args: [
+            Argument::GPR(GPR(ins.field_vd() as _)),
+            Argument::GPR(GPR(ins.field_va() as _)),
+            Argument::GPR(GPR(ins.field_vb() as _)),
+            Argument::None,
+            Argument::None,
+            Argument::None,
+            Argument::None,
+            Argument::None,
+        ],
+    };
+}
+fn basic_vmulosb(out: &mut ParsedIns, ins: Ins) {
+    *out = ParsedIns {
+        mnemonic: "vmulosb",
+        args: [
+            Argument::GPR(GPR(ins.field_vd() as _)),
+            Argument::GPR(GPR(ins.field_va() as _)),
+            Argument::GPR(GPR(ins.field_vb() as _)),
+            Argument::None,
+            Argument::None,
+            Argument::None,
+            Argument::None,
+            Argument::None,
+        ],
+    };
+}
+fn basic_vmulosh(out: &mut ParsedIns, ins: Ins) {
+    *out = ParsedIns {
+        mnemonic: "vmulosh",
+        args: [
+            Argument::GPR(GPR(ins.field_vd() as _)),
+            Argument::GPR(GPR(ins.field_va() as _)),
+            Argument::GPR(GPR(ins.field_vb() as _)),
+            Argument::None,
+            Argument::None,
+            Argument::None,
+            Argument::None,
+            Argument::None,
+        ],
+    };
+}
+fn basic_vmuloub(out: &mut ParsedIns, ins: Ins) {
+    *out = ParsedIns {
+        mnemonic: "vmuloub",
+        args: [
+            Argument::GPR(GPR(ins.field_vd() as _)),
+            Argument::GPR(GPR(ins.field_va() as _)),
+            Argument::GPR(GPR(ins.field_vb() as _)),
+            Argument::None,
+            Argument::None,
+            Argument::None,
+            Argument::None,
+            Argument::None,
+        ],
+    };
+}
+fn basic_vmulouh(out: &mut ParsedIns, ins: Ins) {
+    *out = ParsedIns {
+        mnemonic: "vmulouh",
+        args: [
+            Argument::GPR(GPR(ins.field_vd() as _)),
+            Argument::GPR(GPR(ins.field_va() as _)),
+            Argument::GPR(GPR(ins.field_vb() as _)),
+            Argument::None,
+            Argument::None,
+            Argument::None,
+            Argument::None,
+            Argument::None,
+        ],
+    };
+}
+fn basic_vnmsubfp(out: &mut ParsedIns, ins: Ins) {
+    *out = ParsedIns {
+        mnemonic: "vnmsubfp",
+        args: [
+            Argument::GPR(GPR(ins.field_vd() as _)),
+            Argument::GPR(GPR(ins.field_va() as _)),
+            Argument::GPR(GPR(ins.field_vc() as _)),
+            Argument::GPR(GPR(ins.field_vb() as _)),
+            Argument::None,
+            Argument::None,
+            Argument::None,
+            Argument::None,
+        ],
+    };
+}
+fn basic_vnor(out: &mut ParsedIns, ins: Ins) {
+    *out = ParsedIns {
+        mnemonic: "vnor",
+        args: [
+            Argument::GPR(GPR(ins.field_vd() as _)),
+            Argument::GPR(GPR(ins.field_va() as _)),
+            Argument::GPR(GPR(ins.field_vb() as _)),
+            Argument::None,
+            Argument::None,
+            Argument::None,
+            Argument::None,
+            Argument::None,
+        ],
+    };
+}
+fn basic_vor(out: &mut ParsedIns, ins: Ins) {
+    *out = ParsedIns {
+        mnemonic: "vor",
+        args: [
+            Argument::GPR(GPR(ins.field_vd() as _)),
+            Argument::GPR(GPR(ins.field_va() as _)),
+            Argument::GPR(GPR(ins.field_vb() as _)),
+            Argument::None,
+            Argument::None,
+            Argument::None,
+            Argument::None,
+            Argument::None,
+        ],
+    };
+}
+fn basic_vperm(out: &mut ParsedIns, ins: Ins) {
+    *out = ParsedIns {
+        mnemonic: "vperm",
+        args: [
+            Argument::GPR(GPR(ins.field_vd() as _)),
+            Argument::GPR(GPR(ins.field_va() as _)),
+            Argument::GPR(GPR(ins.field_vb() as _)),
+            Argument::GPR(GPR(ins.field_vc() as _)),
+            Argument::None,
+            Argument::None,
+            Argument::None,
+            Argument::None,
+        ],
+    };
+}
+fn basic_vpkpx(out: &mut ParsedIns, ins: Ins) {
+    *out = ParsedIns {
+        mnemonic: "vpkpx",
+        args: [
+            Argument::GPR(GPR(ins.field_vd() as _)),
+            Argument::GPR(GPR(ins.field_va() as _)),
+            Argument::GPR(GPR(ins.field_vb() as _)),
+            Argument::None,
+            Argument::None,
+            Argument::None,
+            Argument::None,
+            Argument::None,
+        ],
+    };
+}
+fn basic_vpkshss(out: &mut ParsedIns, ins: Ins) {
+    *out = ParsedIns {
+        mnemonic: "vpkshss",
+        args: [
+            Argument::GPR(GPR(ins.field_vd() as _)),
+            Argument::GPR(GPR(ins.field_va() as _)),
+            Argument::GPR(GPR(ins.field_vb() as _)),
+            Argument::None,
+            Argument::None,
+            Argument::None,
+            Argument::None,
+            Argument::None,
+        ],
+    };
+}
+fn basic_vpkshus(out: &mut ParsedIns, ins: Ins) {
+    *out = ParsedIns {
+        mnemonic: "vpkshus",
+        args: [
+            Argument::GPR(GPR(ins.field_vd() as _)),
+            Argument::GPR(GPR(ins.field_va() as _)),
+            Argument::GPR(GPR(ins.field_vb() as _)),
+            Argument::None,
+            Argument::None,
+            Argument::None,
+            Argument::None,
+            Argument::None,
+        ],
+    };
+}
+fn basic_vpkswss(out: &mut ParsedIns, ins: Ins) {
+    *out = ParsedIns {
+        mnemonic: "vpkswss",
+        args: [
+            Argument::GPR(GPR(ins.field_vd() as _)),
+            Argument::GPR(GPR(ins.field_va() as _)),
+            Argument::GPR(GPR(ins.field_vb() as _)),
+            Argument::None,
+            Argument::None,
+            Argument::None,
+            Argument::None,
+            Argument::None,
+        ],
+    };
+}
+fn basic_vpkswus(out: &mut ParsedIns, ins: Ins) {
+    *out = ParsedIns {
+        mnemonic: "vpkswus",
+        args: [
+            Argument::GPR(GPR(ins.field_vd() as _)),
+            Argument::GPR(GPR(ins.field_va() as _)),
+            Argument::GPR(GPR(ins.field_vb() as _)),
+            Argument::None,
+            Argument::None,
+            Argument::None,
+            Argument::None,
+            Argument::None,
+        ],
+    };
+}
+fn basic_vpkuhum(out: &mut ParsedIns, ins: Ins) {
+    *out = ParsedIns {
+        mnemonic: "vpkuhum",
+        args: [
+            Argument::GPR(GPR(ins.field_vd() as _)),
+            Argument::GPR(GPR(ins.field_va() as _)),
+            Argument::GPR(GPR(ins.field_vb() as _)),
+            Argument::None,
+            Argument::None,
+            Argument::None,
+            Argument::None,
+            Argument::None,
+        ],
+    };
+}
+fn basic_vpkuhus(out: &mut ParsedIns, ins: Ins) {
+    *out = ParsedIns {
+        mnemonic: "vpkuhus",
+        args: [
+            Argument::GPR(GPR(ins.field_vd() as _)),
+            Argument::GPR(GPR(ins.field_va() as _)),
+            Argument::GPR(GPR(ins.field_vb() as _)),
+            Argument::None,
+            Argument::None,
+            Argument::None,
+            Argument::None,
+            Argument::None,
+        ],
+    };
+}
+fn basic_vpkuwum(out: &mut ParsedIns, ins: Ins) {
+    *out = ParsedIns {
+        mnemonic: "vpkuwum",
+        args: [
+            Argument::GPR(GPR(ins.field_vd() as _)),
+            Argument::GPR(GPR(ins.field_va() as _)),
+            Argument::GPR(GPR(ins.field_vb() as _)),
+            Argument::None,
+            Argument::None,
+            Argument::None,
+            Argument::None,
+            Argument::None,
+        ],
+    };
+}
+fn basic_vpkuwus(out: &mut ParsedIns, ins: Ins) {
+    *out = ParsedIns {
+        mnemonic: "vpkuwus",
+        args: [
+            Argument::GPR(GPR(ins.field_vd() as _)),
+            Argument::GPR(GPR(ins.field_va() as _)),
+            Argument::GPR(GPR(ins.field_vb() as _)),
+            Argument::None,
+            Argument::None,
+            Argument::None,
+            Argument::None,
+            Argument::None,
+        ],
+    };
+}
+fn basic_vrefp(out: &mut ParsedIns, ins: Ins) {
+    *out = ParsedIns {
+        mnemonic: "vrefp",
+        args: [
+            Argument::GPR(GPR(ins.field_vd() as _)),
+            Argument::GPR(GPR(ins.field_vb() as _)),
+            Argument::None,
+            Argument::None,
+            Argument::None,
+            Argument::None,
+            Argument::None,
+            Argument::None,
+        ],
+    };
+}
+fn basic_vrfim(out: &mut ParsedIns, ins: Ins) {
+    *out = ParsedIns {
+        mnemonic: "vrfim",
+        args: [
+            Argument::GPR(GPR(ins.field_vd() as _)),
+            Argument::GPR(GPR(ins.field_vb() as _)),
+            Argument::None,
+            Argument::None,
+            Argument::None,
+            Argument::None,
+            Argument::None,
+            Argument::None,
+        ],
+    };
+}
+fn basic_vrfin(out: &mut ParsedIns, ins: Ins) {
+    *out = ParsedIns {
+        mnemonic: "vrfin",
+        args: [
+            Argument::GPR(GPR(ins.field_vd() as _)),
+            Argument::GPR(GPR(ins.field_vb() as _)),
+            Argument::None,
+            Argument::None,
+            Argument::None,
+            Argument::None,
+            Argument::None,
+            Argument::None,
+        ],
+    };
+}
+fn basic_vrfip(out: &mut ParsedIns, ins: Ins) {
+    *out = ParsedIns {
+        mnemonic: "vrfip",
+        args: [
+            Argument::GPR(GPR(ins.field_vd() as _)),
+            Argument::GPR(GPR(ins.field_vb() as _)),
+            Argument::None,
+            Argument::None,
+            Argument::None,
+            Argument::None,
+            Argument::None,
+            Argument::None,
+        ],
+    };
+}
+fn basic_vrfiz(out: &mut ParsedIns, ins: Ins) {
+    *out = ParsedIns {
+        mnemonic: "vrfiz",
+        args: [
+            Argument::GPR(GPR(ins.field_vd() as _)),
+            Argument::GPR(GPR(ins.field_vb() as _)),
+            Argument::None,
+            Argument::None,
+            Argument::None,
+            Argument::None,
+            Argument::None,
+            Argument::None,
+        ],
+    };
+}
+fn basic_vrlb(out: &mut ParsedIns, ins: Ins) {
+    *out = ParsedIns {
+        mnemonic: "vrlb",
+        args: [
+            Argument::GPR(GPR(ins.field_vd() as _)),
+            Argument::GPR(GPR(ins.field_va() as _)),
+            Argument::GPR(GPR(ins.field_vb() as _)),
+            Argument::None,
+            Argument::None,
+            Argument::None,
+            Argument::None,
+            Argument::None,
+        ],
+    };
+}
+fn basic_vrlh(out: &mut ParsedIns, ins: Ins) {
+    *out = ParsedIns {
+        mnemonic: "vrlh",
+        args: [
+            Argument::GPR(GPR(ins.field_vd() as _)),
+            Argument::GPR(GPR(ins.field_va() as _)),
+            Argument::GPR(GPR(ins.field_vb() as _)),
+            Argument::None,
+            Argument::None,
+            Argument::None,
+            Argument::None,
+            Argument::None,
+        ],
+    };
+}
+fn basic_vrlw(out: &mut ParsedIns, ins: Ins) {
+    *out = ParsedIns {
+        mnemonic: "vrlw",
+        args: [
+            Argument::GPR(GPR(ins.field_vd() as _)),
+            Argument::GPR(GPR(ins.field_va() as _)),
+            Argument::GPR(GPR(ins.field_vb() as _)),
+            Argument::None,
+            Argument::None,
+            Argument::None,
+            Argument::None,
+            Argument::None,
+        ],
+    };
+}
+fn basic_vrsqrtefp(out: &mut ParsedIns, ins: Ins) {
+    *out = ParsedIns {
+        mnemonic: "vrsqrtefp",
+        args: [
+            Argument::GPR(GPR(ins.field_vd() as _)),
+            Argument::GPR(GPR(ins.field_vb() as _)),
+            Argument::None,
+            Argument::None,
+            Argument::None,
+            Argument::None,
+            Argument::None,
+            Argument::None,
+        ],
+    };
+}
+fn basic_vsel(out: &mut ParsedIns, ins: Ins) {
+    *out = ParsedIns {
+        mnemonic: "vsel",
+        args: [
+            Argument::GPR(GPR(ins.field_vd() as _)),
+            Argument::GPR(GPR(ins.field_va() as _)),
+            Argument::GPR(GPR(ins.field_vb() as _)),
+            Argument::GPR(GPR(ins.field_vc() as _)),
+            Argument::None,
+            Argument::None,
+            Argument::None,
+            Argument::None,
+        ],
+    };
+}
+fn basic_vsl(out: &mut ParsedIns, ins: Ins) {
+    *out = ParsedIns {
+        mnemonic: "vsl",
+        args: [
+            Argument::GPR(GPR(ins.field_vd() as _)),
+            Argument::GPR(GPR(ins.field_va() as _)),
+            Argument::GPR(GPR(ins.field_vb() as _)),
+            Argument::None,
+            Argument::None,
+            Argument::None,
+            Argument::None,
+            Argument::None,
+        ],
+    };
+}
+fn basic_vslb(out: &mut ParsedIns, ins: Ins) {
+    *out = ParsedIns {
+        mnemonic: "vslb",
+        args: [
+            Argument::GPR(GPR(ins.field_vd() as _)),
+            Argument::GPR(GPR(ins.field_va() as _)),
+            Argument::GPR(GPR(ins.field_vb() as _)),
+            Argument::None,
+            Argument::None,
+            Argument::None,
+            Argument::None,
+            Argument::None,
+        ],
+    };
+}
+fn basic_vsldoi(out: &mut ParsedIns, ins: Ins) {
+    *out = ParsedIns {
+        mnemonic: "vsldoi",
+        args: [
+            Argument::GPR(GPR(ins.field_vd() as _)),
+            Argument::GPR(GPR(ins.field_va() as _)),
+            Argument::GPR(GPR(ins.field_vb() as _)),
+            Argument::OpaqueU(OpaqueU(ins.field_shb() as _)),
+            Argument::None,
+            Argument::None,
+            Argument::None,
+            Argument::None,
+        ],
+    };
+}
+fn basic_vslh(out: &mut ParsedIns, ins: Ins) {
+    *out = ParsedIns {
+        mnemonic: "vslh",
+        args: [
+            Argument::GPR(GPR(ins.field_vd() as _)),
+            Argument::GPR(GPR(ins.field_va() as _)),
+            Argument::GPR(GPR(ins.field_vb() as _)),
+            Argument::None,
+            Argument::None,
+            Argument::None,
+            Argument::None,
+            Argument::None,
+        ],
+    };
+}
+fn basic_vslo(out: &mut ParsedIns, ins: Ins) {
+    *out = ParsedIns {
+        mnemonic: "vslo",
+        args: [
+            Argument::GPR(GPR(ins.field_vd() as _)),
+            Argument::GPR(GPR(ins.field_va() as _)),
+            Argument::GPR(GPR(ins.field_vb() as _)),
+            Argument::None,
+            Argument::None,
+            Argument::None,
+            Argument::None,
+            Argument::None,
+        ],
+    };
+}
+fn basic_vslw(out: &mut ParsedIns, ins: Ins) {
+    *out = ParsedIns {
+        mnemonic: "vslw",
+        args: [
+            Argument::GPR(GPR(ins.field_vd() as _)),
+            Argument::GPR(GPR(ins.field_va() as _)),
+            Argument::GPR(GPR(ins.field_vb() as _)),
+            Argument::None,
+            Argument::None,
+            Argument::None,
+            Argument::None,
+            Argument::None,
+        ],
+    };
+}
+fn basic_vspltb(out: &mut ParsedIns, ins: Ins) {
+    *out = ParsedIns {
+        mnemonic: "vspltb",
+        args: [
+            Argument::GPR(GPR(ins.field_vd() as _)),
+            Argument::GPR(GPR(ins.field_vb() as _)),
+            Argument::Uimm(Uimm(ins.field_vuimm() as _)),
+            Argument::None,
+            Argument::None,
+            Argument::None,
+            Argument::None,
+            Argument::None,
+        ],
+    };
+}
+fn basic_vsplth(out: &mut ParsedIns, ins: Ins) {
+    *out = ParsedIns {
+        mnemonic: "vsplth",
+        args: [
+            Argument::GPR(GPR(ins.field_vd() as _)),
+            Argument::GPR(GPR(ins.field_vb() as _)),
+            Argument::Uimm(Uimm(ins.field_vuimm() as _)),
+            Argument::None,
+            Argument::None,
+            Argument::None,
+            Argument::None,
+            Argument::None,
+        ],
+    };
+}
+fn basic_vspltisb(out: &mut ParsedIns, ins: Ins) {
+    *out = ParsedIns {
+        mnemonic: "vspltisb",
+        args: [
+            Argument::GPR(GPR(ins.field_vd() as _)),
+            Argument::Simm(Simm(ins.field_vsimm() as _)),
+            Argument::None,
+            Argument::None,
+            Argument::None,
+            Argument::None,
+            Argument::None,
+            Argument::None,
+        ],
+    };
+}
+fn basic_vspltish(out: &mut ParsedIns, ins: Ins) {
+    *out = ParsedIns {
+        mnemonic: "vspltish",
+        args: [
+            Argument::GPR(GPR(ins.field_vd() as _)),
+            Argument::Simm(Simm(ins.field_vsimm() as _)),
+            Argument::None,
+            Argument::None,
+            Argument::None,
+            Argument::None,
+            Argument::None,
+            Argument::None,
+        ],
+    };
+}
+fn basic_vspltisw(out: &mut ParsedIns, ins: Ins) {
+    *out = ParsedIns {
+        mnemonic: "vspltisw",
+        args: [
+            Argument::GPR(GPR(ins.field_vd() as _)),
+            Argument::Simm(Simm(ins.field_vsimm() as _)),
+            Argument::None,
+            Argument::None,
+            Argument::None,
+            Argument::None,
+            Argument::None,
+            Argument::None,
+        ],
+    };
+}
+fn basic_vspltw(out: &mut ParsedIns, ins: Ins) {
+    *out = ParsedIns {
+        mnemonic: "vspltw",
+        args: [
+            Argument::GPR(GPR(ins.field_vd() as _)),
+            Argument::GPR(GPR(ins.field_vb() as _)),
+            Argument::Uimm(Uimm(ins.field_vuimm() as _)),
+            Argument::None,
+            Argument::None,
+            Argument::None,
+            Argument::None,
+            Argument::None,
+        ],
+    };
+}
+fn basic_vsr(out: &mut ParsedIns, ins: Ins) {
+    *out = ParsedIns {
+        mnemonic: "vsr",
+        args: [
+            Argument::GPR(GPR(ins.field_vd() as _)),
+            Argument::GPR(GPR(ins.field_va() as _)),
+            Argument::GPR(GPR(ins.field_vb() as _)),
+            Argument::None,
+            Argument::None,
+            Argument::None,
+            Argument::None,
+            Argument::None,
+        ],
+    };
+}
+fn basic_vsrab(out: &mut ParsedIns, ins: Ins) {
+    *out = ParsedIns {
+        mnemonic: "vsrab",
+        args: [
+            Argument::GPR(GPR(ins.field_vd() as _)),
+            Argument::GPR(GPR(ins.field_va() as _)),
+            Argument::GPR(GPR(ins.field_vb() as _)),
+            Argument::None,
+            Argument::None,
+            Argument::None,
+            Argument::None,
+            Argument::None,
+        ],
+    };
+}
+fn basic_vsrah(out: &mut ParsedIns, ins: Ins) {
+    *out = ParsedIns {
+        mnemonic: "vsrah",
+        args: [
+            Argument::GPR(GPR(ins.field_vd() as _)),
+            Argument::GPR(GPR(ins.field_va() as _)),
+            Argument::GPR(GPR(ins.field_vb() as _)),
+            Argument::None,
+            Argument::None,
+            Argument::None,
+            Argument::None,
+            Argument::None,
+        ],
+    };
+}
+fn basic_vsraw(out: &mut ParsedIns, ins: Ins) {
+    *out = ParsedIns {
+        mnemonic: "vsraw",
+        args: [
+            Argument::GPR(GPR(ins.field_vd() as _)),
+            Argument::GPR(GPR(ins.field_va() as _)),
+            Argument::GPR(GPR(ins.field_vb() as _)),
+            Argument::None,
+            Argument::None,
+            Argument::None,
+            Argument::None,
+            Argument::None,
+        ],
+    };
+}
+fn basic_vsrb(out: &mut ParsedIns, ins: Ins) {
+    *out = ParsedIns {
+        mnemonic: "vsrb",
+        args: [
+            Argument::GPR(GPR(ins.field_vd() as _)),
+            Argument::GPR(GPR(ins.field_va() as _)),
+            Argument::GPR(GPR(ins.field_vb() as _)),
+            Argument::None,
+            Argument::None,
+            Argument::None,
+            Argument::None,
+            Argument::None,
+        ],
+    };
+}
+fn basic_vsrh(out: &mut ParsedIns, ins: Ins) {
+    *out = ParsedIns {
+        mnemonic: "vsrh",
+        args: [
+            Argument::GPR(GPR(ins.field_vd() as _)),
+            Argument::GPR(GPR(ins.field_va() as _)),
+            Argument::GPR(GPR(ins.field_vb() as _)),
+            Argument::None,
+            Argument::None,
+            Argument::None,
+            Argument::None,
+            Argument::None,
+        ],
+    };
+}
+fn basic_vsro(out: &mut ParsedIns, ins: Ins) {
+    *out = ParsedIns {
+        mnemonic: "vsro",
+        args: [
+            Argument::GPR(GPR(ins.field_vd() as _)),
+            Argument::GPR(GPR(ins.field_va() as _)),
+            Argument::GPR(GPR(ins.field_vb() as _)),
+            Argument::None,
+            Argument::None,
+            Argument::None,
+            Argument::None,
+            Argument::None,
+        ],
+    };
+}
+fn basic_vsrw(out: &mut ParsedIns, ins: Ins) {
+    *out = ParsedIns {
+        mnemonic: "vsrw",
+        args: [
+            Argument::GPR(GPR(ins.field_vd() as _)),
+            Argument::GPR(GPR(ins.field_va() as _)),
+            Argument::GPR(GPR(ins.field_vb() as _)),
+            Argument::None,
+            Argument::None,
+            Argument::None,
+            Argument::None,
+            Argument::None,
+        ],
+    };
+}
+fn basic_vsubcuw(out: &mut ParsedIns, ins: Ins) {
+    *out = ParsedIns {
+        mnemonic: "vsubcuw",
+        args: [
+            Argument::GPR(GPR(ins.field_vd() as _)),
+            Argument::GPR(GPR(ins.field_va() as _)),
+            Argument::GPR(GPR(ins.field_vb() as _)),
+            Argument::None,
+            Argument::None,
+            Argument::None,
+            Argument::None,
+            Argument::None,
+        ],
+    };
+}
+fn basic_vsubfp(out: &mut ParsedIns, ins: Ins) {
+    *out = ParsedIns {
+        mnemonic: "vsubfp",
+        args: [
+            Argument::GPR(GPR(ins.field_vd() as _)),
+            Argument::GPR(GPR(ins.field_va() as _)),
+            Argument::GPR(GPR(ins.field_vb() as _)),
+            Argument::None,
+            Argument::None,
+            Argument::None,
+            Argument::None,
+            Argument::None,
+        ],
+    };
+}
+fn basic_vsubsbs(out: &mut ParsedIns, ins: Ins) {
+    *out = ParsedIns {
+        mnemonic: "vsubsbs",
+        args: [
+            Argument::GPR(GPR(ins.field_vd() as _)),
+            Argument::GPR(GPR(ins.field_va() as _)),
+            Argument::GPR(GPR(ins.field_vb() as _)),
+            Argument::None,
+            Argument::None,
+            Argument::None,
+            Argument::None,
+            Argument::None,
+        ],
+    };
+}
+fn basic_vsubshs(out: &mut ParsedIns, ins: Ins) {
+    *out = ParsedIns {
+        mnemonic: "vsubshs",
+        args: [
+            Argument::GPR(GPR(ins.field_vd() as _)),
+            Argument::GPR(GPR(ins.field_va() as _)),
+            Argument::GPR(GPR(ins.field_vb() as _)),
+            Argument::None,
+            Argument::None,
+            Argument::None,
+            Argument::None,
+            Argument::None,
+        ],
+    };
+}
+fn basic_vsubsws(out: &mut ParsedIns, ins: Ins) {
+    *out = ParsedIns {
+        mnemonic: "vsubsws",
+        args: [
+            Argument::GPR(GPR(ins.field_vd() as _)),
+            Argument::GPR(GPR(ins.field_va() as _)),
+            Argument::GPR(GPR(ins.field_vb() as _)),
+            Argument::None,
+            Argument::None,
+            Argument::None,
+            Argument::None,
+            Argument::None,
+        ],
+    };
+}
+fn basic_vsububm(out: &mut ParsedIns, ins: Ins) {
+    *out = ParsedIns {
+        mnemonic: "vsububm",
+        args: [
+            Argument::GPR(GPR(ins.field_vd() as _)),
+            Argument::GPR(GPR(ins.field_va() as _)),
+            Argument::GPR(GPR(ins.field_vb() as _)),
+            Argument::None,
+            Argument::None,
+            Argument::None,
+            Argument::None,
+            Argument::None,
+        ],
+    };
+}
+fn basic_vsububs(out: &mut ParsedIns, ins: Ins) {
+    *out = ParsedIns {
+        mnemonic: "vsububs",
+        args: [
+            Argument::GPR(GPR(ins.field_vd() as _)),
+            Argument::GPR(GPR(ins.field_va() as _)),
+            Argument::GPR(GPR(ins.field_vb() as _)),
+            Argument::None,
+            Argument::None,
+            Argument::None,
+            Argument::None,
+            Argument::None,
+        ],
+    };
+}
+fn basic_vsubuhm(out: &mut ParsedIns, ins: Ins) {
+    *out = ParsedIns {
+        mnemonic: "vsubuhm",
+        args: [
+            Argument::GPR(GPR(ins.field_vd() as _)),
+            Argument::GPR(GPR(ins.field_va() as _)),
+            Argument::GPR(GPR(ins.field_vb() as _)),
+            Argument::None,
+            Argument::None,
+            Argument::None,
+            Argument::None,
+            Argument::None,
+        ],
+    };
+}
+fn basic_vsubuhs(out: &mut ParsedIns, ins: Ins) {
+    *out = ParsedIns {
+        mnemonic: "vsubuhs",
+        args: [
+            Argument::GPR(GPR(ins.field_vd() as _)),
+            Argument::GPR(GPR(ins.field_va() as _)),
+            Argument::GPR(GPR(ins.field_vb() as _)),
+            Argument::None,
+            Argument::None,
+            Argument::None,
+            Argument::None,
+            Argument::None,
+        ],
+    };
+}
+fn basic_vsubuwm(out: &mut ParsedIns, ins: Ins) {
+    *out = ParsedIns {
+        mnemonic: "vsubuwm",
+        args: [
+            Argument::GPR(GPR(ins.field_vd() as _)),
+            Argument::GPR(GPR(ins.field_va() as _)),
+            Argument::GPR(GPR(ins.field_vb() as _)),
+            Argument::None,
+            Argument::None,
+            Argument::None,
+            Argument::None,
+            Argument::None,
+        ],
+    };
+}
+fn basic_vsubuws(out: &mut ParsedIns, ins: Ins) {
+    *out = ParsedIns {
+        mnemonic: "vsubuws",
+        args: [
+            Argument::GPR(GPR(ins.field_vd() as _)),
+            Argument::GPR(GPR(ins.field_va() as _)),
+            Argument::GPR(GPR(ins.field_vb() as _)),
+            Argument::None,
+            Argument::None,
+            Argument::None,
+            Argument::None,
+            Argument::None,
+        ],
+    };
+}
+fn basic_vsumsws(out: &mut ParsedIns, ins: Ins) {
+    *out = ParsedIns {
+        mnemonic: "vsumsws",
+        args: [
+            Argument::GPR(GPR(ins.field_vd() as _)),
+            Argument::GPR(GPR(ins.field_va() as _)),
+            Argument::GPR(GPR(ins.field_vb() as _)),
+            Argument::None,
+            Argument::None,
+            Argument::None,
+            Argument::None,
+            Argument::None,
+        ],
+    };
+}
+fn basic_vsum2sws(out: &mut ParsedIns, ins: Ins) {
+    *out = ParsedIns {
+        mnemonic: "vsum2sws",
+        args: [
+            Argument::GPR(GPR(ins.field_vd() as _)),
+            Argument::GPR(GPR(ins.field_va() as _)),
+            Argument::GPR(GPR(ins.field_vb() as _)),
+            Argument::None,
+            Argument::None,
+            Argument::None,
+            Argument::None,
+            Argument::None,
+        ],
+    };
+}
+fn basic_vsum4sbs(out: &mut ParsedIns, ins: Ins) {
+    *out = ParsedIns {
+        mnemonic: "vsum4sbs",
+        args: [
+            Argument::GPR(GPR(ins.field_vd() as _)),
+            Argument::GPR(GPR(ins.field_va() as _)),
+            Argument::GPR(GPR(ins.field_vb() as _)),
+            Argument::None,
+            Argument::None,
+            Argument::None,
+            Argument::None,
+            Argument::None,
+        ],
+    };
+}
+fn basic_vsum4shs(out: &mut ParsedIns, ins: Ins) {
+    *out = ParsedIns {
+        mnemonic: "vsum4shs",
+        args: [
+            Argument::GPR(GPR(ins.field_vd() as _)),
+            Argument::GPR(GPR(ins.field_va() as _)),
+            Argument::GPR(GPR(ins.field_vb() as _)),
+            Argument::None,
+            Argument::None,
+            Argument::None,
+            Argument::None,
+            Argument::None,
+        ],
+    };
+}
+fn basic_vsum4ubs(out: &mut ParsedIns, ins: Ins) {
+    *out = ParsedIns {
+        mnemonic: "vsum4ubs",
+        args: [
+            Argument::GPR(GPR(ins.field_vd() as _)),
+            Argument::GPR(GPR(ins.field_va() as _)),
+            Argument::GPR(GPR(ins.field_vb() as _)),
+            Argument::None,
+            Argument::None,
+            Argument::None,
+            Argument::None,
+            Argument::None,
+        ],
+    };
+}
+fn basic_vupkhpx(out: &mut ParsedIns, ins: Ins) {
+    *out = ParsedIns {
+        mnemonic: "vupkhpx",
+        args: [
+            Argument::GPR(GPR(ins.field_vd() as _)),
+            Argument::GPR(GPR(ins.field_vb() as _)),
+            Argument::None,
+            Argument::None,
+            Argument::None,
+            Argument::None,
+            Argument::None,
+            Argument::None,
+        ],
+    };
+}
+fn basic_vupkhsb(out: &mut ParsedIns, ins: Ins) {
+    *out = ParsedIns {
+        mnemonic: "vupkhsb",
+        args: [
+            Argument::GPR(GPR(ins.field_vd() as _)),
+            Argument::GPR(GPR(ins.field_vb() as _)),
+            Argument::None,
+            Argument::None,
+            Argument::None,
+            Argument::None,
+            Argument::None,
+            Argument::None,
+        ],
+    };
+}
+fn basic_vupkhsh(out: &mut ParsedIns, ins: Ins) {
+    *out = ParsedIns {
+        mnemonic: "vupkhsh",
+        args: [
+            Argument::GPR(GPR(ins.field_vd() as _)),
+            Argument::GPR(GPR(ins.field_vb() as _)),
+            Argument::None,
+            Argument::None,
+            Argument::None,
+            Argument::None,
+            Argument::None,
+            Argument::None,
+        ],
+    };
+}
+fn basic_vupklpx(out: &mut ParsedIns, ins: Ins) {
+    *out = ParsedIns {
+        mnemonic: "vupklpx",
+        args: [
+            Argument::GPR(GPR(ins.field_vd() as _)),
+            Argument::GPR(GPR(ins.field_vb() as _)),
+            Argument::None,
+            Argument::None,
+            Argument::None,
+            Argument::None,
+            Argument::None,
+            Argument::None,
+        ],
+    };
+}
+fn basic_vupklsb(out: &mut ParsedIns, ins: Ins) {
+    *out = ParsedIns {
+        mnemonic: "vupklsb",
+        args: [
+            Argument::GPR(GPR(ins.field_vd() as _)),
+            Argument::GPR(GPR(ins.field_vb() as _)),
+            Argument::None,
+            Argument::None,
+            Argument::None,
+            Argument::None,
+            Argument::None,
+            Argument::None,
+        ],
+    };
+}
+fn basic_vupklsh(out: &mut ParsedIns, ins: Ins) {
+    *out = ParsedIns {
+        mnemonic: "vupklsh",
+        args: [
+            Argument::GPR(GPR(ins.field_vd() as _)),
+            Argument::GPR(GPR(ins.field_vb() as _)),
+            Argument::None,
+            Argument::None,
+            Argument::None,
+            Argument::None,
+            Argument::None,
+            Argument::None,
+        ],
+    };
+}
+fn basic_vxor(out: &mut ParsedIns, ins: Ins) {
+    *out = ParsedIns {
+        mnemonic: "vxor",
+        args: [
+            Argument::GPR(GPR(ins.field_vd() as _)),
+            Argument::GPR(GPR(ins.field_va() as _)),
+            Argument::GPR(GPR(ins.field_vb() as _)),
+            Argument::None,
+            Argument::None,
+            Argument::None,
+            Argument::None,
+            Argument::None,
+        ],
+    };
+}
+fn basic_lvewx128(out: &mut ParsedIns, ins: Ins) {
+    *out = ParsedIns {
+        mnemonic: "lvewx128",
+        args: [
+            Argument::GPR(GPR(ins.field_vd128() as _)),
             Argument::GPR(GPR(ins.field_ra() as _)),
             Argument::GPR(GPR(ins.field_rb() as _)),
-            Argument::OpaqueU(OpaqueU(ins.field_ps_wx() as _)),
-            Argument::GQR(GQR(ins.field_ps_ix() as _)),
+            Argument::GPR(GPR(ins.field_vdh() as _)),
+            Argument::None,
+            Argument::None,
+            Argument::None,
+            Argument::None,
         ],
     };
 }
-fn basic_psq_lx(out: &mut ParsedIns, ins: Ins) {
+fn basic_lvlx128(out: &mut ParsedIns, ins: Ins) {
     *out = ParsedIns {
-        mnemonic: "psq_lx",
+        mnemonic: "lvlx128",
         args: [
-            Argument::FPR(FPR(ins.field_frd() as _)),
+            Argument::GPR(GPR(ins.field_vd128() as _)),
             Argument::GPR(GPR(ins.field_ra() as _)),
             Argument::GPR(GPR(ins.field_rb() as _)),
-            Argument::OpaqueU(OpaqueU(ins.field_ps_wx() as _)),
-            Argument::GQR(GQR(ins.field_ps_ix() as _)),
+            Argument::GPR(GPR(ins.field_vdh() as _)),
+            Argument::None,
+            Argument::None,
+            Argument::None,
+            Argument::None,
         ],
     };
 }
-fn basic_psq_stux(out: &mut ParsedIns, ins: Ins) {
+fn basic_lvrx128(out: &mut ParsedIns, ins: Ins) {
     *out = ParsedIns {
-        mnemonic: "psq_stux",
+        mnemonic: "lvrx128",
         args: [
-            Argument::FPR(FPR(ins.field_frs() as _)),
+            Argument::GPR(GPR(ins.field_vd128() as _)),
             Argument::GPR(GPR(ins.field_ra() as _)),
             Argument::GPR(GPR(ins.field_rb() as _)),
-            Argument::OpaqueU(OpaqueU(ins.field_ps_wx() as _)),
-            Argument::GQR(GQR(ins.field_ps_ix() as _)),
+            Argument::GPR(GPR(ins.field_vdh() as _)),
+            Argument::None,
+            Argument::None,
+            Argument::None,
+            Argument::None,
         ],
     };
 }
-fn basic_psq_stx(out: &mut ParsedIns, ins: Ins) {
+fn basic_lvlxl128(out: &mut ParsedIns, ins: Ins) {
     *out = ParsedIns {
-        mnemonic: "psq_stx",
+        mnemonic: "lvlxl128",
         args: [
-            Argument::FPR(FPR(ins.field_frs() as _)),
+            Argument::GPR(GPR(ins.field_vd128() as _)),
             Argument::GPR(GPR(ins.field_ra() as _)),
             Argument::GPR(GPR(ins.field_rb() as _)),
-            Argument::OpaqueU(OpaqueU(ins.field_ps_wx() as _)),
-            Argument::GQR(GQR(ins.field_ps_ix() as _)),
+            Argument::GPR(GPR(ins.field_vdh() as _)),
+            Argument::None,
+            Argument::None,
+            Argument::None,
+            Argument::None,
         ],
     };
 }
-fn basic_ps_abs(out: &mut ParsedIns, ins: Ins) {
-    *out = {
-        const MODIFIERS: [&str; 2] = ["ps_abs", "ps_abs."];
-        ParsedIns {
-            mnemonic: MODIFIERS[ins.field_rc() as usize],
-            args: [
-                Argument::FPR(FPR(ins.field_frd() as _)),
-                Argument::FPR(FPR(ins.field_frb() as _)),
-                Argument::None,
-                Argument::None,
-                Argument::None,
-            ],
-        }
-    };
-}
-fn basic_ps_add(out: &mut ParsedIns, ins: Ins) {
-    *out = {
-        const MODIFIERS: [&str; 2] = ["ps_add", "ps_add."];
-        ParsedIns {
-            mnemonic: MODIFIERS[ins.field_rc() as usize],
-            args: [
-                Argument::FPR(FPR(ins.field_frd() as _)),
-                Argument::FPR(FPR(ins.field_fra() as _)),
-                Argument::FPR(FPR(ins.field_frb() as _)),
-                Argument::None,
-                Argument::None,
-            ],
-        }
-    };
-}
-fn basic_ps_cmpo0(out: &mut ParsedIns, ins: Ins) {
+fn basic_lvrxl128(out: &mut ParsedIns, ins: Ins) {
     *out = ParsedIns {
-        mnemonic: "ps_cmpo0",
+        mnemonic: "lvrxl128",
         args: [
-            Argument::CRField(CRField(ins.field_crfd() as _)),
-            Argument::FPR(FPR(ins.field_fra() as _)),
-            Argument::FPR(FPR(ins.field_frb() as _)),
+            Argument::GPR(GPR(ins.field_vd128() as _)),
+            Argument::GPR(GPR(ins.field_ra() as _)),
+            Argument::GPR(GPR(ins.field_rb() as _)),
+            Argument::GPR(GPR(ins.field_vdh() as _)),
+            Argument::None,
+            Argument::None,
             Argument::None,
             Argument::None,
         ],
     };
 }
-fn basic_ps_cmpo1(out: &mut ParsedIns, ins: Ins) {
+fn basic_lvsl128(out: &mut ParsedIns, ins: Ins) {
     *out = ParsedIns {
-        mnemonic: "ps_cmpo1",
+        mnemonic: "lvsl128",
         args: [
-            Argument::CRField(CRField(ins.field_crfd() as _)),
-            Argument::FPR(FPR(ins.field_fra() as _)),
-            Argument::FPR(FPR(ins.field_frb() as _)),
+            Argument::GPR(GPR(ins.field_vd128() as _)),
+            Argument::GPR(GPR(ins.field_ra() as _)),
+            Argument::GPR(GPR(ins.field_rb() as _)),
+            Argument::GPR(GPR(ins.field_vdh() as _)),
+            Argument::None,
+            Argument::None,
             Argument::None,
             Argument::None,
         ],
     };
 }
-fn basic_ps_cmpu0(out: &mut ParsedIns, ins: Ins) {
+fn basic_lvsr128(out: &mut ParsedIns, ins: Ins) {
     *out = ParsedIns {
-        mnemonic: "ps_cmpu0",
+        mnemonic: "lvsr128",
         args: [
-            Argument::CRField(CRField(ins.field_crfd() as _)),
-            Argument::FPR(FPR(ins.field_fra() as _)),
-            Argument::FPR(FPR(ins.field_frb() as _)),
+            Argument::GPR(GPR(ins.field_vd128() as _)),
+            Argument::GPR(GPR(ins.field_ra() as _)),
+            Argument::GPR(GPR(ins.field_rb() as _)),
+            Argument::GPR(GPR(ins.field_vdh() as _)),
+            Argument::None,
+            Argument::None,
             Argument::None,
             Argument::None,
         ],
     };
 }
-fn basic_ps_cmpu1(out: &mut ParsedIns, ins: Ins) {
+fn basic_lvx128(out: &mut ParsedIns, ins: Ins) {
     *out = ParsedIns {
-        mnemonic: "ps_cmpu1",
+        mnemonic: "lvx128",
         args: [
-            Argument::CRField(CRField(ins.field_crfd() as _)),
-            Argument::FPR(FPR(ins.field_fra() as _)),
-            Argument::FPR(FPR(ins.field_frb() as _)),
+            Argument::GPR(GPR(ins.field_vd128() as _)),
+            Argument::GPR(GPR(ins.field_ra() as _)),
+            Argument::GPR(GPR(ins.field_rb() as _)),
+            Argument::GPR(GPR(ins.field_vdh() as _)),
+            Argument::None,
+            Argument::None,
             Argument::None,
             Argument::None,
         ],
     };
 }
-fn basic_ps_div(out: &mut ParsedIns, ins: Ins) {
+fn basic_lvxl128(out: &mut ParsedIns, ins: Ins) {
+    *out = ParsedIns {
+        mnemonic: "lvxl128",
+        args: [
+            Argument::GPR(GPR(ins.field_vd128() as _)),
+            Argument::GPR(GPR(ins.field_ra() as _)),
+            Argument::GPR(GPR(ins.field_rb() as _)),
+            Argument::GPR(GPR(ins.field_vdh() as _)),
+            Argument::None,
+            Argument::None,
+            Argument::None,
+            Argument::None,
+        ],
+    };
+}
+fn basic_stvewx128(out: &mut ParsedIns, ins: Ins) {
+    *out = ParsedIns {
+        mnemonic: "stvewx128",
+        args: [
+            Argument::GPR(GPR(ins.field_vd128() as _)),
+            Argument::GPR(GPR(ins.field_ra() as _)),
+            Argument::GPR(GPR(ins.field_rb() as _)),
+            Argument::GPR(GPR(ins.field_vdh() as _)),
+            Argument::None,
+            Argument::None,
+            Argument::None,
+            Argument::None,
+        ],
+    };
+}
+fn basic_stvlx128(out: &mut ParsedIns, ins: Ins) {
+    *out = ParsedIns {
+        mnemonic: "stvlx128",
+        args: [
+            Argument::GPR(GPR(ins.field_vd128() as _)),
+            Argument::GPR(GPR(ins.field_ra() as _)),
+            Argument::GPR(GPR(ins.field_rb() as _)),
+            Argument::GPR(GPR(ins.field_vdh() as _)),
+            Argument::None,
+            Argument::None,
+            Argument::None,
+            Argument::None,
+        ],
+    };
+}
+fn basic_stvlxl128(out: &mut ParsedIns, ins: Ins) {
+    *out = ParsedIns {
+        mnemonic: "stvlxl128",
+        args: [
+            Argument::GPR(GPR(ins.field_vd128() as _)),
+            Argument::GPR(GPR(ins.field_ra() as _)),
+            Argument::GPR(GPR(ins.field_rb() as _)),
+            Argument::GPR(GPR(ins.field_vdh() as _)),
+            Argument::None,
+            Argument::None,
+            Argument::None,
+            Argument::None,
+        ],
+    };
+}
+fn basic_stvrx128(out: &mut ParsedIns, ins: Ins) {
+    *out = ParsedIns {
+        mnemonic: "stvrx128",
+        args: [
+            Argument::GPR(GPR(ins.field_vd128() as _)),
+            Argument::GPR(GPR(ins.field_ra() as _)),
+            Argument::GPR(GPR(ins.field_rb() as _)),
+            Argument::GPR(GPR(ins.field_vdh() as _)),
+            Argument::None,
+            Argument::None,
+            Argument::None,
+            Argument::None,
+        ],
+    };
+}
+fn basic_stvrxl128(out: &mut ParsedIns, ins: Ins) {
+    *out = ParsedIns {
+        mnemonic: "stvrxl128",
+        args: [
+            Argument::GPR(GPR(ins.field_vd128() as _)),
+            Argument::GPR(GPR(ins.field_ra() as _)),
+            Argument::GPR(GPR(ins.field_rb() as _)),
+            Argument::GPR(GPR(ins.field_vdh() as _)),
+            Argument::None,
+            Argument::None,
+            Argument::None,
+            Argument::None,
+        ],
+    };
+}
+fn basic_stvx128(out: &mut ParsedIns, ins: Ins) {
+    *out = ParsedIns {
+        mnemonic: "stvx128",
+        args: [
+            Argument::GPR(GPR(ins.field_vd128() as _)),
+            Argument::GPR(GPR(ins.field_ra() as _)),
+            Argument::GPR(GPR(ins.field_rb() as _)),
+            Argument::GPR(GPR(ins.field_vdh() as _)),
+            Argument::None,
+            Argument::None,
+            Argument::None,
+            Argument::None,
+        ],
+    };
+}
+fn basic_stvxl128(out: &mut ParsedIns, ins: Ins) {
+    *out = ParsedIns {
+        mnemonic: "stvxl128",
+        args: [
+            Argument::GPR(GPR(ins.field_vd128() as _)),
+            Argument::GPR(GPR(ins.field_ra() as _)),
+            Argument::GPR(GPR(ins.field_rb() as _)),
+            Argument::GPR(GPR(ins.field_vdh() as _)),
+            Argument::None,
+            Argument::None,
+            Argument::None,
+            Argument::None,
+        ],
+    };
+}
+fn basic_vsldoi128(out: &mut ParsedIns, ins: Ins) {
+    *out = ParsedIns {
+        mnemonic: "vsldoi128",
+        args: [
+            Argument::GPR(GPR(ins.field_vd128() as _)),
+            Argument::GPR(GPR(ins.field_va128() as _)),
+            Argument::GPR(GPR(ins.field_vb128() as _)),
+            Argument::GPR(GPR(ins.field_va128_6() as _)),
+            Argument::GPR(GPR(ins.field_va128_5() as _)),
+            Argument::GPR(GPR(ins.field_vdh() as _)),
+            Argument::GPR(GPR(ins.field_vbh() as _)),
+            Argument::OpaqueU(OpaqueU(ins.field_shb() as _)),
+        ],
+    };
+}
+fn basic_vaddfp128(out: &mut ParsedIns, ins: Ins) {
+    *out = ParsedIns {
+        mnemonic: "vaddfp128",
+        args: [
+            Argument::GPR(GPR(ins.field_vd128() as _)),
+            Argument::GPR(GPR(ins.field_va128() as _)),
+            Argument::GPR(GPR(ins.field_vb128() as _)),
+            Argument::GPR(GPR(ins.field_va128_6() as _)),
+            Argument::GPR(GPR(ins.field_va128_5() as _)),
+            Argument::GPR(GPR(ins.field_vdh() as _)),
+            Argument::GPR(GPR(ins.field_vbh() as _)),
+            Argument::None,
+        ],
+    };
+}
+fn basic_vand128(out: &mut ParsedIns, ins: Ins) {
+    *out = ParsedIns {
+        mnemonic: "vand128",
+        args: [
+            Argument::GPR(GPR(ins.field_vd128() as _)),
+            Argument::GPR(GPR(ins.field_va128() as _)),
+            Argument::GPR(GPR(ins.field_vb128() as _)),
+            Argument::GPR(GPR(ins.field_va128_6() as _)),
+            Argument::GPR(GPR(ins.field_va128_5() as _)),
+            Argument::GPR(GPR(ins.field_vdh() as _)),
+            Argument::GPR(GPR(ins.field_vbh() as _)),
+            Argument::None,
+        ],
+    };
+}
+fn basic_vandc128(out: &mut ParsedIns, ins: Ins) {
+    *out = ParsedIns {
+        mnemonic: "vandc128",
+        args: [
+            Argument::GPR(GPR(ins.field_vd128() as _)),
+            Argument::GPR(GPR(ins.field_va128() as _)),
+            Argument::GPR(GPR(ins.field_vb128() as _)),
+            Argument::GPR(GPR(ins.field_va128_6() as _)),
+            Argument::GPR(GPR(ins.field_va128_5() as _)),
+            Argument::GPR(GPR(ins.field_vdh() as _)),
+            Argument::GPR(GPR(ins.field_vbh() as _)),
+            Argument::None,
+        ],
+    };
+}
+fn basic_vmaddcfp128(out: &mut ParsedIns, ins: Ins) {
+    *out = ParsedIns {
+        mnemonic: "vmaddcfp128",
+        args: [
+            Argument::GPR(GPR(ins.field_vd128() as _)),
+            Argument::GPR(GPR(ins.field_va128() as _)),
+            Argument::GPR(GPR(ins.field_vb128() as _)),
+            Argument::GPR(GPR(ins.field_va128_6() as _)),
+            Argument::GPR(GPR(ins.field_va128_5() as _)),
+            Argument::GPR(GPR(ins.field_vdh() as _)),
+            Argument::GPR(GPR(ins.field_vbh() as _)),
+            Argument::None,
+        ],
+    };
+}
+fn basic_vmaddfp128(out: &mut ParsedIns, ins: Ins) {
+    *out = ParsedIns {
+        mnemonic: "vmaddfp128",
+        args: [
+            Argument::GPR(GPR(ins.field_vd128() as _)),
+            Argument::GPR(GPR(ins.field_va128() as _)),
+            Argument::GPR(GPR(ins.field_vb128() as _)),
+            Argument::GPR(GPR(ins.field_va128_6() as _)),
+            Argument::GPR(GPR(ins.field_va128_5() as _)),
+            Argument::GPR(GPR(ins.field_vdh() as _)),
+            Argument::GPR(GPR(ins.field_vbh() as _)),
+            Argument::None,
+        ],
+    };
+}
+fn basic_vmsum3fp128(out: &mut ParsedIns, ins: Ins) {
+    *out = ParsedIns {
+        mnemonic: "vmsum3fp128",
+        args: [
+            Argument::GPR(GPR(ins.field_vd128() as _)),
+            Argument::GPR(GPR(ins.field_va128() as _)),
+            Argument::GPR(GPR(ins.field_vb128() as _)),
+            Argument::GPR(GPR(ins.field_va128_6() as _)),
+            Argument::GPR(GPR(ins.field_va128_5() as _)),
+            Argument::GPR(GPR(ins.field_vdh() as _)),
+            Argument::GPR(GPR(ins.field_vbh() as _)),
+            Argument::None,
+        ],
+    };
+}
+fn basic_vmsum4fp128(out: &mut ParsedIns, ins: Ins) {
+    *out = ParsedIns {
+        mnemonic: "vmsum4fp128",
+        args: [
+            Argument::GPR(GPR(ins.field_vd128() as _)),
+            Argument::GPR(GPR(ins.field_va128() as _)),
+            Argument::GPR(GPR(ins.field_vb128() as _)),
+            Argument::GPR(GPR(ins.field_va128_6() as _)),
+            Argument::GPR(GPR(ins.field_va128_5() as _)),
+            Argument::GPR(GPR(ins.field_vdh() as _)),
+            Argument::GPR(GPR(ins.field_vbh() as _)),
+            Argument::None,
+        ],
+    };
+}
+fn basic_vmulfp128(out: &mut ParsedIns, ins: Ins) {
+    *out = ParsedIns {
+        mnemonic: "vmulfp128",
+        args: [
+            Argument::GPR(GPR(ins.field_vd128() as _)),
+            Argument::GPR(GPR(ins.field_va128() as _)),
+            Argument::GPR(GPR(ins.field_vb128() as _)),
+            Argument::GPR(GPR(ins.field_va128_6() as _)),
+            Argument::GPR(GPR(ins.field_va128_5() as _)),
+            Argument::GPR(GPR(ins.field_vdh() as _)),
+            Argument::GPR(GPR(ins.field_vbh() as _)),
+            Argument::None,
+        ],
+    };
+}
+fn basic_vnmsubfp128(out: &mut ParsedIns, ins: Ins) {
+    *out = ParsedIns {
+        mnemonic: "vnmsubfp128",
+        args: [
+            Argument::GPR(GPR(ins.field_vd128() as _)),
+            Argument::GPR(GPR(ins.field_va128() as _)),
+            Argument::GPR(GPR(ins.field_vb128() as _)),
+            Argument::GPR(GPR(ins.field_va128_6() as _)),
+            Argument::GPR(GPR(ins.field_va128_5() as _)),
+            Argument::GPR(GPR(ins.field_vdh() as _)),
+            Argument::GPR(GPR(ins.field_vbh() as _)),
+            Argument::None,
+        ],
+    };
+}
+fn basic_vnor128(out: &mut ParsedIns, ins: Ins) {
+    *out = ParsedIns {
+        mnemonic: "vnor128",
+        args: [
+            Argument::GPR(GPR(ins.field_vd128() as _)),
+            Argument::GPR(GPR(ins.field_va128() as _)),
+            Argument::GPR(GPR(ins.field_vb128() as _)),
+            Argument::GPR(GPR(ins.field_va128_6() as _)),
+            Argument::GPR(GPR(ins.field_va128_5() as _)),
+            Argument::GPR(GPR(ins.field_vdh() as _)),
+            Argument::GPR(GPR(ins.field_vbh() as _)),
+            Argument::None,
+        ],
+    };
+}
+fn basic_vor128(out: &mut ParsedIns, ins: Ins) {
+    *out = ParsedIns {
+        mnemonic: "vor128",
+        args: [
+            Argument::GPR(GPR(ins.field_vd128() as _)),
+            Argument::GPR(GPR(ins.field_va128() as _)),
+            Argument::GPR(GPR(ins.field_vb128() as _)),
+            Argument::GPR(GPR(ins.field_va128_6() as _)),
+            Argument::GPR(GPR(ins.field_va128_5() as _)),
+            Argument::GPR(GPR(ins.field_vdh() as _)),
+            Argument::GPR(GPR(ins.field_vbh() as _)),
+            Argument::None,
+        ],
+    };
+}
+fn basic_vperm128(out: &mut ParsedIns, ins: Ins) {
+    *out = ParsedIns {
+        mnemonic: "vperm128",
+        args: [
+            Argument::GPR(GPR(ins.field_vd128() as _)),
+            Argument::GPR(GPR(ins.field_va128() as _)),
+            Argument::GPR(GPR(ins.field_vb128() as _)),
+            Argument::GPR(GPR(ins.field_va128_6() as _)),
+            Argument::GPR(GPR(ins.field_va128_5() as _)),
+            Argument::GPR(GPR(ins.field_vdh() as _)),
+            Argument::GPR(GPR(ins.field_vbh() as _)),
+            Argument::GPR(GPR(ins.field_vc128() as _)),
+        ],
+    };
+}
+fn basic_vpkshss128(out: &mut ParsedIns, ins: Ins) {
+    *out = ParsedIns {
+        mnemonic: "vpkshss128",
+        args: [
+            Argument::GPR(GPR(ins.field_vd128() as _)),
+            Argument::GPR(GPR(ins.field_va128() as _)),
+            Argument::GPR(GPR(ins.field_vb128() as _)),
+            Argument::GPR(GPR(ins.field_va128_6() as _)),
+            Argument::GPR(GPR(ins.field_va128_5() as _)),
+            Argument::GPR(GPR(ins.field_vdh() as _)),
+            Argument::GPR(GPR(ins.field_vbh() as _)),
+            Argument::None,
+        ],
+    };
+}
+fn basic_vpkshus128(out: &mut ParsedIns, ins: Ins) {
+    *out = ParsedIns {
+        mnemonic: "vpkshus128",
+        args: [
+            Argument::GPR(GPR(ins.field_vd128() as _)),
+            Argument::GPR(GPR(ins.field_va128() as _)),
+            Argument::GPR(GPR(ins.field_vb128() as _)),
+            Argument::GPR(GPR(ins.field_va128_6() as _)),
+            Argument::GPR(GPR(ins.field_va128_5() as _)),
+            Argument::GPR(GPR(ins.field_vdh() as _)),
+            Argument::GPR(GPR(ins.field_vbh() as _)),
+            Argument::None,
+        ],
+    };
+}
+fn basic_vpkswss128(out: &mut ParsedIns, ins: Ins) {
+    *out = ParsedIns {
+        mnemonic: "vpkswss128",
+        args: [
+            Argument::GPR(GPR(ins.field_vd128() as _)),
+            Argument::GPR(GPR(ins.field_va128() as _)),
+            Argument::GPR(GPR(ins.field_vb128() as _)),
+            Argument::GPR(GPR(ins.field_va128_6() as _)),
+            Argument::GPR(GPR(ins.field_va128_5() as _)),
+            Argument::GPR(GPR(ins.field_vdh() as _)),
+            Argument::GPR(GPR(ins.field_vbh() as _)),
+            Argument::None,
+        ],
+    };
+}
+fn basic_vpkswus128(out: &mut ParsedIns, ins: Ins) {
+    *out = ParsedIns {
+        mnemonic: "vpkswus128",
+        args: [
+            Argument::GPR(GPR(ins.field_vd128() as _)),
+            Argument::GPR(GPR(ins.field_va128() as _)),
+            Argument::GPR(GPR(ins.field_vb128() as _)),
+            Argument::GPR(GPR(ins.field_va128_6() as _)),
+            Argument::GPR(GPR(ins.field_va128_5() as _)),
+            Argument::GPR(GPR(ins.field_vdh() as _)),
+            Argument::GPR(GPR(ins.field_vbh() as _)),
+            Argument::None,
+        ],
+    };
+}
+fn basic_vpkuhum128(out: &mut ParsedIns, ins: Ins) {
+    *out = ParsedIns {
+        mnemonic: "vpkuhum128",
+        args: [
+            Argument::GPR(GPR(ins.field_vd128() as _)),
+            Argument::GPR(GPR(ins.field_va128() as _)),
+            Argument::GPR(GPR(ins.field_vb128() as _)),
+            Argument::GPR(GPR(ins.field_va128_6() as _)),
+            Argument::GPR(GPR(ins.field_va128_5() as _)),
+            Argument::GPR(GPR(ins.field_vdh() as _)),
+            Argument::GPR(GPR(ins.field_vbh() as _)),
+            Argument::None,
+        ],
+    };
+}
+fn basic_vpkuhus128(out: &mut ParsedIns, ins: Ins) {
+    *out = ParsedIns {
+        mnemonic: "vpkuhus128",
+        args: [
+            Argument::GPR(GPR(ins.field_vd128() as _)),
+            Argument::GPR(GPR(ins.field_va128() as _)),
+            Argument::GPR(GPR(ins.field_vb128() as _)),
+            Argument::GPR(GPR(ins.field_va128_6() as _)),
+            Argument::GPR(GPR(ins.field_va128_5() as _)),
+            Argument::GPR(GPR(ins.field_vdh() as _)),
+            Argument::GPR(GPR(ins.field_vbh() as _)),
+            Argument::None,
+        ],
+    };
+}
+fn basic_vpkuwum128(out: &mut ParsedIns, ins: Ins) {
+    *out = ParsedIns {
+        mnemonic: "vpkuwum128",
+        args: [
+            Argument::GPR(GPR(ins.field_vd128() as _)),
+            Argument::GPR(GPR(ins.field_va128() as _)),
+            Argument::GPR(GPR(ins.field_vb128() as _)),
+            Argument::GPR(GPR(ins.field_va128_6() as _)),
+            Argument::GPR(GPR(ins.field_va128_5() as _)),
+            Argument::GPR(GPR(ins.field_vdh() as _)),
+            Argument::GPR(GPR(ins.field_vbh() as _)),
+            Argument::None,
+        ],
+    };
+}
+fn basic_vpkuwus128(out: &mut ParsedIns, ins: Ins) {
+    *out = ParsedIns {
+        mnemonic: "vpkuwus128",
+        args: [
+            Argument::GPR(GPR(ins.field_vd128() as _)),
+            Argument::GPR(GPR(ins.field_va128() as _)),
+            Argument::GPR(GPR(ins.field_vb128() as _)),
+            Argument::GPR(GPR(ins.field_va128_6() as _)),
+            Argument::GPR(GPR(ins.field_va128_5() as _)),
+            Argument::GPR(GPR(ins.field_vdh() as _)),
+            Argument::GPR(GPR(ins.field_vbh() as _)),
+            Argument::None,
+        ],
+    };
+}
+fn basic_vrlw128(out: &mut ParsedIns, ins: Ins) {
+    *out = ParsedIns {
+        mnemonic: "vrlw128",
+        args: [
+            Argument::GPR(GPR(ins.field_vd128() as _)),
+            Argument::GPR(GPR(ins.field_va128() as _)),
+            Argument::GPR(GPR(ins.field_vb128() as _)),
+            Argument::GPR(GPR(ins.field_va128_6() as _)),
+            Argument::GPR(GPR(ins.field_va128_5() as _)),
+            Argument::GPR(GPR(ins.field_vdh() as _)),
+            Argument::GPR(GPR(ins.field_vbh() as _)),
+            Argument::None,
+        ],
+    };
+}
+fn basic_vsel128(out: &mut ParsedIns, ins: Ins) {
+    *out = ParsedIns {
+        mnemonic: "vsel128",
+        args: [
+            Argument::GPR(GPR(ins.field_vd128() as _)),
+            Argument::GPR(GPR(ins.field_va128() as _)),
+            Argument::GPR(GPR(ins.field_vb128() as _)),
+            Argument::GPR(GPR(ins.field_va128_6() as _)),
+            Argument::GPR(GPR(ins.field_va128_5() as _)),
+            Argument::GPR(GPR(ins.field_vdh() as _)),
+            Argument::GPR(GPR(ins.field_vbh() as _)),
+            Argument::None,
+        ],
+    };
+}
+fn basic_vslo128(out: &mut ParsedIns, ins: Ins) {
+    *out = ParsedIns {
+        mnemonic: "vslo128",
+        args: [
+            Argument::GPR(GPR(ins.field_vd128() as _)),
+            Argument::GPR(GPR(ins.field_va128() as _)),
+            Argument::GPR(GPR(ins.field_vb128() as _)),
+            Argument::GPR(GPR(ins.field_va128_6() as _)),
+            Argument::GPR(GPR(ins.field_va128_5() as _)),
+            Argument::GPR(GPR(ins.field_vdh() as _)),
+            Argument::GPR(GPR(ins.field_vbh() as _)),
+            Argument::None,
+        ],
+    };
+}
+fn basic_vsubfp128(out: &mut ParsedIns, ins: Ins) {
+    *out = ParsedIns {
+        mnemonic: "vsubfp128",
+        args: [
+            Argument::GPR(GPR(ins.field_vd128() as _)),
+            Argument::GPR(GPR(ins.field_va128() as _)),
+            Argument::GPR(GPR(ins.field_vb128() as _)),
+            Argument::GPR(GPR(ins.field_va128_6() as _)),
+            Argument::GPR(GPR(ins.field_va128_5() as _)),
+            Argument::GPR(GPR(ins.field_vdh() as _)),
+            Argument::GPR(GPR(ins.field_vbh() as _)),
+            Argument::None,
+        ],
+    };
+}
+fn basic_vxor128(out: &mut ParsedIns, ins: Ins) {
+    *out = ParsedIns {
+        mnemonic: "vxor128",
+        args: [
+            Argument::GPR(GPR(ins.field_vd128() as _)),
+            Argument::GPR(GPR(ins.field_va128() as _)),
+            Argument::GPR(GPR(ins.field_vb128() as _)),
+            Argument::GPR(GPR(ins.field_va128_6() as _)),
+            Argument::GPR(GPR(ins.field_va128_5() as _)),
+            Argument::GPR(GPR(ins.field_vdh() as _)),
+            Argument::GPR(GPR(ins.field_vbh() as _)),
+            Argument::None,
+        ],
+    };
+}
+fn basic_vcfpsxws128(out: &mut ParsedIns, ins: Ins) {
+    *out = ParsedIns {
+        mnemonic: "vcfpsxws128",
+        args: [
+            Argument::GPR(GPR(ins.field_vd128() as _)),
+            Argument::Simm(Simm(ins.field_vsimm() as _)),
+            Argument::GPR(GPR(ins.field_vb128() as _)),
+            Argument::GPR(GPR(ins.field_vdh() as _)),
+            Argument::GPR(GPR(ins.field_vbh() as _)),
+            Argument::None,
+            Argument::None,
+            Argument::None,
+        ],
+    };
+}
+fn basic_vcfpuxws128(out: &mut ParsedIns, ins: Ins) {
+    *out = ParsedIns {
+        mnemonic: "vcfpuxws128",
+        args: [
+            Argument::GPR(GPR(ins.field_vd128() as _)),
+            Argument::Uimm(Uimm(ins.field_vuimm() as _)),
+            Argument::GPR(GPR(ins.field_vb128() as _)),
+            Argument::GPR(GPR(ins.field_vdh() as _)),
+            Argument::GPR(GPR(ins.field_vbh() as _)),
+            Argument::None,
+            Argument::None,
+            Argument::None,
+        ],
+    };
+}
+fn basic_vcmpbfp128(out: &mut ParsedIns, ins: Ins) {
     *out = {
-        const MODIFIERS: [&str; 2] = ["ps_div", "ps_div."];
+        const MODIFIERS: [&str; 2] = ["vcmpbfp128", "vcmpbfp128\0"];
         ParsedIns {
-            mnemonic: MODIFIERS[ins.field_rc() as usize],
+            mnemonic: MODIFIERS[ins.field_rc128() as usize],
             args: [
-                Argument::FPR(FPR(ins.field_frd() as _)),
-                Argument::FPR(FPR(ins.field_fra() as _)),
-                Argument::FPR(FPR(ins.field_frb() as _)),
-                Argument::None,
+                Argument::GPR(GPR(ins.field_vd128() as _)),
+                Argument::GPR(GPR(ins.field_va128() as _)),
+                Argument::GPR(GPR(ins.field_vb128() as _)),
+                Argument::GPR(GPR(ins.field_va128_6() as _)),
+                Argument::GPR(GPR(ins.field_va128_5() as _)),
+                Argument::GPR(GPR(ins.field_vdh() as _)),
+                Argument::GPR(GPR(ins.field_vbh() as _)),
                 Argument::None,
             ],
         }
     };
 }
-fn basic_ps_madd(out: &mut ParsedIns, ins: Ins) {
+fn basic_vcmpeqfp128(out: &mut ParsedIns, ins: Ins) {
     *out = {
-        const MODIFIERS: [&str; 2] = ["ps_madd", "ps_madd."];
+        const MODIFIERS: [&str; 2] = ["vcmpeqfp128", "vcmpeqfp128\0"];
         ParsedIns {
-            mnemonic: MODIFIERS[ins.field_rc() as usize],
+            mnemonic: MODIFIERS[ins.field_rc128() as usize],
             args: [
-                Argument::FPR(FPR(ins.field_frd() as _)),
-                Argument::FPR(FPR(ins.field_fra() as _)),
-                Argument::FPR(FPR(ins.field_frc() as _)),
-                Argument::FPR(FPR(ins.field_frb() as _)),
+                Argument::GPR(GPR(ins.field_vd128() as _)),
+                Argument::GPR(GPR(ins.field_va128() as _)),
+                Argument::GPR(GPR(ins.field_vb128() as _)),
+                Argument::GPR(GPR(ins.field_va128_6() as _)),
+                Argument::GPR(GPR(ins.field_va128_5() as _)),
+                Argument::GPR(GPR(ins.field_vdh() as _)),
+                Argument::GPR(GPR(ins.field_vbh() as _)),
                 Argument::None,
             ],
         }
     };
 }
-fn basic_ps_madds0(out: &mut ParsedIns, ins: Ins) {
+fn basic_vcmpequw128(out: &mut ParsedIns, ins: Ins) {
     *out = {
-        const MODIFIERS: [&str; 2] = ["ps_madds0", "ps_madds0."];
+        const MODIFIERS: [&str; 2] = ["vcmpequw128", "vcmpequw128\0"];
         ParsedIns {
-            mnemonic: MODIFIERS[ins.field_rc() as usize],
+            mnemonic: MODIFIERS[ins.field_rc128() as usize],
             args: [
-                Argument::FPR(FPR(ins.field_frd() as _)),
-                Argument::FPR(FPR(ins.field_fra() as _)),
-                Argument::FPR(FPR(ins.field_frc() as _)),
-                Argument::FPR(FPR(ins.field_frb() as _)),
+                Argument::GPR(GPR(ins.field_vd128() as _)),
+                Argument::GPR(GPR(ins.field_va128() as _)),
+                Argument::GPR(GPR(ins.field_vb128() as _)),
+                Argument::GPR(GPR(ins.field_va128_6() as _)),
+                Argument::GPR(GPR(ins.field_va128_5() as _)),
+                Argument::GPR(GPR(ins.field_vdh() as _)),
+                Argument::GPR(GPR(ins.field_vbh() as _)),
                 Argument::None,
             ],
         }
     };
 }
-fn basic_ps_madds1(out: &mut ParsedIns, ins: Ins) {
+fn basic_vcmpgefp128(out: &mut ParsedIns, ins: Ins) {
     *out = {
-        const MODIFIERS: [&str; 2] = ["ps_madds1", "ps_madds1."];
+        const MODIFIERS: [&str; 2] = ["vcmpgefp128", "vcmpgefp128\0"];
         ParsedIns {
-            mnemonic: MODIFIERS[ins.field_rc() as usize],
+            mnemonic: MODIFIERS[ins.field_rc128() as usize],
             args: [
-                Argument::FPR(FPR(ins.field_frd() as _)),
-                Argument::FPR(FPR(ins.field_fra() as _)),
-                Argument::FPR(FPR(ins.field_frc() as _)),
-                Argument::FPR(FPR(ins.field_frb() as _)),
+                Argument::GPR(GPR(ins.field_vd128() as _)),
+                Argument::GPR(GPR(ins.field_va128() as _)),
+                Argument::GPR(GPR(ins.field_vb128() as _)),
+                Argument::GPR(GPR(ins.field_va128_6() as _)),
+                Argument::GPR(GPR(ins.field_va128_5() as _)),
+                Argument::GPR(GPR(ins.field_vdh() as _)),
+                Argument::GPR(GPR(ins.field_vbh() as _)),
                 Argument::None,
             ],
         }
     };
 }
-fn basic_ps_merge00(out: &mut ParsedIns, ins: Ins) {
+fn basic_vcmpgtfp128(out: &mut ParsedIns, ins: Ins) {
     *out = {
-        const MODIFIERS: [&str; 2] = ["ps_merge00", "ps_merge00."];
+        const MODIFIERS: [&str; 2] = ["vcmpgtfp128", "vcmpgtfp128\0"];
         ParsedIns {
-            mnemonic: MODIFIERS[ins.field_rc() as usize],
+            mnemonic: MODIFIERS[ins.field_rc128() as usize],
             args: [
-                Argument::FPR(FPR(ins.field_frd() as _)),
-                Argument::FPR(FPR(ins.field_fra() as _)),
-                Argument::FPR(FPR(ins.field_frb() as _)),
-                Argument::None,
+                Argument::GPR(GPR(ins.field_vd128() as _)),
+                Argument::GPR(GPR(ins.field_va128() as _)),
+                Argument::GPR(GPR(ins.field_vb128() as _)),
+                Argument::GPR(GPR(ins.field_va128_6() as _)),
+                Argument::GPR(GPR(ins.field_va128_5() as _)),
+                Argument::GPR(GPR(ins.field_vdh() as _)),
+                Argument::GPR(GPR(ins.field_vbh() as _)),
                 Argument::None,
             ],
         }
     };
 }
-fn basic_ps_merge01(out: &mut ParsedIns, ins: Ins) {
-    *out = {
-        const MODIFIERS: [&str; 2] = ["ps_merge01", "ps_merge01."];
-        ParsedIns {
-            mnemonic: MODIFIERS[ins.field_rc() as usize],
-            args: [
-                Argument::FPR(FPR(ins.field_frd() as _)),
-                Argument::FPR(FPR(ins.field_fra() as _)),
-                Argument::FPR(FPR(ins.field_frb() as _)),
-                Argument::None,
-                Argument::None,
-            ],
-        }
+fn basic_vcsxwfp128(out: &mut ParsedIns, ins: Ins) {
+    *out = ParsedIns {
+        mnemonic: "vcsxwfp128",
+        args: [
+            Argument::GPR(GPR(ins.field_vd128() as _)),
+            Argument::Simm(Simm(ins.field_vsimm() as _)),
+            Argument::GPR(GPR(ins.field_vb128() as _)),
+            Argument::GPR(GPR(ins.field_vdh() as _)),
+            Argument::GPR(GPR(ins.field_vbh() as _)),
+            Argument::None,
+            Argument::None,
+            Argument::None,
+        ],
     };
 }
-fn basic_ps_merge10(out: &mut ParsedIns, ins: Ins) {
-    *out = {
-        const MODIFIERS: [&str; 2] = ["ps_merge10", "ps_merge10."];
-        ParsedIns {
-            mnemonic: MODIFIERS[ins.field_rc() as usize],
-            args: [
-                Argument::FPR(FPR(ins.field_frd() as _)),
-                Argument::FPR(FPR(ins.field_fra() as _)),
-                Argument::FPR(FPR(ins.field_frb() as _)),
-                Argument::None,
-                Argument::None,
-            ],
-        }
+fn basic_vcuxwfp128(out: &mut ParsedIns, ins: Ins) {
+    *out = ParsedIns {
+        mnemonic: "vcuxwfp128",
+        args: [
+            Argument::GPR(GPR(ins.field_vd128() as _)),
+            Argument::Uimm(Uimm(ins.field_vuimm() as _)),
+            Argument::GPR(GPR(ins.field_vb128() as _)),
+            Argument::GPR(GPR(ins.field_vdh() as _)),
+            Argument::GPR(GPR(ins.field_vbh() as _)),
+            Argument::None,
+            Argument::None,
+            Argument::None,
+        ],
     };
 }
-fn basic_ps_merge11(out: &mut ParsedIns, ins: Ins) {
-    *out = {
-        const MODIFIERS: [&str; 2] = ["ps_merge11", "ps_merge11."];
-        ParsedIns {
-            mnemonic: MODIFIERS[ins.field_rc() as usize],
-            args: [
-                Argument::FPR(FPR(ins.field_frd() as _)),
-                Argument::FPR(FPR(ins.field_fra() as _)),
-                Argument::FPR(FPR(ins.field_frb() as _)),
-                Argument::None,
-                Argument::None,
-            ],
-        }
+fn basic_vexptefp128(out: &mut ParsedIns, ins: Ins) {
+    *out = ParsedIns {
+        mnemonic: "vexptefp128",
+        args: [
+            Argument::GPR(GPR(ins.field_vd128() as _)),
+            Argument::GPR(GPR(ins.field_vb128() as _)),
+            Argument::GPR(GPR(ins.field_vdh() as _)),
+            Argument::GPR(GPR(ins.field_vbh() as _)),
+            Argument::None,
+            Argument::None,
+            Argument::None,
+            Argument::None,
+        ],
     };
 }
-fn basic_ps_mr(out: &mut ParsedIns, ins: Ins) {
-    *out = {
-        const MODIFIERS: [&str; 2] = ["ps_mr", "ps_mr."];
-        ParsedIns {
-            mnemonic: MODIFIERS[ins.field_rc() as usize],
-            args: [
-                Argument::FPR(FPR(ins.field_frd() as _)),
-                Argument::FPR(FPR(ins.field_frb() as _)),
-                Argument::None,
-                Argument::None,
-                Argument::None,
-            ],
-        }
+fn basic_vlogefp128(out: &mut ParsedIns, ins: Ins) {
+    *out = ParsedIns {
+        mnemonic: "vlogefp128",
+        args: [
+            Argument::GPR(GPR(ins.field_vd128() as _)),
+            Argument::GPR(GPR(ins.field_vb128() as _)),
+            Argument::GPR(GPR(ins.field_vdh() as _)),
+            Argument::GPR(GPR(ins.field_vbh() as _)),
+            Argument::None,
+            Argument::None,
+            Argument::None,
+            Argument::None,
+        ],
     };
 }
-fn basic_ps_msub(out: &mut ParsedIns, ins: Ins) {
-    *out = {
-        const MODIFIERS: [&str; 2] = ["ps_msub", "ps_msub."];
-        ParsedIns {
-            mnemonic: MODIFIERS[ins.field_rc() as usize],
-            args: [
-                Argument::FPR(FPR(ins.field_frd() as _)),
-                Argument::FPR(FPR(ins.field_fra() as _)),
-                Argument::FPR(FPR(ins.field_frc() as _)),
-                Argument::FPR(FPR(ins.field_frb() as _)),
-                Argument::None,
-            ],
-        }
+fn basic_vmaxfp128(out: &mut ParsedIns, ins: Ins) {
+    *out = ParsedIns {
+        mnemonic: "vmaxfp128",
+        args: [
+            Argument::GPR(GPR(ins.field_vd128() as _)),
+            Argument::GPR(GPR(ins.field_va128() as _)),
+            Argument::GPR(GPR(ins.field_vb128() as _)),
+            Argument::GPR(GPR(ins.field_va128_6() as _)),
+            Argument::GPR(GPR(ins.field_va128_5() as _)),
+            Argument::GPR(GPR(ins.field_vdh() as _)),
+            Argument::GPR(GPR(ins.field_vbh() as _)),
+            Argument::None,
+        ],
     };
 }
-fn basic_ps_mul(out: &mut ParsedIns, ins: Ins) {
-    *out = {
-        const MODIFIERS: [&str; 2] = ["ps_mul", "ps_mul."];
-        ParsedIns {
-            mnemonic: MODIFIERS[ins.field_rc() as usize],
-            args: [
-                Argument::FPR(FPR(ins.field_frd() as _)),
-                Argument::FPR(FPR(ins.field_fra() as _)),
-                Argument::FPR(FPR(ins.field_frc() as _)),
-                Argument::None,
-                Argument::None,
-            ],
-        }
+fn basic_vminfp128(out: &mut ParsedIns, ins: Ins) {
+    *out = ParsedIns {
+        mnemonic: "vminfp128",
+        args: [
+            Argument::GPR(GPR(ins.field_vd128() as _)),
+            Argument::GPR(GPR(ins.field_va128() as _)),
+            Argument::GPR(GPR(ins.field_vb128() as _)),
+            Argument::GPR(GPR(ins.field_va128_6() as _)),
+            Argument::GPR(GPR(ins.field_va128_5() as _)),
+            Argument::GPR(GPR(ins.field_vdh() as _)),
+            Argument::GPR(GPR(ins.field_vbh() as _)),
+            Argument::None,
+        ],
     };
 }
-fn basic_ps_muls0(out: &mut ParsedIns, ins: Ins) {
-    *out = {
-        const MODIFIERS: [&str; 2] = ["ps_muls0", "ps_muls0."];
-        ParsedIns {
-            mnemonic: MODIFIERS[ins.field_rc() as usize],
-            args: [
-                Argument::FPR(FPR(ins.field_frd() as _)),
-                Argument::FPR(FPR(ins.field_fra() as _)),
-                Argument::FPR(FPR(ins.field_frc() as _)),
-                Argument::None,
-                Argument::None,
-            ],
-        }
+fn basic_vmrghw128(out: &mut ParsedIns, ins: Ins) {
+    *out = ParsedIns {
+        mnemonic: "vmrghw128",
+        args: [
+            Argument::GPR(GPR(ins.field_vd128() as _)),
+            Argument::GPR(GPR(ins.field_va128() as _)),
+            Argument::GPR(GPR(ins.field_vb128() as _)),
+            Argument::GPR(GPR(ins.field_va128_6() as _)),
+            Argument::GPR(GPR(ins.field_va128_5() as _)),
+            Argument::GPR(GPR(ins.field_vdh() as _)),
+            Argument::GPR(GPR(ins.field_vbh() as _)),
+            Argument::None,
+        ],
     };
 }
-fn basic_ps_muls1(out: &mut ParsedIns, ins: Ins) {
-    *out = {
-        const MODIFIERS: [&str; 2] = ["ps_muls1", "ps_muls1."];
-        ParsedIns {
-            mnemonic: MODIFIERS[ins.field_rc() as usize],
-            args: [
-                Argument::FPR(FPR(ins.field_frd() as _)),
-                Argument::FPR(FPR(ins.field_fra() as _)),
-                Argument::FPR(FPR(ins.field_frc() as _)),
-                Argument::None,
-                Argument::None,
-            ],
-        }
+fn basic_vmrglw128(out: &mut ParsedIns, ins: Ins) {
+    *out = ParsedIns {
+        mnemonic: "vmrglw128",
+        args: [
+            Argument::GPR(GPR(ins.field_vd128() as _)),
+            Argument::GPR(GPR(ins.field_va128() as _)),
+            Argument::GPR(GPR(ins.field_vb128() as _)),
+            Argument::GPR(GPR(ins.field_va128_6() as _)),
+            Argument::GPR(GPR(ins.field_va128_5() as _)),
+            Argument::GPR(GPR(ins.field_vdh() as _)),
+            Argument::GPR(GPR(ins.field_vbh() as _)),
+            Argument::None,
+        ],
     };
 }
-fn basic_ps_nabs(out: &mut ParsedIns, ins: Ins) {
-    *out = {
-        const MODIFIERS: [&str; 2] = ["ps_nabs", "ps_nabs."];
-        ParsedIns {
-            mnemonic: MODIFIERS[ins.field_rc() as usize],
-            args: [
-                Argument::FPR(FPR(ins.field_frd() as _)),
-                Argument::FPR(FPR(ins.field_frb() as _)),
-                Argument::None,
-                Argument::None,
-                Argument::None,
-            ],
-        }
+fn basic_vpermwi128(out: &mut ParsedIns, ins: Ins) {
+    *out = ParsedIns {
+        mnemonic: "vpermwi128",
+        args: [
+            Argument::GPR(GPR(ins.field_vd128() as _)),
+            Argument::GPR(GPR(ins.field_vb128() as _)),
+            Argument::GPR(GPR(ins.field_vdh() as _)),
+            Argument::GPR(GPR(ins.field_vbh() as _)),
+            Argument::OpaqueU(OpaqueU(ins.field_permh() as _)),
+            Argument::OpaqueU(OpaqueU(ins.field_perml() as _)),
+            Argument::None,
+            Argument::None,
+        ],
     };
 }
-fn basic_ps_neg(out: &mut ParsedIns, ins: Ins) {
-    *out = {
-        const MODIFIERS: [&str; 2] = ["ps_neg", "ps_neg."];
-        ParsedIns {
-            mnemonic: MODIFIERS[ins.field_rc() as usize],
-            args: [
-                Argument::FPR(FPR(ins.field_frd() as _)),
-                Argument::FPR(FPR(ins.field_frb() as _)),
-                Argument::None,
-                Argument::None,
-                Argument::None,
-            ],
-        }
+fn basic_vpkd3d128(out: &mut ParsedIns, ins: Ins) {
+    *out = ParsedIns {
+        mnemonic: "vpkd3d128",
+        args: [
+            Argument::GPR(GPR(ins.field_vd128() as _)),
+            Argument::GPR(GPR(ins.field_vb128() as _)),
+            Argument::GPR(GPR(ins.field_vdh() as _)),
+            Argument::GPR(GPR(ins.field_vbh() as _)),
+            Argument::OpaqueU(OpaqueU(ins.field_ximm() as _)),
+            Argument::OpaqueU(OpaqueU(ins.field_yimm() as _)),
+            Argument::OpaqueU(OpaqueU(ins.field_zimm() as _)),
+            Argument::None,
+        ],
     };
 }
-fn basic_ps_nmadd(out: &mut ParsedIns, ins: Ins) {
-    *out = {
-        const MODIFIERS: [&str; 2] = ["ps_nmadd", "ps_nmadd."];
-        ParsedIns {
-            mnemonic: MODIFIERS[ins.field_rc() as usize],
-            args: [
-                Argument::FPR(FPR(ins.field_frd() as _)),
-                Argument::FPR(FPR(ins.field_fra() as _)),
-                Argument::FPR(FPR(ins.field_frc() as _)),
-                Argument::FPR(FPR(ins.field_frb() as _)),
-                Argument::None,
-            ],
-        }
+fn basic_vrefp128(out: &mut ParsedIns, ins: Ins) {
+    *out = ParsedIns {
+        mnemonic: "vrefp128",
+        args: [
+            Argument::GPR(GPR(ins.field_vd128() as _)),
+            Argument::GPR(GPR(ins.field_vb128() as _)),
+            Argument::GPR(GPR(ins.field_vdh() as _)),
+            Argument::GPR(GPR(ins.field_vbh() as _)),
+            Argument::None,
+            Argument::None,
+            Argument::None,
+            Argument::None,
+        ],
     };
 }
-fn basic_ps_nmsub(out: &mut ParsedIns, ins: Ins) {
-    *out = {
-        const MODIFIERS: [&str; 2] = ["ps_nmsub", "ps_nmsub."];
-        ParsedIns {
-            mnemonic: MODIFIERS[ins.field_rc() as usize],
-            args: [
-                Argument::FPR(FPR(ins.field_frd() as _)),
-                Argument::FPR(FPR(ins.field_fra() as _)),
-                Argument::FPR(FPR(ins.field_frc() as _)),
-                Argument::FPR(FPR(ins.field_frb() as _)),
-                Argument::None,
-            ],
-        }
+fn basic_vrfim128(out: &mut ParsedIns, ins: Ins) {
+    *out = ParsedIns {
+        mnemonic: "vrfim128",
+        args: [
+            Argument::GPR(GPR(ins.field_vd128() as _)),
+            Argument::GPR(GPR(ins.field_vb128() as _)),
+            Argument::GPR(GPR(ins.field_vdh() as _)),
+            Argument::GPR(GPR(ins.field_vbh() as _)),
+            Argument::None,
+            Argument::None,
+            Argument::None,
+            Argument::None,
+        ],
     };
 }
-fn basic_ps_res(out: &mut ParsedIns, ins: Ins) {
-    *out = {
-        const MODIFIERS: [&str; 2] = ["ps_res", "ps_res."];
-        ParsedIns {
-            mnemonic: MODIFIERS[ins.field_rc() as usize],
-            args: [
-                Argument::FPR(FPR(ins.field_frd() as _)),
-                Argument::FPR(FPR(ins.field_frb() as _)),
-                Argument::None,
-                Argument::None,
-                Argument::None,
-            ],
-        }
+fn basic_vrfin128(out: &mut ParsedIns, ins: Ins) {
+    *out = ParsedIns {
+        mnemonic: "vrfin128",
+        args: [
+            Argument::GPR(GPR(ins.field_vd128() as _)),
+            Argument::GPR(GPR(ins.field_vb128() as _)),
+            Argument::GPR(GPR(ins.field_vdh() as _)),
+            Argument::GPR(GPR(ins.field_vbh() as _)),
+            Argument::None,
+            Argument::None,
+            Argument::None,
+            Argument::None,
+        ],
     };
 }
-fn basic_ps_rsqrte(out: &mut ParsedIns, ins: Ins) {
-    *out = {
-        const MODIFIERS: [&str; 2] = ["ps_rsqrte", "ps_rsqrte."];
-        ParsedIns {
-            mnemonic: MODIFIERS[ins.field_rc() as usize],
-            args: [
-                Argument::FPR(FPR(ins.field_frd() as _)),
-                Argument::FPR(FPR(ins.field_frb() as _)),
-                Argument::None,
-                Argument::None,
-                Argument::None,
-            ],
-        }
+fn basic_vrfip128(out: &mut ParsedIns, ins: Ins) {
+    *out = ParsedIns {
+        mnemonic: "vrfip128",
+        args: [
+            Argument::GPR(GPR(ins.field_vd128() as _)),
+            Argument::GPR(GPR(ins.field_vb128() as _)),
+            Argument::GPR(GPR(ins.field_vdh() as _)),
+            Argument::GPR(GPR(ins.field_vbh() as _)),
+            Argument::None,
+            Argument::None,
+            Argument::None,
+            Argument::None,
+        ],
     };
 }
-fn basic_ps_sel(out: &mut ParsedIns, ins: Ins) {
-    *out = {
-        const MODIFIERS: [&str; 2] = ["ps_sel", "ps_sel."];
-        ParsedIns {
-            mnemonic: MODIFIERS[ins.field_rc() as usize],
-            args: [
-                Argument::FPR(FPR(ins.field_frd() as _)),
-                Argument::FPR(FPR(ins.field_fra() as _)),
-                Argument::FPR(FPR(ins.field_frc() as _)),
-                Argument::FPR(FPR(ins.field_frb() as _)),
-                Argument::None,
-            ],
-        }
+fn basic_vrfiz128(out: &mut ParsedIns, ins: Ins) {
+    *out = ParsedIns {
+        mnemonic: "vrfiz128",
+        args: [
+            Argument::GPR(GPR(ins.field_vd128() as _)),
+            Argument::GPR(GPR(ins.field_vb128() as _)),
+            Argument::GPR(GPR(ins.field_vdh() as _)),
+            Argument::GPR(GPR(ins.field_vbh() as _)),
+            Argument::None,
+            Argument::None,
+            Argument::None,
+            Argument::None,
+        ],
     };
 }
-fn basic_ps_sub(out: &mut ParsedIns, ins: Ins) {
-    *out = {
-        const MODIFIERS: [&str; 2] = ["ps_sub", "ps_sub."];
-        ParsedIns {
-            mnemonic: MODIFIERS[ins.field_rc() as usize],
-            args: [
-                Argument::FPR(FPR(ins.field_frd() as _)),
-                Argument::FPR(FPR(ins.field_fra() as _)),
-                Argument::FPR(FPR(ins.field_frb() as _)),
-                Argument::None,
-                Argument::None,
-            ],
-        }
+fn basic_vrlimi128(out: &mut ParsedIns, ins: Ins) {
+    *out = ParsedIns {
+        mnemonic: "vrlimi128",
+        args: [
+            Argument::GPR(GPR(ins.field_vd128() as _)),
+            Argument::Uimm(Uimm(ins.field_vuimm() as _)),
+            Argument::GPR(GPR(ins.field_vb128() as _)),
+            Argument::GPR(GPR(ins.field_vdh() as _)),
+            Argument::GPR(GPR(ins.field_vbh() as _)),
+            Argument::OpaqueU(OpaqueU(ins.field_zimm() as _)),
+            Argument::None,
+            Argument::None,
+        ],
     };
 }
-fn basic_ps_sum0(out: &mut ParsedIns, ins: Ins) {
-    *out = {
-        const MODIFIERS: [&str; 2] = ["ps_sum0", "ps_sum0."];
-        ParsedIns {
-            mnemonic: MODIFIERS[ins.field_rc() as usize],
-            args: [
-                Argument::FPR(FPR(ins.field_frd() as _)),
-                Argument::FPR(FPR(ins.field_fra() as _)),
-                Argument::FPR(FPR(ins.field_frc() as _)),
-                Argument::FPR(FPR(ins.field_frb() as _)),
-                Argument::None,
-            ],
-        }
+fn basic_vrsqrtefp128(out: &mut ParsedIns, ins: Ins) {
+    *out = ParsedIns {
+        mnemonic: "vrsqrtefp128",
+        args: [
+            Argument::GPR(GPR(ins.field_vd128() as _)),
+            Argument::GPR(GPR(ins.field_vb128() as _)),
+            Argument::GPR(GPR(ins.field_vdh() as _)),
+            Argument::GPR(GPR(ins.field_vbh() as _)),
+            Argument::None,
+            Argument::None,
+            Argument::None,
+            Argument::None,
+        ],
     };
 }
-fn basic_ps_sum1(out: &mut ParsedIns, ins: Ins) {
-    *out = {
-        const MODIFIERS: [&str; 2] = ["ps_sum1", "ps_sum1."];
-        ParsedIns {
-            mnemonic: MODIFIERS[ins.field_rc() as usize],
-            args: [
-                Argument::FPR(FPR(ins.field_frd() as _)),
-                Argument::FPR(FPR(ins.field_fra() as _)),
-                Argument::FPR(FPR(ins.field_frc() as _)),
-                Argument::FPR(FPR(ins.field_frb() as _)),
-                Argument::None,
-            ],
-        }
+fn basic_vslw128(out: &mut ParsedIns, ins: Ins) {
+    *out = ParsedIns {
+        mnemonic: "vslw128",
+        args: [
+            Argument::GPR(GPR(ins.field_vd128() as _)),
+            Argument::GPR(GPR(ins.field_va128() as _)),
+            Argument::GPR(GPR(ins.field_vb128() as _)),
+            Argument::GPR(GPR(ins.field_va128_6() as _)),
+            Argument::GPR(GPR(ins.field_va128_5() as _)),
+            Argument::GPR(GPR(ins.field_vdh() as _)),
+            Argument::GPR(GPR(ins.field_vbh() as _)),
+            Argument::None,
+        ],
+    };
+}
+fn basic_vspltisw128(out: &mut ParsedIns, ins: Ins) {
+    *out = ParsedIns {
+        mnemonic: "vspltisw128",
+        args: [
+            Argument::GPR(GPR(ins.field_vd128() as _)),
+            Argument::Simm(Simm(ins.field_vsimm() as _)),
+            Argument::GPR(GPR(ins.field_vb128() as _)),
+            Argument::GPR(GPR(ins.field_vdh() as _)),
+            Argument::GPR(GPR(ins.field_vbh() as _)),
+            Argument::None,
+            Argument::None,
+            Argument::None,
+        ],
+    };
+}
+fn basic_vspltw128(out: &mut ParsedIns, ins: Ins) {
+    *out = ParsedIns {
+        mnemonic: "vspltw128",
+        args: [
+            Argument::GPR(GPR(ins.field_vd128() as _)),
+            Argument::Uimm(Uimm(ins.field_vuimm() as _)),
+            Argument::GPR(GPR(ins.field_vb128() as _)),
+            Argument::GPR(GPR(ins.field_vdh() as _)),
+            Argument::GPR(GPR(ins.field_vbh() as _)),
+            Argument::None,
+            Argument::None,
+            Argument::None,
+        ],
+    };
+}
+fn basic_vsraw128(out: &mut ParsedIns, ins: Ins) {
+    *out = ParsedIns {
+        mnemonic: "vsraw128",
+        args: [
+            Argument::GPR(GPR(ins.field_vd128() as _)),
+            Argument::GPR(GPR(ins.field_va128() as _)),
+            Argument::GPR(GPR(ins.field_vb128() as _)),
+            Argument::GPR(GPR(ins.field_va128_6() as _)),
+            Argument::GPR(GPR(ins.field_va128_5() as _)),
+            Argument::GPR(GPR(ins.field_vdh() as _)),
+            Argument::GPR(GPR(ins.field_vbh() as _)),
+            Argument::None,
+        ],
+    };
+}
+fn basic_vsro128(out: &mut ParsedIns, ins: Ins) {
+    *out = ParsedIns {
+        mnemonic: "vsro128",
+        args: [
+            Argument::GPR(GPR(ins.field_vd128() as _)),
+            Argument::GPR(GPR(ins.field_va128() as _)),
+            Argument::GPR(GPR(ins.field_vb128() as _)),
+            Argument::GPR(GPR(ins.field_va128_6() as _)),
+            Argument::GPR(GPR(ins.field_va128_5() as _)),
+            Argument::GPR(GPR(ins.field_vdh() as _)),
+            Argument::GPR(GPR(ins.field_vbh() as _)),
+            Argument::None,
+        ],
+    };
+}
+fn basic_vsrw128(out: &mut ParsedIns, ins: Ins) {
+    *out = ParsedIns {
+        mnemonic: "vsrw128",
+        args: [
+            Argument::GPR(GPR(ins.field_vd128() as _)),
+            Argument::GPR(GPR(ins.field_va128() as _)),
+            Argument::GPR(GPR(ins.field_vb128() as _)),
+            Argument::GPR(GPR(ins.field_va128_6() as _)),
+            Argument::GPR(GPR(ins.field_va128_5() as _)),
+            Argument::GPR(GPR(ins.field_vdh() as _)),
+            Argument::GPR(GPR(ins.field_vbh() as _)),
+            Argument::None,
+        ],
+    };
+}
+fn basic_vupkd3d128(out: &mut ParsedIns, ins: Ins) {
+    *out = ParsedIns {
+        mnemonic: "vupkd3d128",
+        args: [
+            Argument::GPR(GPR(ins.field_vd128() as _)),
+            Argument::Uimm(Uimm(ins.field_vuimm() as _)),
+            Argument::GPR(GPR(ins.field_vb128() as _)),
+            Argument::GPR(GPR(ins.field_vdh() as _)),
+            Argument::GPR(GPR(ins.field_vbh() as _)),
+            Argument::None,
+            Argument::None,
+            Argument::None,
+        ],
+    };
+}
+fn basic_vupkhsb128(out: &mut ParsedIns, ins: Ins) {
+    *out = ParsedIns {
+        mnemonic: "vupkhsb128",
+        args: [
+            Argument::GPR(GPR(ins.field_vd128() as _)),
+            Argument::GPR(GPR(ins.field_vb128() as _)),
+            Argument::GPR(GPR(ins.field_vdh() as _)),
+            Argument::GPR(GPR(ins.field_vbh() as _)),
+            Argument::None,
+            Argument::None,
+            Argument::None,
+            Argument::None,
+        ],
+    };
+}
+fn basic_vupklsb128(out: &mut ParsedIns, ins: Ins) {
+    *out = ParsedIns {
+        mnemonic: "vupklsb128",
+        args: [
+            Argument::GPR(GPR(ins.field_vd128() as _)),
+            Argument::GPR(GPR(ins.field_vb128() as _)),
+            Argument::GPR(GPR(ins.field_vdh() as _)),
+            Argument::GPR(GPR(ins.field_vbh() as _)),
+            Argument::None,
+            Argument::None,
+            Argument::None,
+            Argument::None,
+        ],
     };
 }
 fn basic_mulli(out: &mut ParsedIns, ins: Ins) {
@@ -1867,6 +5943,9 @@ fn basic_mulli(out: &mut ParsedIns, ins: Ins) {
             Argument::GPR(GPR(ins.field_rd() as _)),
             Argument::GPR(GPR(ins.field_ra() as _)),
             Argument::Simm(Simm(ins.field_simm() as _)),
+            Argument::None,
+            Argument::None,
+            Argument::None,
             Argument::None,
             Argument::None,
         ],
@@ -1881,6 +5960,9 @@ fn basic_subfic(out: &mut ParsedIns, ins: Ins) {
             Argument::Simm(Simm(ins.field_simm() as _)),
             Argument::None,
             Argument::None,
+            Argument::None,
+            Argument::None,
+            Argument::None,
         ],
     };
 }
@@ -1893,6 +5975,9 @@ fn basic_cmpli(out: &mut ParsedIns, ins: Ins) {
             Argument::GPR(GPR(ins.field_ra() as _)),
             Argument::Uimm(Uimm(ins.field_uimm() as _)),
             Argument::None,
+            Argument::None,
+            Argument::None,
+            Argument::None,
         ],
     };
 }
@@ -1903,6 +5988,9 @@ fn simplified_cmpli(out: &mut ParsedIns, ins: Ins) {
             args: [
                 Argument::GPR(GPR(ins.field_ra() as _)),
                 Argument::Uimm(Uimm(ins.field_uimm() as _)),
+                Argument::None,
+                Argument::None,
+                Argument::None,
                 Argument::None,
                 Argument::None,
                 Argument::None,
@@ -1919,6 +6007,9 @@ fn simplified_cmpli(out: &mut ParsedIns, ins: Ins) {
                 Argument::Uimm(Uimm(ins.field_uimm() as _)),
                 Argument::None,
                 Argument::None,
+                Argument::None,
+                Argument::None,
+                Argument::None,
             ],
         };
         return;
@@ -1929,6 +6020,9 @@ fn simplified_cmpli(out: &mut ParsedIns, ins: Ins) {
             args: [
                 Argument::GPR(GPR(ins.field_ra() as _)),
                 Argument::Uimm(Uimm(ins.field_uimm() as _)),
+                Argument::None,
+                Argument::None,
+                Argument::None,
                 Argument::None,
                 Argument::None,
                 Argument::None,
@@ -1943,6 +6037,9 @@ fn simplified_cmpli(out: &mut ParsedIns, ins: Ins) {
                 Argument::CRField(CRField(ins.field_crfd() as _)),
                 Argument::GPR(GPR(ins.field_ra() as _)),
                 Argument::Uimm(Uimm(ins.field_uimm() as _)),
+                Argument::None,
+                Argument::None,
+                Argument::None,
                 Argument::None,
                 Argument::None,
             ],
@@ -1960,6 +6057,9 @@ fn basic_cmpi(out: &mut ParsedIns, ins: Ins) {
             Argument::GPR(GPR(ins.field_ra() as _)),
             Argument::Simm(Simm(ins.field_simm() as _)),
             Argument::None,
+            Argument::None,
+            Argument::None,
+            Argument::None,
         ],
     };
 }
@@ -1970,6 +6070,9 @@ fn simplified_cmpi(out: &mut ParsedIns, ins: Ins) {
             args: [
                 Argument::GPR(GPR(ins.field_ra() as _)),
                 Argument::Simm(Simm(ins.field_simm() as _)),
+                Argument::None,
+                Argument::None,
+                Argument::None,
                 Argument::None,
                 Argument::None,
                 Argument::None,
@@ -1986,6 +6089,9 @@ fn simplified_cmpi(out: &mut ParsedIns, ins: Ins) {
                 Argument::Simm(Simm(ins.field_simm() as _)),
                 Argument::None,
                 Argument::None,
+                Argument::None,
+                Argument::None,
+                Argument::None,
             ],
         };
         return;
@@ -1996,6 +6102,9 @@ fn simplified_cmpi(out: &mut ParsedIns, ins: Ins) {
             args: [
                 Argument::GPR(GPR(ins.field_ra() as _)),
                 Argument::Simm(Simm(ins.field_simm() as _)),
+                Argument::None,
+                Argument::None,
+                Argument::None,
                 Argument::None,
                 Argument::None,
                 Argument::None,
@@ -2010,6 +6119,9 @@ fn simplified_cmpi(out: &mut ParsedIns, ins: Ins) {
                 Argument::CRField(CRField(ins.field_crfd() as _)),
                 Argument::GPR(GPR(ins.field_ra() as _)),
                 Argument::Simm(Simm(ins.field_simm() as _)),
+                Argument::None,
+                Argument::None,
+                Argument::None,
                 Argument::None,
                 Argument::None,
             ],
@@ -2027,6 +6139,9 @@ fn basic_addic(out: &mut ParsedIns, ins: Ins) {
             Argument::Simm(Simm(ins.field_simm() as _)),
             Argument::None,
             Argument::None,
+            Argument::None,
+            Argument::None,
+            Argument::None,
         ],
     };
 }
@@ -2038,6 +6153,9 @@ fn simplified_addic(out: &mut ParsedIns, ins: Ins) {
                 Argument::GPR(GPR(ins.field_rd() as _)),
                 Argument::GPR(GPR(ins.field_ra() as _)),
                 Argument::Simm(Simm((-ins.field_simm()) as _)),
+                Argument::None,
+                Argument::None,
+                Argument::None,
                 Argument::None,
                 Argument::None,
             ],
@@ -2055,6 +6173,9 @@ fn basic_addic_(out: &mut ParsedIns, ins: Ins) {
             Argument::Simm(Simm(ins.field_simm() as _)),
             Argument::None,
             Argument::None,
+            Argument::None,
+            Argument::None,
+            Argument::None,
         ],
     };
 }
@@ -2066,6 +6187,9 @@ fn simplified_addic_(out: &mut ParsedIns, ins: Ins) {
                 Argument::GPR(GPR(ins.field_rd() as _)),
                 Argument::GPR(GPR(ins.field_ra() as _)),
                 Argument::Simm(Simm((-ins.field_simm()) as _)),
+                Argument::None,
+                Argument::None,
+                Argument::None,
                 Argument::None,
                 Argument::None,
             ],
@@ -2083,6 +6207,9 @@ fn basic_addi(out: &mut ParsedIns, ins: Ins) {
             Argument::Simm(Simm(ins.field_simm() as _)),
             Argument::None,
             Argument::None,
+            Argument::None,
+            Argument::None,
+            Argument::None,
         ],
     };
 }
@@ -2093,6 +6220,9 @@ fn simplified_addi(out: &mut ParsedIns, ins: Ins) {
             args: [
                 Argument::GPR(GPR(ins.field_rd() as _)),
                 Argument::Simm(Simm(ins.field_simm() as _)),
+                Argument::None,
+                Argument::None,
+                Argument::None,
                 Argument::None,
                 Argument::None,
                 Argument::None,
@@ -2107,6 +6237,9 @@ fn simplified_addi(out: &mut ParsedIns, ins: Ins) {
                 Argument::GPR(GPR(ins.field_rd() as _)),
                 Argument::GPR(GPR(ins.field_ra() as _)),
                 Argument::Simm(Simm((-ins.field_simm()) as _)),
+                Argument::None,
+                Argument::None,
+                Argument::None,
                 Argument::None,
                 Argument::None,
             ],
@@ -2124,6 +6257,9 @@ fn basic_addis(out: &mut ParsedIns, ins: Ins) {
             Argument::Uimm(Uimm(ins.field_uimm() as _)),
             Argument::None,
             Argument::None,
+            Argument::None,
+            Argument::None,
+            Argument::None,
         ],
     };
 }
@@ -2134,6 +6270,9 @@ fn simplified_addis(out: &mut ParsedIns, ins: Ins) {
             args: [
                 Argument::GPR(GPR(ins.field_rd() as _)),
                 Argument::Uimm(Uimm(ins.field_uimm() as _)),
+                Argument::None,
+                Argument::None,
+                Argument::None,
                 Argument::None,
                 Argument::None,
                 Argument::None,
@@ -2148,6 +6287,9 @@ fn simplified_addis(out: &mut ParsedIns, ins: Ins) {
                 Argument::GPR(GPR(ins.field_rd() as _)),
                 Argument::GPR(GPR(ins.field_ra() as _)),
                 Argument::Simm(Simm((-ins.field_simm()) as _)),
+                Argument::None,
+                Argument::None,
+                Argument::None,
                 Argument::None,
                 Argument::None,
             ],
@@ -2185,6 +6327,9 @@ fn basic_bc(out: &mut ParsedIns, ins: Ins) {
                 Argument::BranchDest(BranchDest(ins.field_bd() as _)),
                 Argument::None,
                 Argument::None,
+                Argument::None,
+                Argument::None,
+                Argument::None,
             ],
         }
     };
@@ -2216,6 +6361,9 @@ fn simplified_bc(out: &mut ParsedIns, ins: Ins) {
                     | (ins.field_bnp() as usize) << 3],
                 args: [
                     Argument::BranchDest(BranchDest(ins.field_bd() as _)),
+                    Argument::None,
+                    Argument::None,
+                    Argument::None,
                     Argument::None,
                     Argument::None,
                     Argument::None,
@@ -2255,6 +6403,9 @@ fn simplified_bc(out: &mut ParsedIns, ins: Ins) {
                     Argument::None,
                     Argument::None,
                     Argument::None,
+                    Argument::None,
+                    Argument::None,
+                    Argument::None,
                 ],
             }
         };
@@ -2286,6 +6437,9 @@ fn simplified_bc(out: &mut ParsedIns, ins: Ins) {
                     | (ins.field_bnp() as usize) << 3],
                 args: [
                     Argument::BranchDest(BranchDest(ins.field_bd() as _)),
+                    Argument::None,
+                    Argument::None,
+                    Argument::None,
                     Argument::None,
                     Argument::None,
                     Argument::None,
@@ -2325,6 +6479,9 @@ fn simplified_bc(out: &mut ParsedIns, ins: Ins) {
                     Argument::None,
                     Argument::None,
                     Argument::None,
+                    Argument::None,
+                    Argument::None,
+                    Argument::None,
                 ],
             }
         };
@@ -2356,6 +6513,9 @@ fn simplified_bc(out: &mut ParsedIns, ins: Ins) {
                     | (ins.field_bnp() as usize) << 3],
                 args: [
                     Argument::BranchDest(BranchDest(ins.field_bd() as _)),
+                    Argument::None,
+                    Argument::None,
+                    Argument::None,
                     Argument::None,
                     Argument::None,
                     Argument::None,
@@ -2395,6 +6555,9 @@ fn simplified_bc(out: &mut ParsedIns, ins: Ins) {
                     Argument::None,
                     Argument::None,
                     Argument::None,
+                    Argument::None,
+                    Argument::None,
+                    Argument::None,
                 ],
             }
         };
@@ -2426,6 +6589,9 @@ fn simplified_bc(out: &mut ParsedIns, ins: Ins) {
                     | (ins.field_bnp() as usize) << 3],
                 args: [
                     Argument::BranchDest(BranchDest(ins.field_bd() as _)),
+                    Argument::None,
+                    Argument::None,
+                    Argument::None,
                     Argument::None,
                     Argument::None,
                     Argument::None,
@@ -2465,6 +6631,9 @@ fn simplified_bc(out: &mut ParsedIns, ins: Ins) {
                     Argument::None,
                     Argument::None,
                     Argument::None,
+                    Argument::None,
+                    Argument::None,
+                    Argument::None,
                 ],
             }
         };
@@ -2496,6 +6665,9 @@ fn simplified_bc(out: &mut ParsedIns, ins: Ins) {
                     | (ins.field_bnp() as usize) << 3],
                 args: [
                     Argument::BranchDest(BranchDest(ins.field_bd() as _)),
+                    Argument::None,
+                    Argument::None,
+                    Argument::None,
                     Argument::None,
                     Argument::None,
                     Argument::None,
@@ -2535,6 +6707,9 @@ fn simplified_bc(out: &mut ParsedIns, ins: Ins) {
                     Argument::None,
                     Argument::None,
                     Argument::None,
+                    Argument::None,
+                    Argument::None,
+                    Argument::None,
                 ],
             }
         };
@@ -2566,6 +6741,9 @@ fn simplified_bc(out: &mut ParsedIns, ins: Ins) {
                     | (ins.field_bnp() as usize) << 3],
                 args: [
                     Argument::BranchDest(BranchDest(ins.field_bd() as _)),
+                    Argument::None,
+                    Argument::None,
+                    Argument::None,
                     Argument::None,
                     Argument::None,
                     Argument::None,
@@ -2605,6 +6783,9 @@ fn simplified_bc(out: &mut ParsedIns, ins: Ins) {
                     Argument::None,
                     Argument::None,
                     Argument::None,
+                    Argument::None,
+                    Argument::None,
+                    Argument::None,
                 ],
             }
         };
@@ -2636,6 +6817,9 @@ fn simplified_bc(out: &mut ParsedIns, ins: Ins) {
                     | (ins.field_bnp() as usize) << 3],
                 args: [
                     Argument::BranchDest(BranchDest(ins.field_bd() as _)),
+                    Argument::None,
+                    Argument::None,
+                    Argument::None,
                     Argument::None,
                     Argument::None,
                     Argument::None,
@@ -2675,6 +6859,9 @@ fn simplified_bc(out: &mut ParsedIns, ins: Ins) {
                     Argument::None,
                     Argument::None,
                     Argument::None,
+                    Argument::None,
+                    Argument::None,
+                    Argument::None,
                 ],
             }
         };
@@ -2706,6 +6893,9 @@ fn simplified_bc(out: &mut ParsedIns, ins: Ins) {
                     | (ins.field_bnp() as usize) << 3],
                 args: [
                     Argument::BranchDest(BranchDest(ins.field_bd() as _)),
+                    Argument::None,
+                    Argument::None,
+                    Argument::None,
                     Argument::None,
                     Argument::None,
                     Argument::None,
@@ -2745,6 +6935,9 @@ fn simplified_bc(out: &mut ParsedIns, ins: Ins) {
                     Argument::None,
                     Argument::None,
                     Argument::None,
+                    Argument::None,
+                    Argument::None,
+                    Argument::None,
                 ],
             }
         };
@@ -2776,6 +6969,9 @@ fn simplified_bc(out: &mut ParsedIns, ins: Ins) {
                     | (ins.field_bnp() as usize) << 3],
                 args: [
                     Argument::BranchDest(BranchDest(ins.field_bd() as _)),
+                    Argument::None,
+                    Argument::None,
+                    Argument::None,
                     Argument::None,
                     Argument::None,
                     Argument::None,
@@ -2815,6 +7011,9 @@ fn simplified_bc(out: &mut ParsedIns, ins: Ins) {
                     Argument::None,
                     Argument::None,
                     Argument::None,
+                    Argument::None,
+                    Argument::None,
+                    Argument::None,
                 ],
             }
         };
@@ -2850,6 +7049,9 @@ fn simplified_bc(out: &mut ParsedIns, ins: Ins) {
                     Argument::None,
                     Argument::None,
                     Argument::None,
+                    Argument::None,
+                    Argument::None,
+                    Argument::None,
                 ],
             }
         };
@@ -2881,6 +7083,9 @@ fn simplified_bc(out: &mut ParsedIns, ins: Ins) {
                     | (ins.field_bnp() as usize) << 3],
                 args: [
                     Argument::BranchDest(BranchDest(ins.field_bd() as _)),
+                    Argument::None,
+                    Argument::None,
+                    Argument::None,
                     Argument::None,
                     Argument::None,
                     Argument::None,
@@ -2920,6 +7125,9 @@ fn simplified_bc(out: &mut ParsedIns, ins: Ins) {
                     Argument::None,
                     Argument::None,
                     Argument::None,
+                    Argument::None,
+                    Argument::None,
+                    Argument::None,
                 ],
             }
         };
@@ -2955,6 +7163,9 @@ fn simplified_bc(out: &mut ParsedIns, ins: Ins) {
                     Argument::None,
                     Argument::None,
                     Argument::None,
+                    Argument::None,
+                    Argument::None,
+                    Argument::None,
                 ],
             }
         };
@@ -2980,6 +7191,9 @@ fn basic_b(out: &mut ParsedIns, ins: Ins) {
                 Argument::None,
                 Argument::None,
                 Argument::None,
+                Argument::None,
+                Argument::None,
+                Argument::None,
             ],
         }
     };
@@ -2993,6 +7207,9 @@ fn basic_bcctr(out: &mut ParsedIns, ins: Ins) {
             args: [
                 Argument::OpaqueU(OpaqueU(ins.field_bo() as _)),
                 Argument::CRBit(CRBit(ins.field_bi() as _)),
+                Argument::None,
+                Argument::None,
+                Argument::None,
                 Argument::None,
                 Argument::None,
                 Argument::None,
@@ -3034,6 +7251,9 @@ fn simplified_bcctr(out: &mut ParsedIns, ins: Ins) {
                     Argument::None,
                     Argument::None,
                     Argument::None,
+                    Argument::None,
+                    Argument::None,
+                    Argument::None,
                 ],
             }
         };
@@ -3058,6 +7278,9 @@ fn simplified_bcctr(out: &mut ParsedIns, ins: Ins) {
                     | (ins.field_bp_nd() as usize) << 1],
                 args: [
                     Argument::CRField(CRField(ins.field_crfs() as _)),
+                    Argument::None,
+                    Argument::None,
+                    Argument::None,
                     Argument::None,
                     Argument::None,
                     Argument::None,
@@ -3090,6 +7313,9 @@ fn simplified_bcctr(out: &mut ParsedIns, ins: Ins) {
                     Argument::None,
                     Argument::None,
                     Argument::None,
+                    Argument::None,
+                    Argument::None,
+                    Argument::None,
                 ],
             }
         };
@@ -3114,6 +7340,9 @@ fn simplified_bcctr(out: &mut ParsedIns, ins: Ins) {
                     | (ins.field_bp_nd() as usize) << 1],
                 args: [
                     Argument::CRField(CRField(ins.field_crfs() as _)),
+                    Argument::None,
+                    Argument::None,
+                    Argument::None,
                     Argument::None,
                     Argument::None,
                     Argument::None,
@@ -3146,6 +7375,9 @@ fn simplified_bcctr(out: &mut ParsedIns, ins: Ins) {
                     Argument::None,
                     Argument::None,
                     Argument::None,
+                    Argument::None,
+                    Argument::None,
+                    Argument::None,
                 ],
             }
         };
@@ -3170,6 +7402,9 @@ fn simplified_bcctr(out: &mut ParsedIns, ins: Ins) {
                     | (ins.field_bp_nd() as usize) << 1],
                 args: [
                     Argument::CRField(CRField(ins.field_crfs() as _)),
+                    Argument::None,
+                    Argument::None,
+                    Argument::None,
                     Argument::None,
                     Argument::None,
                     Argument::None,
@@ -3202,6 +7437,9 @@ fn simplified_bcctr(out: &mut ParsedIns, ins: Ins) {
                     Argument::None,
                     Argument::None,
                     Argument::None,
+                    Argument::None,
+                    Argument::None,
+                    Argument::None,
                 ],
             }
         };
@@ -3230,6 +7468,9 @@ fn simplified_bcctr(out: &mut ParsedIns, ins: Ins) {
                     Argument::None,
                     Argument::None,
                     Argument::None,
+                    Argument::None,
+                    Argument::None,
+                    Argument::None,
                 ],
             }
         };
@@ -3246,6 +7487,9 @@ fn basic_bclr(out: &mut ParsedIns, ins: Ins) {
             args: [
                 Argument::OpaqueU(OpaqueU(ins.field_bo() as _)),
                 Argument::CRBit(CRBit(ins.field_bi() as _)),
+                Argument::None,
+                Argument::None,
+                Argument::None,
                 Argument::None,
                 Argument::None,
                 Argument::None,
@@ -3287,6 +7531,9 @@ fn simplified_bclr(out: &mut ParsedIns, ins: Ins) {
                     Argument::None,
                     Argument::None,
                     Argument::None,
+                    Argument::None,
+                    Argument::None,
+                    Argument::None,
                 ],
             }
         };
@@ -3311,6 +7558,9 @@ fn simplified_bclr(out: &mut ParsedIns, ins: Ins) {
                     | (ins.field_bp_nd() as usize) << 1],
                 args: [
                     Argument::CRField(CRField(ins.field_crfs() as _)),
+                    Argument::None,
+                    Argument::None,
+                    Argument::None,
                     Argument::None,
                     Argument::None,
                     Argument::None,
@@ -3343,6 +7593,9 @@ fn simplified_bclr(out: &mut ParsedIns, ins: Ins) {
                     Argument::None,
                     Argument::None,
                     Argument::None,
+                    Argument::None,
+                    Argument::None,
+                    Argument::None,
                 ],
             }
         };
@@ -3367,6 +7620,9 @@ fn simplified_bclr(out: &mut ParsedIns, ins: Ins) {
                     | (ins.field_bp_nd() as usize) << 1],
                 args: [
                     Argument::CRField(CRField(ins.field_crfs() as _)),
+                    Argument::None,
+                    Argument::None,
+                    Argument::None,
                     Argument::None,
                     Argument::None,
                     Argument::None,
@@ -3399,6 +7655,9 @@ fn simplified_bclr(out: &mut ParsedIns, ins: Ins) {
                     Argument::None,
                     Argument::None,
                     Argument::None,
+                    Argument::None,
+                    Argument::None,
+                    Argument::None,
                 ],
             }
         };
@@ -3423,6 +7682,9 @@ fn simplified_bclr(out: &mut ParsedIns, ins: Ins) {
                     | (ins.field_bp_nd() as usize) << 1],
                 args: [
                     Argument::CRField(CRField(ins.field_crfs() as _)),
+                    Argument::None,
+                    Argument::None,
+                    Argument::None,
                     Argument::None,
                     Argument::None,
                     Argument::None,
@@ -3455,6 +7717,9 @@ fn simplified_bclr(out: &mut ParsedIns, ins: Ins) {
                     Argument::None,
                     Argument::None,
                     Argument::None,
+                    Argument::None,
+                    Argument::None,
+                    Argument::None,
                 ],
             }
         };
@@ -3479,6 +7744,9 @@ fn simplified_bclr(out: &mut ParsedIns, ins: Ins) {
                     | (ins.field_bp_nd() as usize) << 1],
                 args: [
                     Argument::CRField(CRField(ins.field_crfs() as _)),
+                    Argument::None,
+                    Argument::None,
+                    Argument::None,
                     Argument::None,
                     Argument::None,
                     Argument::None,
@@ -3516,6 +7784,9 @@ fn simplified_bclr(out: &mut ParsedIns, ins: Ins) {
                     Argument::None,
                     Argument::None,
                     Argument::None,
+                    Argument::None,
+                    Argument::None,
+                    Argument::None,
                 ],
             }
         };
@@ -3534,6 +7805,9 @@ fn simplified_bclr(out: &mut ParsedIns, ins: Ins) {
                     | (ins.field_bp_nd() as usize) << 1],
                 args: [
                     Argument::CRBit(CRBit(ins.field_bi() as _)),
+                    Argument::None,
+                    Argument::None,
+                    Argument::None,
                     Argument::None,
                     Argument::None,
                     Argument::None,
@@ -3566,6 +7840,9 @@ fn simplified_bclr(out: &mut ParsedIns, ins: Ins) {
                     Argument::None,
                     Argument::None,
                     Argument::None,
+                    Argument::None,
+                    Argument::None,
+                    Argument::None,
                 ],
             }
         };
@@ -3579,6 +7856,9 @@ fn simplified_bclr(out: &mut ParsedIns, ins: Ins) {
                     | (ins.field_bp_nd() as usize) << 1],
                 args: [
                     Argument::CRBit(CRBit(ins.field_bi() as _)),
+                    Argument::None,
+                    Argument::None,
+                    Argument::None,
                     Argument::None,
                     Argument::None,
                     Argument::None,
@@ -3599,6 +7879,9 @@ fn basic_crand(out: &mut ParsedIns, ins: Ins) {
             Argument::CRBit(CRBit(ins.field_crbb() as _)),
             Argument::None,
             Argument::None,
+            Argument::None,
+            Argument::None,
+            Argument::None,
         ],
     };
 }
@@ -3609,6 +7892,9 @@ fn basic_crandc(out: &mut ParsedIns, ins: Ins) {
             Argument::CRBit(CRBit(ins.field_crbd() as _)),
             Argument::CRBit(CRBit(ins.field_crba() as _)),
             Argument::CRBit(CRBit(ins.field_crbb() as _)),
+            Argument::None,
+            Argument::None,
+            Argument::None,
             Argument::None,
             Argument::None,
         ],
@@ -3623,6 +7909,9 @@ fn basic_creqv(out: &mut ParsedIns, ins: Ins) {
             Argument::CRBit(CRBit(ins.field_crbb() as _)),
             Argument::None,
             Argument::None,
+            Argument::None,
+            Argument::None,
+            Argument::None,
         ],
     };
 }
@@ -3632,6 +7921,9 @@ fn simplified_creqv(out: &mut ParsedIns, ins: Ins) {
             mnemonic: "crset",
             args: [
                 Argument::CRBit(CRBit(ins.field_crbd() as _)),
+                Argument::None,
+                Argument::None,
+                Argument::None,
                 Argument::None,
                 Argument::None,
                 Argument::None,
@@ -3651,6 +7943,9 @@ fn basic_crnand(out: &mut ParsedIns, ins: Ins) {
             Argument::CRBit(CRBit(ins.field_crbb() as _)),
             Argument::None,
             Argument::None,
+            Argument::None,
+            Argument::None,
+            Argument::None,
         ],
     };
 }
@@ -3663,6 +7958,9 @@ fn basic_crnor(out: &mut ParsedIns, ins: Ins) {
             Argument::CRBit(CRBit(ins.field_crbb() as _)),
             Argument::None,
             Argument::None,
+            Argument::None,
+            Argument::None,
+            Argument::None,
         ],
     };
 }
@@ -3673,6 +7971,9 @@ fn simplified_crnor(out: &mut ParsedIns, ins: Ins) {
             args: [
                 Argument::CRBit(CRBit(ins.field_crbd() as _)),
                 Argument::CRBit(CRBit(ins.field_crba() as _)),
+                Argument::None,
+                Argument::None,
+                Argument::None,
                 Argument::None,
                 Argument::None,
                 Argument::None,
@@ -3691,6 +7992,9 @@ fn basic_cror(out: &mut ParsedIns, ins: Ins) {
             Argument::CRBit(CRBit(ins.field_crbb() as _)),
             Argument::None,
             Argument::None,
+            Argument::None,
+            Argument::None,
+            Argument::None,
         ],
     };
 }
@@ -3701,6 +8005,9 @@ fn simplified_cror(out: &mut ParsedIns, ins: Ins) {
             args: [
                 Argument::CRBit(CRBit(ins.field_crbd() as _)),
                 Argument::CRBit(CRBit(ins.field_crba() as _)),
+                Argument::None,
+                Argument::None,
+                Argument::None,
                 Argument::None,
                 Argument::None,
                 Argument::None,
@@ -3719,6 +8026,9 @@ fn basic_crorc(out: &mut ParsedIns, ins: Ins) {
             Argument::CRBit(CRBit(ins.field_crbb() as _)),
             Argument::None,
             Argument::None,
+            Argument::None,
+            Argument::None,
+            Argument::None,
         ],
     };
 }
@@ -3731,6 +8041,9 @@ fn basic_crxor(out: &mut ParsedIns, ins: Ins) {
             Argument::CRBit(CRBit(ins.field_crbb() as _)),
             Argument::None,
             Argument::None,
+            Argument::None,
+            Argument::None,
+            Argument::None,
         ],
     };
 }
@@ -3740,6 +8053,9 @@ fn simplified_crxor(out: &mut ParsedIns, ins: Ins) {
             mnemonic: "crclr",
             args: [
                 Argument::CRBit(CRBit(ins.field_crbd() as _)),
+                Argument::None,
+                Argument::None,
+                Argument::None,
                 Argument::None,
                 Argument::None,
                 Argument::None,
@@ -3765,12 +8081,21 @@ fn basic_mcrf(out: &mut ParsedIns, ins: Ins) {
             Argument::None,
             Argument::None,
             Argument::None,
+            Argument::None,
+            Argument::None,
+            Argument::None,
         ],
     };
 }
 fn basic_rfi(out: &mut ParsedIns, ins: Ins) {
     *out = ParsedIns {
         mnemonic: "rfi",
+        args: EMPTY_ARGS,
+    };
+}
+fn basic_rfid(out: &mut ParsedIns, ins: Ins) {
+    *out = ParsedIns {
+        mnemonic: "rfid",
         args: EMPTY_ARGS,
     };
 }
@@ -3785,6 +8110,9 @@ fn basic_rlwimi(out: &mut ParsedIns, ins: Ins) {
                 Argument::OpaqueU(OpaqueU(ins.field_sh() as _)),
                 Argument::OpaqueU(OpaqueU(ins.field_mb() as _)),
                 Argument::OpaqueU(OpaqueU(ins.field_me() as _)),
+                Argument::None,
+                Argument::None,
+                Argument::None,
             ],
         }
     };
@@ -3800,6 +8128,9 @@ fn basic_rlwinm(out: &mut ParsedIns, ins: Ins) {
                 Argument::OpaqueU(OpaqueU(ins.field_sh() as _)),
                 Argument::OpaqueU(OpaqueU(ins.field_mb() as _)),
                 Argument::OpaqueU(OpaqueU(ins.field_me() as _)),
+                Argument::None,
+                Argument::None,
+                Argument::None,
             ],
         }
     };
@@ -3814,6 +8145,9 @@ fn simplified_rlwinm(out: &mut ParsedIns, ins: Ins) {
                     Argument::GPR(GPR(ins.field_ra() as _)),
                     Argument::GPR(GPR(ins.field_rs() as _)),
                     Argument::OpaqueU(OpaqueU((31 - ins.field_me()) as _)),
+                    Argument::None,
+                    Argument::None,
+                    Argument::None,
                     Argument::None,
                     Argument::None,
                 ],
@@ -3832,6 +8166,9 @@ fn simplified_rlwinm(out: &mut ParsedIns, ins: Ins) {
                     Argument::OpaqueU(OpaqueU(ins.field_mb() as _)),
                     Argument::None,
                     Argument::None,
+                    Argument::None,
+                    Argument::None,
+                    Argument::None,
                 ],
             }
         };
@@ -3846,6 +8183,9 @@ fn simplified_rlwinm(out: &mut ParsedIns, ins: Ins) {
                     Argument::GPR(GPR(ins.field_ra() as _)),
                     Argument::GPR(GPR(ins.field_rs() as _)),
                     Argument::OpaqueU(OpaqueU(ins.field_sh() as _)),
+                    Argument::None,
+                    Argument::None,
+                    Argument::None,
                     Argument::None,
                     Argument::None,
                 ],
@@ -3864,6 +8204,9 @@ fn simplified_rlwinm(out: &mut ParsedIns, ins: Ins) {
                     Argument::OpaqueU(OpaqueU((32 - ins.field_sh()) as _)),
                     Argument::None,
                     Argument::None,
+                    Argument::None,
+                    Argument::None,
+                    Argument::None,
                 ],
             }
         };
@@ -3878,6 +8221,9 @@ fn simplified_rlwinm(out: &mut ParsedIns, ins: Ins) {
                     Argument::GPR(GPR(ins.field_ra() as _)),
                     Argument::GPR(GPR(ins.field_rs() as _)),
                     Argument::OpaqueU(OpaqueU(ins.field_sh() as _)),
+                    Argument::None,
+                    Argument::None,
+                    Argument::None,
                     Argument::None,
                     Argument::None,
                 ],
@@ -3896,6 +8242,9 @@ fn simplified_rlwinm(out: &mut ParsedIns, ins: Ins) {
                     Argument::OpaqueU(OpaqueU(ins.field_mb() as _)),
                     Argument::None,
                     Argument::None,
+                    Argument::None,
+                    Argument::None,
+                    Argument::None,
                 ],
             }
         };
@@ -3912,6 +8261,9 @@ fn simplified_rlwinm(out: &mut ParsedIns, ins: Ins) {
                     Argument::OpaqueU(OpaqueU((ins.field_mb() + ins.field_sh()) as _)),
                     Argument::OpaqueU(OpaqueU(ins.field_sh() as _)),
                     Argument::None,
+                    Argument::None,
+                    Argument::None,
+                    Argument::None,
                 ],
             }
         };
@@ -3927,6 +8279,9 @@ fn simplified_rlwinm(out: &mut ParsedIns, ins: Ins) {
                     Argument::GPR(GPR(ins.field_rs() as _)),
                     Argument::OpaqueU(OpaqueU((ins.field_me() + 1) as _)),
                     Argument::OpaqueU(OpaqueU(ins.field_sh() as _)),
+                    Argument::None,
+                    Argument::None,
+                    Argument::None,
                     Argument::None,
                 ],
             }
@@ -3946,6 +8301,9 @@ fn simplified_rlwinm(out: &mut ParsedIns, ins: Ins) {
                         OpaqueU((ins.field_sh() - (32 - ins.field_mb())) as _),
                     ),
                     Argument::None,
+                    Argument::None,
+                    Argument::None,
+                    Argument::None,
                 ],
             }
         };
@@ -3964,6 +8322,9 @@ fn basic_rlwnm(out: &mut ParsedIns, ins: Ins) {
                 Argument::GPR(GPR(ins.field_rb() as _)),
                 Argument::OpaqueU(OpaqueU(ins.field_mb() as _)),
                 Argument::OpaqueU(OpaqueU(ins.field_me() as _)),
+                Argument::None,
+                Argument::None,
+                Argument::None,
             ],
         }
     };
@@ -3980,6 +8341,9 @@ fn simplified_rlwnm(out: &mut ParsedIns, ins: Ins) {
                     Argument::GPR(GPR(ins.field_rb() as _)),
                     Argument::None,
                     Argument::None,
+                    Argument::None,
+                    Argument::None,
+                    Argument::None,
                 ],
             }
         };
@@ -3994,6 +8358,9 @@ fn basic_ori(out: &mut ParsedIns, ins: Ins) {
             Argument::GPR(GPR(ins.field_ra() as _)),
             Argument::GPR(GPR(ins.field_rs() as _)),
             Argument::Uimm(Uimm(ins.field_uimm() as _)),
+            Argument::None,
+            Argument::None,
+            Argument::None,
             Argument::None,
             Argument::None,
         ],
@@ -4018,6 +8385,9 @@ fn basic_oris(out: &mut ParsedIns, ins: Ins) {
             Argument::Uimm(Uimm(ins.field_uimm() as _)),
             Argument::None,
             Argument::None,
+            Argument::None,
+            Argument::None,
+            Argument::None,
         ],
     };
 }
@@ -4028,6 +8398,9 @@ fn basic_xori(out: &mut ParsedIns, ins: Ins) {
             Argument::GPR(GPR(ins.field_ra() as _)),
             Argument::GPR(GPR(ins.field_rs() as _)),
             Argument::Uimm(Uimm(ins.field_uimm() as _)),
+            Argument::None,
+            Argument::None,
+            Argument::None,
             Argument::None,
             Argument::None,
         ],
@@ -4042,6 +8415,9 @@ fn basic_xoris(out: &mut ParsedIns, ins: Ins) {
             Argument::Uimm(Uimm(ins.field_uimm() as _)),
             Argument::None,
             Argument::None,
+            Argument::None,
+            Argument::None,
+            Argument::None,
         ],
     };
 }
@@ -4052,6 +8428,9 @@ fn basic_andi_(out: &mut ParsedIns, ins: Ins) {
             Argument::GPR(GPR(ins.field_ra() as _)),
             Argument::GPR(GPR(ins.field_rs() as _)),
             Argument::Uimm(Uimm(ins.field_uimm() as _)),
+            Argument::None,
+            Argument::None,
+            Argument::None,
             Argument::None,
             Argument::None,
         ],
@@ -4066,7 +8445,140 @@ fn basic_andis_(out: &mut ParsedIns, ins: Ins) {
             Argument::Uimm(Uimm(ins.field_uimm() as _)),
             Argument::None,
             Argument::None,
+            Argument::None,
+            Argument::None,
+            Argument::None,
         ],
+    };
+}
+fn basic_rldcl(out: &mut ParsedIns, ins: Ins) {
+    *out = {
+        const MODIFIERS: [&str; 2] = ["rldcl", "rldcl."];
+        ParsedIns {
+            mnemonic: MODIFIERS[ins.field_rc() as usize],
+            args: [
+                Argument::GPR(GPR(ins.field_ra() as _)),
+                Argument::GPR(GPR(ins.field_rs() as _)),
+                Argument::GPR(GPR(ins.field_rb() as _)),
+                Argument::OpaqueU(OpaqueU(ins.field_mb64() as _)),
+                Argument::None,
+                Argument::None,
+                Argument::None,
+                Argument::None,
+            ],
+        }
+    };
+}
+fn simplified_rldcl(out: &mut ParsedIns, ins: Ins) {
+    if ins.field_mb() == 0x0 {
+        *out = {
+            const MODIFIERS: [&str; 2] = ["rotld", "rotld."];
+            ParsedIns {
+                mnemonic: MODIFIERS[ins.field_rc() as usize],
+                args: [
+                    Argument::GPR(GPR(ins.field_ra() as _)),
+                    Argument::GPR(GPR(ins.field_rs() as _)),
+                    Argument::GPR(GPR(ins.field_rb() as _)),
+                    Argument::None,
+                    Argument::None,
+                    Argument::None,
+                    Argument::None,
+                    Argument::None,
+                ],
+            }
+        };
+        return;
+    }
+    basic_rldcl(out, ins)
+}
+fn basic_rldcr(out: &mut ParsedIns, ins: Ins) {
+    *out = {
+        const MODIFIERS: [&str; 2] = ["rldcr", "rldcr."];
+        ParsedIns {
+            mnemonic: MODIFIERS[ins.field_rc() as usize],
+            args: [
+                Argument::GPR(GPR(ins.field_ra() as _)),
+                Argument::GPR(GPR(ins.field_rs() as _)),
+                Argument::GPR(GPR(ins.field_rb() as _)),
+                Argument::OpaqueU(OpaqueU(ins.field_me64() as _)),
+                Argument::None,
+                Argument::None,
+                Argument::None,
+                Argument::None,
+            ],
+        }
+    };
+}
+fn basic_rldic(out: &mut ParsedIns, ins: Ins) {
+    *out = {
+        const MODIFIERS: [&str; 2] = ["rldic", "rldic."];
+        ParsedIns {
+            mnemonic: MODIFIERS[ins.field_rc() as usize],
+            args: [
+                Argument::GPR(GPR(ins.field_ra() as _)),
+                Argument::GPR(GPR(ins.field_rs() as _)),
+                Argument::OpaqueU(OpaqueU(ins.field_sh1() as _)),
+                Argument::OpaqueU(OpaqueU(ins.field_mb64() as _)),
+                Argument::OpaqueU(OpaqueU(ins.field_sh2() as _)),
+                Argument::None,
+                Argument::None,
+                Argument::None,
+            ],
+        }
+    };
+}
+fn basic_rldicl(out: &mut ParsedIns, ins: Ins) {
+    *out = {
+        const MODIFIERS: [&str; 2] = ["rldicl", "rldicl."];
+        ParsedIns {
+            mnemonic: MODIFIERS[ins.field_rc() as usize],
+            args: [
+                Argument::GPR(GPR(ins.field_ra() as _)),
+                Argument::GPR(GPR(ins.field_rs() as _)),
+                Argument::OpaqueU(OpaqueU(ins.field_sh1() as _)),
+                Argument::OpaqueU(OpaqueU(ins.field_mb64() as _)),
+                Argument::OpaqueU(OpaqueU(ins.field_sh2() as _)),
+                Argument::None,
+                Argument::None,
+                Argument::None,
+            ],
+        }
+    };
+}
+fn basic_rldicr(out: &mut ParsedIns, ins: Ins) {
+    *out = {
+        const MODIFIERS: [&str; 2] = ["rldicr", "rldicr."];
+        ParsedIns {
+            mnemonic: MODIFIERS[ins.field_rc() as usize],
+            args: [
+                Argument::GPR(GPR(ins.field_ra() as _)),
+                Argument::GPR(GPR(ins.field_rs() as _)),
+                Argument::OpaqueU(OpaqueU(ins.field_sh1() as _)),
+                Argument::OpaqueU(OpaqueU(ins.field_me64() as _)),
+                Argument::OpaqueU(OpaqueU(ins.field_sh2() as _)),
+                Argument::None,
+                Argument::None,
+                Argument::None,
+            ],
+        }
+    };
+}
+fn basic_rldimi(out: &mut ParsedIns, ins: Ins) {
+    *out = {
+        const MODIFIERS: [&str; 2] = ["rldimi", "rldimi."];
+        ParsedIns {
+            mnemonic: MODIFIERS[ins.field_rc() as usize],
+            args: [
+                Argument::GPR(GPR(ins.field_ra() as _)),
+                Argument::GPR(GPR(ins.field_rs() as _)),
+                Argument::OpaqueU(OpaqueU(ins.field_sh1() as _)),
+                Argument::OpaqueU(OpaqueU(ins.field_mb64() as _)),
+                Argument::OpaqueU(OpaqueU(ins.field_sh2() as _)),
+                Argument::None,
+                Argument::None,
+                Argument::None,
+            ],
+        }
     };
 }
 fn basic_add(out: &mut ParsedIns, ins: Ins) {
@@ -4079,6 +8591,9 @@ fn basic_add(out: &mut ParsedIns, ins: Ins) {
                 Argument::GPR(GPR(ins.field_rd() as _)),
                 Argument::GPR(GPR(ins.field_ra() as _)),
                 Argument::GPR(GPR(ins.field_rb() as _)),
+                Argument::None,
+                Argument::None,
+                Argument::None,
                 Argument::None,
                 Argument::None,
             ],
@@ -4097,6 +8612,9 @@ fn basic_addc(out: &mut ParsedIns, ins: Ins) {
                 Argument::GPR(GPR(ins.field_rb() as _)),
                 Argument::None,
                 Argument::None,
+                Argument::None,
+                Argument::None,
+                Argument::None,
             ],
         }
     };
@@ -4113,6 +8631,9 @@ fn basic_adde(out: &mut ParsedIns, ins: Ins) {
                 Argument::GPR(GPR(ins.field_rb() as _)),
                 Argument::None,
                 Argument::None,
+                Argument::None,
+                Argument::None,
+                Argument::None,
             ],
         }
     };
@@ -4126,6 +8647,9 @@ fn basic_addme(out: &mut ParsedIns, ins: Ins) {
             args: [
                 Argument::GPR(GPR(ins.field_rd() as _)),
                 Argument::GPR(GPR(ins.field_ra() as _)),
+                Argument::None,
+                Argument::None,
+                Argument::None,
                 Argument::None,
                 Argument::None,
                 Argument::None,
@@ -4145,6 +8669,9 @@ fn basic_addze(out: &mut ParsedIns, ins: Ins) {
                 Argument::None,
                 Argument::None,
                 Argument::None,
+                Argument::None,
+                Argument::None,
+                Argument::None,
             ],
         }
     };
@@ -4158,6 +8685,9 @@ fn basic_and(out: &mut ParsedIns, ins: Ins) {
                 Argument::GPR(GPR(ins.field_ra() as _)),
                 Argument::GPR(GPR(ins.field_rs() as _)),
                 Argument::GPR(GPR(ins.field_rb() as _)),
+                Argument::None,
+                Argument::None,
+                Argument::None,
                 Argument::None,
                 Argument::None,
             ],
@@ -4175,6 +8705,9 @@ fn basic_andc(out: &mut ParsedIns, ins: Ins) {
                 Argument::GPR(GPR(ins.field_rb() as _)),
                 Argument::None,
                 Argument::None,
+                Argument::None,
+                Argument::None,
+                Argument::None,
             ],
         }
     };
@@ -4188,6 +8721,9 @@ fn basic_cmp(out: &mut ParsedIns, ins: Ins) {
             Argument::GPR(GPR(ins.field_ra() as _)),
             Argument::GPR(GPR(ins.field_rb() as _)),
             Argument::None,
+            Argument::None,
+            Argument::None,
+            Argument::None,
         ],
     };
 }
@@ -4198,6 +8734,9 @@ fn simplified_cmp(out: &mut ParsedIns, ins: Ins) {
             args: [
                 Argument::GPR(GPR(ins.field_ra() as _)),
                 Argument::GPR(GPR(ins.field_rb() as _)),
+                Argument::None,
+                Argument::None,
+                Argument::None,
                 Argument::None,
                 Argument::None,
                 Argument::None,
@@ -4214,6 +8753,9 @@ fn simplified_cmp(out: &mut ParsedIns, ins: Ins) {
                 Argument::GPR(GPR(ins.field_rb() as _)),
                 Argument::None,
                 Argument::None,
+                Argument::None,
+                Argument::None,
+                Argument::None,
             ],
         };
         return;
@@ -4224,6 +8766,9 @@ fn simplified_cmp(out: &mut ParsedIns, ins: Ins) {
             args: [
                 Argument::GPR(GPR(ins.field_ra() as _)),
                 Argument::GPR(GPR(ins.field_rb() as _)),
+                Argument::None,
+                Argument::None,
+                Argument::None,
                 Argument::None,
                 Argument::None,
                 Argument::None,
@@ -4238,6 +8783,9 @@ fn simplified_cmp(out: &mut ParsedIns, ins: Ins) {
                 Argument::CRField(CRField(ins.field_crfd() as _)),
                 Argument::GPR(GPR(ins.field_ra() as _)),
                 Argument::GPR(GPR(ins.field_rb() as _)),
+                Argument::None,
+                Argument::None,
+                Argument::None,
                 Argument::None,
                 Argument::None,
             ],
@@ -4255,6 +8803,9 @@ fn basic_cmpl(out: &mut ParsedIns, ins: Ins) {
             Argument::GPR(GPR(ins.field_ra() as _)),
             Argument::GPR(GPR(ins.field_rb() as _)),
             Argument::None,
+            Argument::None,
+            Argument::None,
+            Argument::None,
         ],
     };
 }
@@ -4265,6 +8816,9 @@ fn simplified_cmpl(out: &mut ParsedIns, ins: Ins) {
             args: [
                 Argument::GPR(GPR(ins.field_ra() as _)),
                 Argument::GPR(GPR(ins.field_rb() as _)),
+                Argument::None,
+                Argument::None,
+                Argument::None,
                 Argument::None,
                 Argument::None,
                 Argument::None,
@@ -4281,6 +8835,9 @@ fn simplified_cmpl(out: &mut ParsedIns, ins: Ins) {
                 Argument::GPR(GPR(ins.field_rb() as _)),
                 Argument::None,
                 Argument::None,
+                Argument::None,
+                Argument::None,
+                Argument::None,
             ],
         };
         return;
@@ -4291,6 +8848,9 @@ fn simplified_cmpl(out: &mut ParsedIns, ins: Ins) {
             args: [
                 Argument::GPR(GPR(ins.field_ra() as _)),
                 Argument::GPR(GPR(ins.field_rb() as _)),
+                Argument::None,
+                Argument::None,
+                Argument::None,
                 Argument::None,
                 Argument::None,
                 Argument::None,
@@ -4307,11 +8867,32 @@ fn simplified_cmpl(out: &mut ParsedIns, ins: Ins) {
                 Argument::GPR(GPR(ins.field_rb() as _)),
                 Argument::None,
                 Argument::None,
+                Argument::None,
+                Argument::None,
+                Argument::None,
             ],
         };
         return;
     }
     basic_cmpl(out, ins)
+}
+fn basic_cntlzd(out: &mut ParsedIns, ins: Ins) {
+    *out = {
+        const MODIFIERS: [&str; 2] = ["cntlzd", "cntlzd."];
+        ParsedIns {
+            mnemonic: MODIFIERS[ins.field_rc() as usize],
+            args: [
+                Argument::GPR(GPR(ins.field_ra() as _)),
+                Argument::GPR(GPR(ins.field_rs() as _)),
+                Argument::None,
+                Argument::None,
+                Argument::None,
+                Argument::None,
+                Argument::None,
+                Argument::None,
+            ],
+        }
+    };
 }
 fn basic_cntlzw(out: &mut ParsedIns, ins: Ins) {
     *out = {
@@ -4321,6 +8902,9 @@ fn basic_cntlzw(out: &mut ParsedIns, ins: Ins) {
             args: [
                 Argument::GPR(GPR(ins.field_ra() as _)),
                 Argument::GPR(GPR(ins.field_rs() as _)),
+                Argument::None,
+                Argument::None,
+                Argument::None,
                 Argument::None,
                 Argument::None,
                 Argument::None,
@@ -4337,6 +8921,9 @@ fn basic_dcbf(out: &mut ParsedIns, ins: Ins) {
             Argument::None,
             Argument::None,
             Argument::None,
+            Argument::None,
+            Argument::None,
+            Argument::None,
         ],
     };
 }
@@ -4346,6 +8933,9 @@ fn basic_dcbi(out: &mut ParsedIns, ins: Ins) {
         args: [
             Argument::GPR(GPR(ins.field_ra() as _)),
             Argument::GPR(GPR(ins.field_rb() as _)),
+            Argument::None,
+            Argument::None,
+            Argument::None,
             Argument::None,
             Argument::None,
             Argument::None,
@@ -4361,6 +8951,9 @@ fn basic_dcbst(out: &mut ParsedIns, ins: Ins) {
             Argument::None,
             Argument::None,
             Argument::None,
+            Argument::None,
+            Argument::None,
+            Argument::None,
         ],
     };
 }
@@ -4370,6 +8963,9 @@ fn basic_dcbt(out: &mut ParsedIns, ins: Ins) {
         args: [
             Argument::GPR(GPR(ins.field_ra() as _)),
             Argument::GPR(GPR(ins.field_rb() as _)),
+            Argument::None,
+            Argument::None,
+            Argument::None,
             Argument::None,
             Argument::None,
             Argument::None,
@@ -4385,6 +8981,9 @@ fn basic_dcbtst(out: &mut ParsedIns, ins: Ins) {
             Argument::None,
             Argument::None,
             Argument::None,
+            Argument::None,
+            Argument::None,
+            Argument::None,
         ],
     };
 }
@@ -4397,7 +8996,48 @@ fn basic_dcbz(out: &mut ParsedIns, ins: Ins) {
             Argument::None,
             Argument::None,
             Argument::None,
+            Argument::None,
+            Argument::None,
+            Argument::None,
         ],
+    };
+}
+fn basic_divd(out: &mut ParsedIns, ins: Ins) {
+    *out = {
+        const MODIFIERS: [&str; 4] = ["divd", "divdo", "divd.", "divdo."];
+        ParsedIns {
+            mnemonic: MODIFIERS[ins.field_oe() as usize
+                | (ins.field_rc() as usize) << 1],
+            args: [
+                Argument::GPR(GPR(ins.field_rd() as _)),
+                Argument::GPR(GPR(ins.field_ra() as _)),
+                Argument::GPR(GPR(ins.field_rb() as _)),
+                Argument::None,
+                Argument::None,
+                Argument::None,
+                Argument::None,
+                Argument::None,
+            ],
+        }
+    };
+}
+fn basic_divdu(out: &mut ParsedIns, ins: Ins) {
+    *out = {
+        const MODIFIERS: [&str; 4] = ["divdu", "divduo", "divdu.", "divduo."];
+        ParsedIns {
+            mnemonic: MODIFIERS[ins.field_oe() as usize
+                | (ins.field_rc() as usize) << 1],
+            args: [
+                Argument::GPR(GPR(ins.field_rd() as _)),
+                Argument::GPR(GPR(ins.field_ra() as _)),
+                Argument::GPR(GPR(ins.field_rb() as _)),
+                Argument::None,
+                Argument::None,
+                Argument::None,
+                Argument::None,
+                Argument::None,
+            ],
+        }
     };
 }
 fn basic_divw(out: &mut ParsedIns, ins: Ins) {
@@ -4410,6 +9050,9 @@ fn basic_divw(out: &mut ParsedIns, ins: Ins) {
                 Argument::GPR(GPR(ins.field_rd() as _)),
                 Argument::GPR(GPR(ins.field_ra() as _)),
                 Argument::GPR(GPR(ins.field_rb() as _)),
+                Argument::None,
+                Argument::None,
+                Argument::None,
                 Argument::None,
                 Argument::None,
             ],
@@ -4428,6 +9071,9 @@ fn basic_divwu(out: &mut ParsedIns, ins: Ins) {
                 Argument::GPR(GPR(ins.field_rb() as _)),
                 Argument::None,
                 Argument::None,
+                Argument::None,
+                Argument::None,
+                Argument::None,
             ],
         }
     };
@@ -4441,6 +9087,9 @@ fn basic_eciwx(out: &mut ParsedIns, ins: Ins) {
             Argument::GPR(GPR(ins.field_rb() as _)),
             Argument::None,
             Argument::None,
+            Argument::None,
+            Argument::None,
+            Argument::None,
         ],
     };
 }
@@ -4451,6 +9100,9 @@ fn basic_ecowx(out: &mut ParsedIns, ins: Ins) {
             Argument::GPR(GPR(ins.field_rs() as _)),
             Argument::GPR(GPR(ins.field_ra() as _)),
             Argument::GPR(GPR(ins.field_rb() as _)),
+            Argument::None,
+            Argument::None,
+            Argument::None,
             Argument::None,
             Argument::None,
         ],
@@ -4473,6 +9125,9 @@ fn basic_eqv(out: &mut ParsedIns, ins: Ins) {
                 Argument::GPR(GPR(ins.field_rb() as _)),
                 Argument::None,
                 Argument::None,
+                Argument::None,
+                Argument::None,
+                Argument::None,
             ],
         }
     };
@@ -4485,6 +9140,9 @@ fn basic_extsb(out: &mut ParsedIns, ins: Ins) {
             args: [
                 Argument::GPR(GPR(ins.field_ra() as _)),
                 Argument::GPR(GPR(ins.field_rs() as _)),
+                Argument::None,
+                Argument::None,
+                Argument::None,
                 Argument::None,
                 Argument::None,
                 Argument::None,
@@ -4503,6 +9161,27 @@ fn basic_extsh(out: &mut ParsedIns, ins: Ins) {
                 Argument::None,
                 Argument::None,
                 Argument::None,
+                Argument::None,
+                Argument::None,
+                Argument::None,
+            ],
+        }
+    };
+}
+fn basic_extsw(out: &mut ParsedIns, ins: Ins) {
+    *out = {
+        const MODIFIERS: [&str; 2] = ["extsw", "extsw."];
+        ParsedIns {
+            mnemonic: MODIFIERS[ins.field_rc() as usize],
+            args: [
+                Argument::GPR(GPR(ins.field_ra() as _)),
+                Argument::GPR(GPR(ins.field_rs() as _)),
+                Argument::None,
+                Argument::None,
+                Argument::None,
+                Argument::None,
+                Argument::None,
+                Argument::None,
             ],
         }
     };
@@ -4515,6 +9194,9 @@ fn basic_icbi(out: &mut ParsedIns, ins: Ins) {
             args: [
                 Argument::GPR(GPR(ins.field_ra() as _)),
                 Argument::GPR(GPR(ins.field_rb() as _)),
+                Argument::None,
+                Argument::None,
+                Argument::None,
                 Argument::None,
                 Argument::None,
                 Argument::None,
@@ -4531,6 +9213,9 @@ fn basic_lbzux(out: &mut ParsedIns, ins: Ins) {
             Argument::GPR(GPR(ins.field_rb() as _)),
             Argument::None,
             Argument::None,
+            Argument::None,
+            Argument::None,
+            Argument::None,
         ],
     };
 }
@@ -4541,6 +9226,54 @@ fn basic_lbzx(out: &mut ParsedIns, ins: Ins) {
             Argument::GPR(GPR(ins.field_rd() as _)),
             Argument::GPR(GPR(ins.field_ra() as _)),
             Argument::GPR(GPR(ins.field_rb() as _)),
+            Argument::None,
+            Argument::None,
+            Argument::None,
+            Argument::None,
+            Argument::None,
+        ],
+    };
+}
+fn basic_ldarx(out: &mut ParsedIns, ins: Ins) {
+    *out = ParsedIns {
+        mnemonic: "ldarx",
+        args: [
+            Argument::GPR(GPR(ins.field_rd() as _)),
+            Argument::GPR(GPR(ins.field_ra() as _)),
+            Argument::GPR(GPR(ins.field_rb() as _)),
+            Argument::None,
+            Argument::None,
+            Argument::None,
+            Argument::None,
+            Argument::None,
+        ],
+    };
+}
+fn basic_ldux(out: &mut ParsedIns, ins: Ins) {
+    *out = ParsedIns {
+        mnemonic: "ldux",
+        args: [
+            Argument::GPR(GPR(ins.field_rd() as _)),
+            Argument::GPR(GPR(ins.field_ra() as _)),
+            Argument::GPR(GPR(ins.field_rb() as _)),
+            Argument::None,
+            Argument::None,
+            Argument::None,
+            Argument::None,
+            Argument::None,
+        ],
+    };
+}
+fn basic_ldx(out: &mut ParsedIns, ins: Ins) {
+    *out = ParsedIns {
+        mnemonic: "ldx",
+        args: [
+            Argument::GPR(GPR(ins.field_rd() as _)),
+            Argument::GPR(GPR(ins.field_ra() as _)),
+            Argument::GPR(GPR(ins.field_rb() as _)),
+            Argument::None,
+            Argument::None,
+            Argument::None,
             Argument::None,
             Argument::None,
         ],
@@ -4555,6 +9288,9 @@ fn basic_lfdux(out: &mut ParsedIns, ins: Ins) {
             Argument::GPR(GPR(ins.field_rb() as _)),
             Argument::None,
             Argument::None,
+            Argument::None,
+            Argument::None,
+            Argument::None,
         ],
     };
 }
@@ -4565,6 +9301,9 @@ fn basic_lfdx(out: &mut ParsedIns, ins: Ins) {
             Argument::FPR(FPR(ins.field_frd() as _)),
             Argument::GPR(GPR(ins.field_ra() as _)),
             Argument::GPR(GPR(ins.field_rb() as _)),
+            Argument::None,
+            Argument::None,
+            Argument::None,
             Argument::None,
             Argument::None,
         ],
@@ -4579,6 +9318,9 @@ fn basic_lfsux(out: &mut ParsedIns, ins: Ins) {
             Argument::GPR(GPR(ins.field_rb() as _)),
             Argument::None,
             Argument::None,
+            Argument::None,
+            Argument::None,
+            Argument::None,
         ],
     };
 }
@@ -4589,6 +9331,9 @@ fn basic_lfsx(out: &mut ParsedIns, ins: Ins) {
             Argument::FPR(FPR(ins.field_frd() as _)),
             Argument::GPR(GPR(ins.field_ra() as _)),
             Argument::GPR(GPR(ins.field_rb() as _)),
+            Argument::None,
+            Argument::None,
+            Argument::None,
             Argument::None,
             Argument::None,
         ],
@@ -4603,6 +9348,9 @@ fn basic_lhaux(out: &mut ParsedIns, ins: Ins) {
             Argument::GPR(GPR(ins.field_rb() as _)),
             Argument::None,
             Argument::None,
+            Argument::None,
+            Argument::None,
+            Argument::None,
         ],
     };
 }
@@ -4613,6 +9361,9 @@ fn basic_lhax(out: &mut ParsedIns, ins: Ins) {
             Argument::GPR(GPR(ins.field_rd() as _)),
             Argument::GPR(GPR(ins.field_ra() as _)),
             Argument::GPR(GPR(ins.field_rb() as _)),
+            Argument::None,
+            Argument::None,
+            Argument::None,
             Argument::None,
             Argument::None,
         ],
@@ -4627,6 +9378,9 @@ fn basic_lhbrx(out: &mut ParsedIns, ins: Ins) {
             Argument::GPR(GPR(ins.field_rb() as _)),
             Argument::None,
             Argument::None,
+            Argument::None,
+            Argument::None,
+            Argument::None,
         ],
     };
 }
@@ -4637,6 +9391,9 @@ fn basic_lhzux(out: &mut ParsedIns, ins: Ins) {
             Argument::GPR(GPR(ins.field_rd() as _)),
             Argument::GPR(GPR(ins.field_ra() as _)),
             Argument::GPR(GPR(ins.field_rb() as _)),
+            Argument::None,
+            Argument::None,
+            Argument::None,
             Argument::None,
             Argument::None,
         ],
@@ -4651,6 +9408,9 @@ fn basic_lhzx(out: &mut ParsedIns, ins: Ins) {
             Argument::GPR(GPR(ins.field_rb() as _)),
             Argument::None,
             Argument::None,
+            Argument::None,
+            Argument::None,
+            Argument::None,
         ],
     };
 }
@@ -4661,6 +9421,9 @@ fn basic_lswi(out: &mut ParsedIns, ins: Ins) {
             Argument::GPR(GPR(ins.field_rd() as _)),
             Argument::GPR(GPR(ins.field_ra() as _)),
             Argument::OpaqueU(OpaqueU(ins.field_nb() as _)),
+            Argument::None,
+            Argument::None,
+            Argument::None,
             Argument::None,
             Argument::None,
         ],
@@ -4675,6 +9438,9 @@ fn basic_lswx(out: &mut ParsedIns, ins: Ins) {
             Argument::GPR(GPR(ins.field_rb() as _)),
             Argument::None,
             Argument::None,
+            Argument::None,
+            Argument::None,
+            Argument::None,
         ],
     };
 }
@@ -4685,6 +9451,39 @@ fn basic_lwarx(out: &mut ParsedIns, ins: Ins) {
             Argument::GPR(GPR(ins.field_rd() as _)),
             Argument::GPR(GPR(ins.field_ra() as _)),
             Argument::GPR(GPR(ins.field_rb() as _)),
+            Argument::None,
+            Argument::None,
+            Argument::None,
+            Argument::None,
+            Argument::None,
+        ],
+    };
+}
+fn basic_lwaux(out: &mut ParsedIns, ins: Ins) {
+    *out = ParsedIns {
+        mnemonic: "lwaux",
+        args: [
+            Argument::GPR(GPR(ins.field_rd() as _)),
+            Argument::GPR(GPR(ins.field_ra() as _)),
+            Argument::GPR(GPR(ins.field_rb() as _)),
+            Argument::None,
+            Argument::None,
+            Argument::None,
+            Argument::None,
+            Argument::None,
+        ],
+    };
+}
+fn basic_lwax(out: &mut ParsedIns, ins: Ins) {
+    *out = ParsedIns {
+        mnemonic: "lwax",
+        args: [
+            Argument::GPR(GPR(ins.field_rd() as _)),
+            Argument::GPR(GPR(ins.field_ra() as _)),
+            Argument::GPR(GPR(ins.field_rb() as _)),
+            Argument::None,
+            Argument::None,
+            Argument::None,
             Argument::None,
             Argument::None,
         ],
@@ -4699,6 +9498,9 @@ fn basic_lwbrx(out: &mut ParsedIns, ins: Ins) {
             Argument::GPR(GPR(ins.field_rb() as _)),
             Argument::None,
             Argument::None,
+            Argument::None,
+            Argument::None,
+            Argument::None,
         ],
     };
 }
@@ -4709,6 +9511,9 @@ fn basic_lwzux(out: &mut ParsedIns, ins: Ins) {
             Argument::GPR(GPR(ins.field_rd() as _)),
             Argument::GPR(GPR(ins.field_ra() as _)),
             Argument::GPR(GPR(ins.field_rb() as _)),
+            Argument::None,
+            Argument::None,
+            Argument::None,
             Argument::None,
             Argument::None,
         ],
@@ -4723,6 +9528,9 @@ fn basic_lwzx(out: &mut ParsedIns, ins: Ins) {
             Argument::GPR(GPR(ins.field_rb() as _)),
             Argument::None,
             Argument::None,
+            Argument::None,
+            Argument::None,
+            Argument::None,
         ],
     };
 }
@@ -4731,6 +9539,9 @@ fn basic_mcrxr(out: &mut ParsedIns, ins: Ins) {
         mnemonic: "mcrxr",
         args: [
             Argument::CRField(CRField(ins.field_crfd() as _)),
+            Argument::None,
+            Argument::None,
+            Argument::None,
             Argument::None,
             Argument::None,
             Argument::None,
@@ -4747,6 +9558,9 @@ fn basic_mfcr(out: &mut ParsedIns, ins: Ins) {
             Argument::None,
             Argument::None,
             Argument::None,
+            Argument::None,
+            Argument::None,
+            Argument::None,
         ],
     };
 }
@@ -4755,6 +9569,9 @@ fn basic_mfmsr(out: &mut ParsedIns, ins: Ins) {
         mnemonic: "mfmsr",
         args: [
             Argument::GPR(GPR(ins.field_rd() as _)),
+            Argument::None,
+            Argument::None,
+            Argument::None,
             Argument::None,
             Argument::None,
             Argument::None,
@@ -4771,6 +9588,9 @@ fn basic_mfspr(out: &mut ParsedIns, ins: Ins) {
             Argument::None,
             Argument::None,
             Argument::None,
+            Argument::None,
+            Argument::None,
+            Argument::None,
         ],
     };
 }
@@ -4780,6 +9600,9 @@ fn simplified_mfspr(out: &mut ParsedIns, ins: Ins) {
             mnemonic: "mfxer",
             args: [
                 Argument::GPR(GPR(ins.field_rd() as _)),
+                Argument::None,
+                Argument::None,
+                Argument::None,
                 Argument::None,
                 Argument::None,
                 Argument::None,
@@ -4797,6 +9620,9 @@ fn simplified_mfspr(out: &mut ParsedIns, ins: Ins) {
                 Argument::None,
                 Argument::None,
                 Argument::None,
+                Argument::None,
+                Argument::None,
+                Argument::None,
             ],
         };
         return;
@@ -4806,6 +9632,9 @@ fn simplified_mfspr(out: &mut ParsedIns, ins: Ins) {
             mnemonic: "mfctr",
             args: [
                 Argument::GPR(GPR(ins.field_rd() as _)),
+                Argument::None,
+                Argument::None,
+                Argument::None,
                 Argument::None,
                 Argument::None,
                 Argument::None,
@@ -4823,6 +9652,9 @@ fn simplified_mfspr(out: &mut ParsedIns, ins: Ins) {
                 Argument::None,
                 Argument::None,
                 Argument::None,
+                Argument::None,
+                Argument::None,
+                Argument::None,
             ],
         };
         return;
@@ -4832,6 +9664,9 @@ fn simplified_mfspr(out: &mut ParsedIns, ins: Ins) {
             mnemonic: "mfdar",
             args: [
                 Argument::GPR(GPR(ins.field_rd() as _)),
+                Argument::None,
+                Argument::None,
+                Argument::None,
                 Argument::None,
                 Argument::None,
                 Argument::None,
@@ -4849,6 +9684,9 @@ fn simplified_mfspr(out: &mut ParsedIns, ins: Ins) {
                 Argument::None,
                 Argument::None,
                 Argument::None,
+                Argument::None,
+                Argument::None,
+                Argument::None,
             ],
         };
         return;
@@ -4858,6 +9696,9 @@ fn simplified_mfspr(out: &mut ParsedIns, ins: Ins) {
             mnemonic: "mfsdr1",
             args: [
                 Argument::GPR(GPR(ins.field_rd() as _)),
+                Argument::None,
+                Argument::None,
+                Argument::None,
                 Argument::None,
                 Argument::None,
                 Argument::None,
@@ -4875,6 +9716,9 @@ fn simplified_mfspr(out: &mut ParsedIns, ins: Ins) {
                 Argument::None,
                 Argument::None,
                 Argument::None,
+                Argument::None,
+                Argument::None,
+                Argument::None,
             ],
         };
         return;
@@ -4884,6 +9728,9 @@ fn simplified_mfspr(out: &mut ParsedIns, ins: Ins) {
             mnemonic: "mfsrr1",
             args: [
                 Argument::GPR(GPR(ins.field_rd() as _)),
+                Argument::None,
+                Argument::None,
+                Argument::None,
                 Argument::None,
                 Argument::None,
                 Argument::None,
@@ -4901,6 +9748,9 @@ fn simplified_mfspr(out: &mut ParsedIns, ins: Ins) {
                 Argument::None,
                 Argument::None,
                 Argument::None,
+                Argument::None,
+                Argument::None,
+                Argument::None,
             ],
         };
         return;
@@ -4910,6 +9760,9 @@ fn simplified_mfspr(out: &mut ParsedIns, ins: Ins) {
             mnemonic: "mfear",
             args: [
                 Argument::GPR(GPR(ins.field_rd() as _)),
+                Argument::None,
+                Argument::None,
+                Argument::None,
                 Argument::None,
                 Argument::None,
                 Argument::None,
@@ -4927,6 +9780,9 @@ fn simplified_mfspr(out: &mut ParsedIns, ins: Ins) {
                 Argument::None,
                 Argument::None,
                 Argument::None,
+                Argument::None,
+                Argument::None,
+                Argument::None,
             ],
         };
         return;
@@ -4937,6 +9793,9 @@ fn simplified_mfspr(out: &mut ParsedIns, ins: Ins) {
             args: [
                 Argument::GPR(GPR(ins.field_rd() as _)),
                 Argument::OpaqueU(OpaqueU(ins.field_spr_bat() as _)),
+                Argument::None,
+                Argument::None,
+                Argument::None,
                 Argument::None,
                 Argument::None,
                 Argument::None,
@@ -4953,6 +9812,9 @@ fn simplified_mfspr(out: &mut ParsedIns, ins: Ins) {
                 Argument::None,
                 Argument::None,
                 Argument::None,
+                Argument::None,
+                Argument::None,
+                Argument::None,
             ],
         };
         return;
@@ -4963,6 +9825,9 @@ fn simplified_mfspr(out: &mut ParsedIns, ins: Ins) {
             args: [
                 Argument::GPR(GPR(ins.field_rd() as _)),
                 Argument::OpaqueU(OpaqueU(ins.field_spr_bat() as _)),
+                Argument::None,
+                Argument::None,
+                Argument::None,
                 Argument::None,
                 Argument::None,
                 Argument::None,
@@ -4981,6 +9846,9 @@ fn basic_mfsr(out: &mut ParsedIns, ins: Ins) {
             Argument::None,
             Argument::None,
             Argument::None,
+            Argument::None,
+            Argument::None,
+            Argument::None,
         ],
     };
 }
@@ -4990,6 +9858,9 @@ fn basic_mfsrin(out: &mut ParsedIns, ins: Ins) {
         args: [
             Argument::GPR(GPR(ins.field_rd() as _)),
             Argument::GPR(GPR(ins.field_rb() as _)),
+            Argument::None,
+            Argument::None,
+            Argument::None,
             Argument::None,
             Argument::None,
             Argument::None,
@@ -5005,6 +9876,9 @@ fn basic_mftb(out: &mut ParsedIns, ins: Ins) {
             Argument::None,
             Argument::None,
             Argument::None,
+            Argument::None,
+            Argument::None,
+            Argument::None,
         ],
     };
 }
@@ -5017,6 +9891,9 @@ fn basic_mtcrf(out: &mut ParsedIns, ins: Ins) {
             Argument::None,
             Argument::None,
             Argument::None,
+            Argument::None,
+            Argument::None,
+            Argument::None,
         ],
     };
 }
@@ -5025,6 +9902,24 @@ fn basic_mtmsr(out: &mut ParsedIns, ins: Ins) {
         mnemonic: "mtmsr",
         args: [
             Argument::GPR(GPR(ins.field_rs() as _)),
+            Argument::None,
+            Argument::None,
+            Argument::None,
+            Argument::None,
+            Argument::None,
+            Argument::None,
+            Argument::None,
+        ],
+    };
+}
+fn basic_mtmsrd(out: &mut ParsedIns, ins: Ins) {
+    *out = ParsedIns {
+        mnemonic: "mtmsrd",
+        args: [
+            Argument::GPR(GPR(ins.field_rs() as _)),
+            Argument::OpaqueU(OpaqueU(ins.field_mtmsrd_l() as _)),
+            Argument::None,
+            Argument::None,
             Argument::None,
             Argument::None,
             Argument::None,
@@ -5041,6 +9936,9 @@ fn basic_mtspr(out: &mut ParsedIns, ins: Ins) {
             Argument::None,
             Argument::None,
             Argument::None,
+            Argument::None,
+            Argument::None,
+            Argument::None,
         ],
     };
 }
@@ -5050,6 +9948,9 @@ fn simplified_mtspr(out: &mut ParsedIns, ins: Ins) {
             mnemonic: "mtxer",
             args: [
                 Argument::GPR(GPR(ins.field_rs() as _)),
+                Argument::None,
+                Argument::None,
+                Argument::None,
                 Argument::None,
                 Argument::None,
                 Argument::None,
@@ -5067,6 +9968,9 @@ fn simplified_mtspr(out: &mut ParsedIns, ins: Ins) {
                 Argument::None,
                 Argument::None,
                 Argument::None,
+                Argument::None,
+                Argument::None,
+                Argument::None,
             ],
         };
         return;
@@ -5076,6 +9980,9 @@ fn simplified_mtspr(out: &mut ParsedIns, ins: Ins) {
             mnemonic: "mtctr",
             args: [
                 Argument::GPR(GPR(ins.field_rs() as _)),
+                Argument::None,
+                Argument::None,
+                Argument::None,
                 Argument::None,
                 Argument::None,
                 Argument::None,
@@ -5093,6 +10000,9 @@ fn simplified_mtspr(out: &mut ParsedIns, ins: Ins) {
                 Argument::None,
                 Argument::None,
                 Argument::None,
+                Argument::None,
+                Argument::None,
+                Argument::None,
             ],
         };
         return;
@@ -5102,6 +10012,9 @@ fn simplified_mtspr(out: &mut ParsedIns, ins: Ins) {
             mnemonic: "mtdar",
             args: [
                 Argument::GPR(GPR(ins.field_rs() as _)),
+                Argument::None,
+                Argument::None,
+                Argument::None,
                 Argument::None,
                 Argument::None,
                 Argument::None,
@@ -5119,6 +10032,9 @@ fn simplified_mtspr(out: &mut ParsedIns, ins: Ins) {
                 Argument::None,
                 Argument::None,
                 Argument::None,
+                Argument::None,
+                Argument::None,
+                Argument::None,
             ],
         };
         return;
@@ -5128,6 +10044,9 @@ fn simplified_mtspr(out: &mut ParsedIns, ins: Ins) {
             mnemonic: "mtsdr1",
             args: [
                 Argument::GPR(GPR(ins.field_rs() as _)),
+                Argument::None,
+                Argument::None,
+                Argument::None,
                 Argument::None,
                 Argument::None,
                 Argument::None,
@@ -5145,6 +10064,9 @@ fn simplified_mtspr(out: &mut ParsedIns, ins: Ins) {
                 Argument::None,
                 Argument::None,
                 Argument::None,
+                Argument::None,
+                Argument::None,
+                Argument::None,
             ],
         };
         return;
@@ -5154,6 +10076,9 @@ fn simplified_mtspr(out: &mut ParsedIns, ins: Ins) {
             mnemonic: "mtsrr1",
             args: [
                 Argument::GPR(GPR(ins.field_rs() as _)),
+                Argument::None,
+                Argument::None,
+                Argument::None,
                 Argument::None,
                 Argument::None,
                 Argument::None,
@@ -5171,6 +10096,9 @@ fn simplified_mtspr(out: &mut ParsedIns, ins: Ins) {
                 Argument::None,
                 Argument::None,
                 Argument::None,
+                Argument::None,
+                Argument::None,
+                Argument::None,
             ],
         };
         return;
@@ -5180,6 +10108,9 @@ fn simplified_mtspr(out: &mut ParsedIns, ins: Ins) {
             mnemonic: "mtear",
             args: [
                 Argument::GPR(GPR(ins.field_rs() as _)),
+                Argument::None,
+                Argument::None,
+                Argument::None,
                 Argument::None,
                 Argument::None,
                 Argument::None,
@@ -5197,6 +10128,9 @@ fn simplified_mtspr(out: &mut ParsedIns, ins: Ins) {
                 Argument::None,
                 Argument::None,
                 Argument::None,
+                Argument::None,
+                Argument::None,
+                Argument::None,
             ],
         };
         return;
@@ -5206,6 +10140,9 @@ fn simplified_mtspr(out: &mut ParsedIns, ins: Ins) {
             mnemonic: "mttbu",
             args: [
                 Argument::GPR(GPR(ins.field_rs() as _)),
+                Argument::None,
+                Argument::None,
+                Argument::None,
                 Argument::None,
                 Argument::None,
                 Argument::None,
@@ -5223,6 +10160,9 @@ fn simplified_mtspr(out: &mut ParsedIns, ins: Ins) {
                 Argument::None,
                 Argument::None,
                 Argument::None,
+                Argument::None,
+                Argument::None,
+                Argument::None,
             ],
         };
         return;
@@ -5233,6 +10173,9 @@ fn simplified_mtspr(out: &mut ParsedIns, ins: Ins) {
             args: [
                 Argument::OpaqueU(OpaqueU(ins.field_spr_bat() as _)),
                 Argument::GPR(GPR(ins.field_rs() as _)),
+                Argument::None,
+                Argument::None,
+                Argument::None,
                 Argument::None,
                 Argument::None,
                 Argument::None,
@@ -5249,6 +10192,9 @@ fn simplified_mtspr(out: &mut ParsedIns, ins: Ins) {
                 Argument::None,
                 Argument::None,
                 Argument::None,
+                Argument::None,
+                Argument::None,
+                Argument::None,
             ],
         };
         return;
@@ -5259,6 +10205,9 @@ fn simplified_mtspr(out: &mut ParsedIns, ins: Ins) {
             args: [
                 Argument::OpaqueU(OpaqueU(ins.field_spr_bat() as _)),
                 Argument::GPR(GPR(ins.field_rs() as _)),
+                Argument::None,
+                Argument::None,
+                Argument::None,
                 Argument::None,
                 Argument::None,
                 Argument::None,
@@ -5277,6 +10226,39 @@ fn basic_mtsr(out: &mut ParsedIns, ins: Ins) {
             Argument::None,
             Argument::None,
             Argument::None,
+            Argument::None,
+            Argument::None,
+            Argument::None,
+        ],
+    };
+}
+fn basic_mtsrd(out: &mut ParsedIns, ins: Ins) {
+    *out = ParsedIns {
+        mnemonic: "mtsrd",
+        args: [
+            Argument::SR(SR(ins.field_sr() as _)),
+            Argument::GPR(GPR(ins.field_rs() as _)),
+            Argument::None,
+            Argument::None,
+            Argument::None,
+            Argument::None,
+            Argument::None,
+            Argument::None,
+        ],
+    };
+}
+fn basic_mtsrdin(out: &mut ParsedIns, ins: Ins) {
+    *out = ParsedIns {
+        mnemonic: "mtsrdin",
+        args: [
+            Argument::GPR(GPR(ins.field_rs() as _)),
+            Argument::GPR(GPR(ins.field_rb() as _)),
+            Argument::None,
+            Argument::None,
+            Argument::None,
+            Argument::None,
+            Argument::None,
+            Argument::None,
         ],
     };
 }
@@ -5289,7 +10271,46 @@ fn basic_mtsrin(out: &mut ParsedIns, ins: Ins) {
             Argument::None,
             Argument::None,
             Argument::None,
+            Argument::None,
+            Argument::None,
+            Argument::None,
         ],
+    };
+}
+fn basic_mulhd(out: &mut ParsedIns, ins: Ins) {
+    *out = {
+        const MODIFIERS: [&str; 2] = ["mulhd", "mulhd."];
+        ParsedIns {
+            mnemonic: MODIFIERS[ins.field_rc() as usize],
+            args: [
+                Argument::GPR(GPR(ins.field_rd() as _)),
+                Argument::GPR(GPR(ins.field_ra() as _)),
+                Argument::GPR(GPR(ins.field_rb() as _)),
+                Argument::None,
+                Argument::None,
+                Argument::None,
+                Argument::None,
+                Argument::None,
+            ],
+        }
+    };
+}
+fn basic_mulhdu(out: &mut ParsedIns, ins: Ins) {
+    *out = {
+        const MODIFIERS: [&str; 2] = ["mulhdu", "mulhdu."];
+        ParsedIns {
+            mnemonic: MODIFIERS[ins.field_rc() as usize],
+            args: [
+                Argument::GPR(GPR(ins.field_rd() as _)),
+                Argument::GPR(GPR(ins.field_ra() as _)),
+                Argument::GPR(GPR(ins.field_rb() as _)),
+                Argument::None,
+                Argument::None,
+                Argument::None,
+                Argument::None,
+                Argument::None,
+            ],
+        }
     };
 }
 fn basic_mulhw(out: &mut ParsedIns, ins: Ins) {
@@ -5301,6 +10322,9 @@ fn basic_mulhw(out: &mut ParsedIns, ins: Ins) {
                 Argument::GPR(GPR(ins.field_rd() as _)),
                 Argument::GPR(GPR(ins.field_ra() as _)),
                 Argument::GPR(GPR(ins.field_rb() as _)),
+                Argument::None,
+                Argument::None,
+                Argument::None,
                 Argument::None,
                 Argument::None,
             ],
@@ -5316,6 +10340,28 @@ fn basic_mulhwu(out: &mut ParsedIns, ins: Ins) {
                 Argument::GPR(GPR(ins.field_rd() as _)),
                 Argument::GPR(GPR(ins.field_ra() as _)),
                 Argument::GPR(GPR(ins.field_rb() as _)),
+                Argument::None,
+                Argument::None,
+                Argument::None,
+                Argument::None,
+                Argument::None,
+            ],
+        }
+    };
+}
+fn basic_mulld(out: &mut ParsedIns, ins: Ins) {
+    *out = {
+        const MODIFIERS: [&str; 4] = ["mulld", "mulldo", "mulld.", "mulldo."];
+        ParsedIns {
+            mnemonic: MODIFIERS[ins.field_oe() as usize
+                | (ins.field_rc() as usize) << 1],
+            args: [
+                Argument::GPR(GPR(ins.field_rd() as _)),
+                Argument::GPR(GPR(ins.field_ra() as _)),
+                Argument::GPR(GPR(ins.field_rb() as _)),
+                Argument::None,
+                Argument::None,
+                Argument::None,
                 Argument::None,
                 Argument::None,
             ],
@@ -5334,6 +10380,9 @@ fn basic_mullw(out: &mut ParsedIns, ins: Ins) {
                 Argument::GPR(GPR(ins.field_rb() as _)),
                 Argument::None,
                 Argument::None,
+                Argument::None,
+                Argument::None,
+                Argument::None,
             ],
         }
     };
@@ -5347,6 +10396,9 @@ fn basic_nand(out: &mut ParsedIns, ins: Ins) {
                 Argument::GPR(GPR(ins.field_ra() as _)),
                 Argument::GPR(GPR(ins.field_rs() as _)),
                 Argument::GPR(GPR(ins.field_rb() as _)),
+                Argument::None,
+                Argument::None,
+                Argument::None,
                 Argument::None,
                 Argument::None,
             ],
@@ -5365,6 +10417,9 @@ fn basic_neg(out: &mut ParsedIns, ins: Ins) {
                 Argument::None,
                 Argument::None,
                 Argument::None,
+                Argument::None,
+                Argument::None,
+                Argument::None,
             ],
         }
     };
@@ -5378,6 +10433,9 @@ fn basic_nor(out: &mut ParsedIns, ins: Ins) {
                 Argument::GPR(GPR(ins.field_ra() as _)),
                 Argument::GPR(GPR(ins.field_rs() as _)),
                 Argument::GPR(GPR(ins.field_rb() as _)),
+                Argument::None,
+                Argument::None,
+                Argument::None,
                 Argument::None,
                 Argument::None,
             ],
@@ -5395,6 +10453,9 @@ fn basic_or(out: &mut ParsedIns, ins: Ins) {
                 Argument::GPR(GPR(ins.field_rb() as _)),
                 Argument::None,
                 Argument::None,
+                Argument::None,
+                Argument::None,
+                Argument::None,
             ],
         }
     };
@@ -5408,6 +10469,9 @@ fn simplified_or(out: &mut ParsedIns, ins: Ins) {
                 args: [
                     Argument::GPR(GPR(ins.field_ra() as _)),
                     Argument::GPR(GPR(ins.field_rs() as _)),
+                    Argument::None,
+                    Argument::None,
+                    Argument::None,
                     Argument::None,
                     Argument::None,
                     Argument::None,
@@ -5429,6 +10493,48 @@ fn basic_orc(out: &mut ParsedIns, ins: Ins) {
                 Argument::GPR(GPR(ins.field_rb() as _)),
                 Argument::None,
                 Argument::None,
+                Argument::None,
+                Argument::None,
+                Argument::None,
+            ],
+        }
+    };
+}
+fn basic_slbia(out: &mut ParsedIns, ins: Ins) {
+    *out = ParsedIns {
+        mnemonic: "slbia",
+        args: EMPTY_ARGS,
+    };
+}
+fn basic_slbie(out: &mut ParsedIns, ins: Ins) {
+    *out = ParsedIns {
+        mnemonic: "slbie",
+        args: [
+            Argument::GPR(GPR(ins.field_rb() as _)),
+            Argument::None,
+            Argument::None,
+            Argument::None,
+            Argument::None,
+            Argument::None,
+            Argument::None,
+            Argument::None,
+        ],
+    };
+}
+fn basic_sld(out: &mut ParsedIns, ins: Ins) {
+    *out = {
+        const MODIFIERS: [&str; 2] = ["sld", "sld."];
+        ParsedIns {
+            mnemonic: MODIFIERS[ins.field_rc() as usize],
+            args: [
+                Argument::GPR(GPR(ins.field_ra() as _)),
+                Argument::GPR(GPR(ins.field_rs() as _)),
+                Argument::GPR(GPR(ins.field_rb() as _)),
+                Argument::None,
+                Argument::None,
+                Argument::None,
+                Argument::None,
+                Argument::None,
             ],
         }
     };
@@ -5442,6 +10548,45 @@ fn basic_slw(out: &mut ParsedIns, ins: Ins) {
                 Argument::GPR(GPR(ins.field_ra() as _)),
                 Argument::GPR(GPR(ins.field_rs() as _)),
                 Argument::GPR(GPR(ins.field_rb() as _)),
+                Argument::None,
+                Argument::None,
+                Argument::None,
+                Argument::None,
+                Argument::None,
+            ],
+        }
+    };
+}
+fn basic_srad(out: &mut ParsedIns, ins: Ins) {
+    *out = {
+        const MODIFIERS: [&str; 2] = ["srad", "srad."];
+        ParsedIns {
+            mnemonic: MODIFIERS[ins.field_rc() as usize],
+            args: [
+                Argument::GPR(GPR(ins.field_ra() as _)),
+                Argument::GPR(GPR(ins.field_rs() as _)),
+                Argument::GPR(GPR(ins.field_rb() as _)),
+                Argument::None,
+                Argument::None,
+                Argument::None,
+                Argument::None,
+                Argument::None,
+            ],
+        }
+    };
+}
+fn basic_sradi(out: &mut ParsedIns, ins: Ins) {
+    *out = {
+        const MODIFIERS: [&str; 2] = ["sradi", "sradi."];
+        ParsedIns {
+            mnemonic: MODIFIERS[ins.field_rc() as usize],
+            args: [
+                Argument::GPR(GPR(ins.field_ra() as _)),
+                Argument::GPR(GPR(ins.field_rs() as _)),
+                Argument::OpaqueU(OpaqueU(ins.field_sh1() as _)),
+                Argument::OpaqueU(OpaqueU(ins.field_sh2() as _)),
+                Argument::None,
+                Argument::None,
                 Argument::None,
                 Argument::None,
             ],
@@ -5459,6 +10604,9 @@ fn basic_sraw(out: &mut ParsedIns, ins: Ins) {
                 Argument::GPR(GPR(ins.field_rb() as _)),
                 Argument::None,
                 Argument::None,
+                Argument::None,
+                Argument::None,
+                Argument::None,
             ],
         }
     };
@@ -5472,6 +10620,27 @@ fn basic_srawi(out: &mut ParsedIns, ins: Ins) {
                 Argument::GPR(GPR(ins.field_ra() as _)),
                 Argument::GPR(GPR(ins.field_rs() as _)),
                 Argument::OpaqueU(OpaqueU(ins.field_sh() as _)),
+                Argument::None,
+                Argument::None,
+                Argument::None,
+                Argument::None,
+                Argument::None,
+            ],
+        }
+    };
+}
+fn basic_srd(out: &mut ParsedIns, ins: Ins) {
+    *out = {
+        const MODIFIERS: [&str; 2] = ["srd", "srd."];
+        ParsedIns {
+            mnemonic: MODIFIERS[ins.field_rc() as usize],
+            args: [
+                Argument::GPR(GPR(ins.field_ra() as _)),
+                Argument::GPR(GPR(ins.field_rs() as _)),
+                Argument::GPR(GPR(ins.field_rb() as _)),
+                Argument::None,
+                Argument::None,
+                Argument::None,
                 Argument::None,
                 Argument::None,
             ],
@@ -5489,6 +10658,9 @@ fn basic_srw(out: &mut ParsedIns, ins: Ins) {
                 Argument::GPR(GPR(ins.field_rb() as _)),
                 Argument::None,
                 Argument::None,
+                Argument::None,
+                Argument::None,
+                Argument::None,
             ],
         }
     };
@@ -5500,6 +10672,9 @@ fn basic_stbux(out: &mut ParsedIns, ins: Ins) {
             Argument::GPR(GPR(ins.field_rs() as _)),
             Argument::GPR(GPR(ins.field_ra() as _)),
             Argument::GPR(GPR(ins.field_rb() as _)),
+            Argument::None,
+            Argument::None,
+            Argument::None,
             Argument::None,
             Argument::None,
         ],
@@ -5514,6 +10689,54 @@ fn basic_stbx(out: &mut ParsedIns, ins: Ins) {
             Argument::GPR(GPR(ins.field_rb() as _)),
             Argument::None,
             Argument::None,
+            Argument::None,
+            Argument::None,
+            Argument::None,
+        ],
+    };
+}
+fn basic_stdcx_(out: &mut ParsedIns, ins: Ins) {
+    *out = ParsedIns {
+        mnemonic: "stdcx.",
+        args: [
+            Argument::GPR(GPR(ins.field_rs() as _)),
+            Argument::GPR(GPR(ins.field_ra() as _)),
+            Argument::GPR(GPR(ins.field_rb() as _)),
+            Argument::None,
+            Argument::None,
+            Argument::None,
+            Argument::None,
+            Argument::None,
+        ],
+    };
+}
+fn basic_stdux(out: &mut ParsedIns, ins: Ins) {
+    *out = ParsedIns {
+        mnemonic: "stdux",
+        args: [
+            Argument::GPR(GPR(ins.field_rs() as _)),
+            Argument::GPR(GPR(ins.field_ra() as _)),
+            Argument::GPR(GPR(ins.field_rb() as _)),
+            Argument::None,
+            Argument::None,
+            Argument::None,
+            Argument::None,
+            Argument::None,
+        ],
+    };
+}
+fn basic_stdx(out: &mut ParsedIns, ins: Ins) {
+    *out = ParsedIns {
+        mnemonic: "stdx",
+        args: [
+            Argument::GPR(GPR(ins.field_rs() as _)),
+            Argument::GPR(GPR(ins.field_ra() as _)),
+            Argument::GPR(GPR(ins.field_rb() as _)),
+            Argument::None,
+            Argument::None,
+            Argument::None,
+            Argument::None,
+            Argument::None,
         ],
     };
 }
@@ -5524,6 +10747,9 @@ fn basic_stfdux(out: &mut ParsedIns, ins: Ins) {
             Argument::FPR(FPR(ins.field_frs() as _)),
             Argument::GPR(GPR(ins.field_ra() as _)),
             Argument::GPR(GPR(ins.field_rb() as _)),
+            Argument::None,
+            Argument::None,
+            Argument::None,
             Argument::None,
             Argument::None,
         ],
@@ -5538,6 +10764,9 @@ fn basic_stfdx(out: &mut ParsedIns, ins: Ins) {
             Argument::GPR(GPR(ins.field_rb() as _)),
             Argument::None,
             Argument::None,
+            Argument::None,
+            Argument::None,
+            Argument::None,
         ],
     };
 }
@@ -5548,6 +10777,9 @@ fn basic_stfiwx(out: &mut ParsedIns, ins: Ins) {
             Argument::FPR(FPR(ins.field_frs() as _)),
             Argument::GPR(GPR(ins.field_ra() as _)),
             Argument::GPR(GPR(ins.field_rb() as _)),
+            Argument::None,
+            Argument::None,
+            Argument::None,
             Argument::None,
             Argument::None,
         ],
@@ -5562,6 +10794,9 @@ fn basic_stfsux(out: &mut ParsedIns, ins: Ins) {
             Argument::GPR(GPR(ins.field_rb() as _)),
             Argument::None,
             Argument::None,
+            Argument::None,
+            Argument::None,
+            Argument::None,
         ],
     };
 }
@@ -5572,6 +10807,9 @@ fn basic_stfsx(out: &mut ParsedIns, ins: Ins) {
             Argument::FPR(FPR(ins.field_frs() as _)),
             Argument::GPR(GPR(ins.field_ra() as _)),
             Argument::GPR(GPR(ins.field_rb() as _)),
+            Argument::None,
+            Argument::None,
+            Argument::None,
             Argument::None,
             Argument::None,
         ],
@@ -5586,6 +10824,9 @@ fn basic_sthbrx(out: &mut ParsedIns, ins: Ins) {
             Argument::GPR(GPR(ins.field_rb() as _)),
             Argument::None,
             Argument::None,
+            Argument::None,
+            Argument::None,
+            Argument::None,
         ],
     };
 }
@@ -5596,6 +10837,9 @@ fn basic_sthux(out: &mut ParsedIns, ins: Ins) {
             Argument::GPR(GPR(ins.field_rs() as _)),
             Argument::GPR(GPR(ins.field_ra() as _)),
             Argument::GPR(GPR(ins.field_rb() as _)),
+            Argument::None,
+            Argument::None,
+            Argument::None,
             Argument::None,
             Argument::None,
         ],
@@ -5610,6 +10854,9 @@ fn basic_sthx(out: &mut ParsedIns, ins: Ins) {
             Argument::GPR(GPR(ins.field_rb() as _)),
             Argument::None,
             Argument::None,
+            Argument::None,
+            Argument::None,
+            Argument::None,
         ],
     };
 }
@@ -5620,6 +10867,9 @@ fn basic_stswi(out: &mut ParsedIns, ins: Ins) {
             Argument::GPR(GPR(ins.field_rs() as _)),
             Argument::GPR(GPR(ins.field_ra() as _)),
             Argument::OpaqueU(OpaqueU(ins.field_nb() as _)),
+            Argument::None,
+            Argument::None,
+            Argument::None,
             Argument::None,
             Argument::None,
         ],
@@ -5634,6 +10884,9 @@ fn basic_stswx(out: &mut ParsedIns, ins: Ins) {
             Argument::GPR(GPR(ins.field_rb() as _)),
             Argument::None,
             Argument::None,
+            Argument::None,
+            Argument::None,
+            Argument::None,
         ],
     };
 }
@@ -5644,6 +10897,9 @@ fn basic_stwbrx(out: &mut ParsedIns, ins: Ins) {
             Argument::GPR(GPR(ins.field_rs() as _)),
             Argument::GPR(GPR(ins.field_ra() as _)),
             Argument::GPR(GPR(ins.field_rb() as _)),
+            Argument::None,
+            Argument::None,
+            Argument::None,
             Argument::None,
             Argument::None,
         ],
@@ -5658,6 +10914,9 @@ fn basic_stwcx_(out: &mut ParsedIns, ins: Ins) {
             Argument::GPR(GPR(ins.field_rb() as _)),
             Argument::None,
             Argument::None,
+            Argument::None,
+            Argument::None,
+            Argument::None,
         ],
     };
 }
@@ -5670,6 +10929,9 @@ fn basic_stwux(out: &mut ParsedIns, ins: Ins) {
             Argument::GPR(GPR(ins.field_rb() as _)),
             Argument::None,
             Argument::None,
+            Argument::None,
+            Argument::None,
+            Argument::None,
         ],
     };
 }
@@ -5680,6 +10942,9 @@ fn basic_stwx(out: &mut ParsedIns, ins: Ins) {
             Argument::GPR(GPR(ins.field_rs() as _)),
             Argument::GPR(GPR(ins.field_ra() as _)),
             Argument::GPR(GPR(ins.field_rb() as _)),
+            Argument::None,
+            Argument::None,
+            Argument::None,
             Argument::None,
             Argument::None,
         ],
@@ -5695,6 +10960,9 @@ fn basic_subf(out: &mut ParsedIns, ins: Ins) {
                 Argument::GPR(GPR(ins.field_rd() as _)),
                 Argument::GPR(GPR(ins.field_ra() as _)),
                 Argument::GPR(GPR(ins.field_rb() as _)),
+                Argument::None,
+                Argument::None,
+                Argument::None,
                 Argument::None,
                 Argument::None,
             ],
@@ -5713,6 +10981,9 @@ fn basic_subfc(out: &mut ParsedIns, ins: Ins) {
                 Argument::GPR(GPR(ins.field_rb() as _)),
                 Argument::None,
                 Argument::None,
+                Argument::None,
+                Argument::None,
+                Argument::None,
             ],
         }
     };
@@ -5729,6 +11000,9 @@ fn basic_subfe(out: &mut ParsedIns, ins: Ins) {
                 Argument::GPR(GPR(ins.field_rb() as _)),
                 Argument::None,
                 Argument::None,
+                Argument::None,
+                Argument::None,
+                Argument::None,
             ],
         }
     };
@@ -5742,6 +11016,9 @@ fn basic_subfme(out: &mut ParsedIns, ins: Ins) {
             args: [
                 Argument::GPR(GPR(ins.field_rd() as _)),
                 Argument::GPR(GPR(ins.field_ra() as _)),
+                Argument::None,
+                Argument::None,
+                Argument::None,
                 Argument::None,
                 Argument::None,
                 Argument::None,
@@ -5761,6 +11038,9 @@ fn basic_subfze(out: &mut ParsedIns, ins: Ins) {
                 Argument::None,
                 Argument::None,
                 Argument::None,
+                Argument::None,
+                Argument::None,
+                Argument::None,
             ],
         }
     };
@@ -5768,14 +11048,93 @@ fn basic_subfze(out: &mut ParsedIns, ins: Ins) {
 fn basic_sync(out: &mut ParsedIns, ins: Ins) {
     *out = ParsedIns {
         mnemonic: "sync",
-        args: EMPTY_ARGS,
+        args: [
+            Argument::OpaqueU(OpaqueU(ins.field_sync_l() as _)),
+            Argument::None,
+            Argument::None,
+            Argument::None,
+            Argument::None,
+            Argument::None,
+            Argument::None,
+            Argument::None,
+        ],
     };
+}
+fn simplified_sync(out: &mut ParsedIns, ins: Ins) {
+    if ins.field_sync_l() == 0x1 {
+        *out = ParsedIns {
+            mnemonic: "lwsync",
+            args: EMPTY_ARGS,
+        };
+        return;
+    }
+    if ins.field_sync_l() == 0x2 {
+        *out = ParsedIns {
+            mnemonic: "ptesync",
+            args: EMPTY_ARGS,
+        };
+        return;
+    }
+    basic_sync(out, ins)
+}
+fn basic_td(out: &mut ParsedIns, ins: Ins) {
+    *out = ParsedIns {
+        mnemonic: "td",
+        args: [
+            Argument::OpaqueU(OpaqueU(ins.field_to() as _)),
+            Argument::GPR(GPR(ins.field_ra() as _)),
+            Argument::GPR(GPR(ins.field_rb() as _)),
+            Argument::None,
+            Argument::None,
+            Argument::None,
+            Argument::None,
+            Argument::None,
+        ],
+    };
+}
+fn simplified_td(out: &mut ParsedIns, ins: Ins) {
+    if ins.field_to() == 0xc {
+        *out = ParsedIns {
+            mnemonic: "tdge",
+            args: [
+                Argument::GPR(GPR(ins.field_ra() as _)),
+                Argument::GPR(GPR(ins.field_rb() as _)),
+                Argument::None,
+                Argument::None,
+                Argument::None,
+                Argument::None,
+                Argument::None,
+                Argument::None,
+            ],
+        };
+        return;
+    }
+    if ins.field_to() == 0x5 {
+        *out = ParsedIns {
+            mnemonic: "tdlnl",
+            args: [
+                Argument::GPR(GPR(ins.field_ra() as _)),
+                Argument::GPR(GPR(ins.field_rb() as _)),
+                Argument::None,
+                Argument::None,
+                Argument::None,
+                Argument::None,
+                Argument::None,
+                Argument::None,
+            ],
+        };
+        return;
+    }
+    basic_td(out, ins)
 }
 fn basic_tlbie(out: &mut ParsedIns, ins: Ins) {
     *out = ParsedIns {
         mnemonic: "tlbie",
         args: [
             Argument::GPR(GPR(ins.field_rb() as _)),
+            Argument::None,
+            Argument::None,
+            Argument::None,
             Argument::None,
             Argument::None,
             Argument::None,
@@ -5798,6 +11157,9 @@ fn basic_tw(out: &mut ParsedIns, ins: Ins) {
             Argument::GPR(GPR(ins.field_rb() as _)),
             Argument::None,
             Argument::None,
+            Argument::None,
+            Argument::None,
+            Argument::None,
         ],
     };
 }
@@ -5811,6 +11173,9 @@ fn simplified_tw(out: &mut ParsedIns, ins: Ins) {
                 Argument::None,
                 Argument::None,
                 Argument::None,
+                Argument::None,
+                Argument::None,
+                Argument::None,
             ],
         };
         return;
@@ -5821,6 +11186,9 @@ fn simplified_tw(out: &mut ParsedIns, ins: Ins) {
             args: [
                 Argument::GPR(GPR(ins.field_ra() as _)),
                 Argument::GPR(GPR(ins.field_rb() as _)),
+                Argument::None,
+                Argument::None,
+                Argument::None,
                 Argument::None,
                 Argument::None,
                 Argument::None,
@@ -5848,8 +11216,245 @@ fn basic_xor(out: &mut ParsedIns, ins: Ins) {
                 Argument::GPR(GPR(ins.field_rb() as _)),
                 Argument::None,
                 Argument::None,
+                Argument::None,
+                Argument::None,
+                Argument::None,
             ],
         }
+    };
+}
+fn basic_dss(out: &mut ParsedIns, ins: Ins) {
+    *out = {
+        const MODIFIERS: [&str; 2] = ["dss", "dssa"];
+        ParsedIns {
+            mnemonic: MODIFIERS[ins.field_a() as usize],
+            args: [
+                Argument::OpaqueU(OpaqueU(ins.field_strm() as _)),
+                Argument::None,
+                Argument::None,
+                Argument::None,
+                Argument::None,
+                Argument::None,
+                Argument::None,
+                Argument::None,
+            ],
+        }
+    };
+}
+fn basic_dst(out: &mut ParsedIns, ins: Ins) {
+    *out = {
+        const MODIFIERS: [&str; 2] = ["dst", "dstt"];
+        ParsedIns {
+            mnemonic: MODIFIERS[ins.field_t() as usize],
+            args: [
+                Argument::GPR(GPR(ins.field_ra() as _)),
+                Argument::GPR(GPR(ins.field_rb() as _)),
+                Argument::OpaqueU(OpaqueU(ins.field_strm() as _)),
+                Argument::None,
+                Argument::None,
+                Argument::None,
+                Argument::None,
+                Argument::None,
+            ],
+        }
+    };
+}
+fn basic_dstst(out: &mut ParsedIns, ins: Ins) {
+    *out = {
+        const MODIFIERS: [&str; 2] = ["dstst", "dststt"];
+        ParsedIns {
+            mnemonic: MODIFIERS[ins.field_t() as usize],
+            args: [
+                Argument::GPR(GPR(ins.field_ra() as _)),
+                Argument::GPR(GPR(ins.field_rb() as _)),
+                Argument::OpaqueU(OpaqueU(ins.field_strm() as _)),
+                Argument::None,
+                Argument::None,
+                Argument::None,
+                Argument::None,
+                Argument::None,
+            ],
+        }
+    };
+}
+fn basic_lvebx(out: &mut ParsedIns, ins: Ins) {
+    *out = ParsedIns {
+        mnemonic: "lvebx",
+        args: [
+            Argument::GPR(GPR(ins.field_vd() as _)),
+            Argument::GPR(GPR(ins.field_ra() as _)),
+            Argument::GPR(GPR(ins.field_rb() as _)),
+            Argument::None,
+            Argument::None,
+            Argument::None,
+            Argument::None,
+            Argument::None,
+        ],
+    };
+}
+fn basic_lvehx(out: &mut ParsedIns, ins: Ins) {
+    *out = ParsedIns {
+        mnemonic: "lvehx",
+        args: [
+            Argument::GPR(GPR(ins.field_vd() as _)),
+            Argument::GPR(GPR(ins.field_ra() as _)),
+            Argument::GPR(GPR(ins.field_rb() as _)),
+            Argument::None,
+            Argument::None,
+            Argument::None,
+            Argument::None,
+            Argument::None,
+        ],
+    };
+}
+fn basic_lvewx(out: &mut ParsedIns, ins: Ins) {
+    *out = ParsedIns {
+        mnemonic: "lvewx",
+        args: [
+            Argument::GPR(GPR(ins.field_vd() as _)),
+            Argument::GPR(GPR(ins.field_ra() as _)),
+            Argument::GPR(GPR(ins.field_rb() as _)),
+            Argument::None,
+            Argument::None,
+            Argument::None,
+            Argument::None,
+            Argument::None,
+        ],
+    };
+}
+fn basic_lvsl(out: &mut ParsedIns, ins: Ins) {
+    *out = ParsedIns {
+        mnemonic: "lvsl",
+        args: [
+            Argument::GPR(GPR(ins.field_vd() as _)),
+            Argument::GPR(GPR(ins.field_ra() as _)),
+            Argument::GPR(GPR(ins.field_rb() as _)),
+            Argument::None,
+            Argument::None,
+            Argument::None,
+            Argument::None,
+            Argument::None,
+        ],
+    };
+}
+fn basic_lvsr(out: &mut ParsedIns, ins: Ins) {
+    *out = ParsedIns {
+        mnemonic: "lvsr",
+        args: [
+            Argument::GPR(GPR(ins.field_vd() as _)),
+            Argument::GPR(GPR(ins.field_ra() as _)),
+            Argument::GPR(GPR(ins.field_rb() as _)),
+            Argument::None,
+            Argument::None,
+            Argument::None,
+            Argument::None,
+            Argument::None,
+        ],
+    };
+}
+fn basic_lvx(out: &mut ParsedIns, ins: Ins) {
+    *out = ParsedIns {
+        mnemonic: "lvx",
+        args: [
+            Argument::GPR(GPR(ins.field_vd() as _)),
+            Argument::GPR(GPR(ins.field_ra() as _)),
+            Argument::GPR(GPR(ins.field_rb() as _)),
+            Argument::None,
+            Argument::None,
+            Argument::None,
+            Argument::None,
+            Argument::None,
+        ],
+    };
+}
+fn basic_lvxl(out: &mut ParsedIns, ins: Ins) {
+    *out = ParsedIns {
+        mnemonic: "lvxl",
+        args: [
+            Argument::GPR(GPR(ins.field_vd() as _)),
+            Argument::GPR(GPR(ins.field_ra() as _)),
+            Argument::GPR(GPR(ins.field_rb() as _)),
+            Argument::None,
+            Argument::None,
+            Argument::None,
+            Argument::None,
+            Argument::None,
+        ],
+    };
+}
+fn basic_stvebx(out: &mut ParsedIns, ins: Ins) {
+    *out = ParsedIns {
+        mnemonic: "stvebx",
+        args: [
+            Argument::GPR(GPR(ins.field_vs() as _)),
+            Argument::GPR(GPR(ins.field_ra() as _)),
+            Argument::GPR(GPR(ins.field_rb() as _)),
+            Argument::None,
+            Argument::None,
+            Argument::None,
+            Argument::None,
+            Argument::None,
+        ],
+    };
+}
+fn basic_stvehx(out: &mut ParsedIns, ins: Ins) {
+    *out = ParsedIns {
+        mnemonic: "stvehx",
+        args: [
+            Argument::GPR(GPR(ins.field_vs() as _)),
+            Argument::GPR(GPR(ins.field_ra() as _)),
+            Argument::GPR(GPR(ins.field_rb() as _)),
+            Argument::None,
+            Argument::None,
+            Argument::None,
+            Argument::None,
+            Argument::None,
+        ],
+    };
+}
+fn basic_stvewx(out: &mut ParsedIns, ins: Ins) {
+    *out = ParsedIns {
+        mnemonic: "stvewx",
+        args: [
+            Argument::GPR(GPR(ins.field_vs() as _)),
+            Argument::GPR(GPR(ins.field_ra() as _)),
+            Argument::GPR(GPR(ins.field_rb() as _)),
+            Argument::None,
+            Argument::None,
+            Argument::None,
+            Argument::None,
+            Argument::None,
+        ],
+    };
+}
+fn basic_stvx(out: &mut ParsedIns, ins: Ins) {
+    *out = ParsedIns {
+        mnemonic: "stvx",
+        args: [
+            Argument::GPR(GPR(ins.field_vs() as _)),
+            Argument::GPR(GPR(ins.field_ra() as _)),
+            Argument::GPR(GPR(ins.field_rb() as _)),
+            Argument::None,
+            Argument::None,
+            Argument::None,
+            Argument::None,
+            Argument::None,
+        ],
+    };
+}
+fn basic_stvxl(out: &mut ParsedIns, ins: Ins) {
+    *out = ParsedIns {
+        mnemonic: "stvxl",
+        args: [
+            Argument::GPR(GPR(ins.field_vs() as _)),
+            Argument::GPR(GPR(ins.field_ra() as _)),
+            Argument::GPR(GPR(ins.field_rb() as _)),
+            Argument::None,
+            Argument::None,
+            Argument::None,
+            Argument::None,
+            Argument::None,
+        ],
     };
 }
 fn basic_lwz(out: &mut ParsedIns, ins: Ins) {
@@ -5859,6 +11464,9 @@ fn basic_lwz(out: &mut ParsedIns, ins: Ins) {
             Argument::GPR(GPR(ins.field_rd() as _)),
             Argument::Offset(Offset(ins.field_offset() as _)),
             Argument::GPR(GPR(ins.field_ra() as _)),
+            Argument::None,
+            Argument::None,
+            Argument::None,
             Argument::None,
             Argument::None,
         ],
@@ -5873,6 +11481,9 @@ fn basic_lwzu(out: &mut ParsedIns, ins: Ins) {
             Argument::GPR(GPR(ins.field_ra() as _)),
             Argument::None,
             Argument::None,
+            Argument::None,
+            Argument::None,
+            Argument::None,
         ],
     };
 }
@@ -5883,6 +11494,9 @@ fn basic_lbz(out: &mut ParsedIns, ins: Ins) {
             Argument::GPR(GPR(ins.field_rd() as _)),
             Argument::Offset(Offset(ins.field_offset() as _)),
             Argument::GPR(GPR(ins.field_ra() as _)),
+            Argument::None,
+            Argument::None,
+            Argument::None,
             Argument::None,
             Argument::None,
         ],
@@ -5897,6 +11511,9 @@ fn basic_lbzu(out: &mut ParsedIns, ins: Ins) {
             Argument::GPR(GPR(ins.field_ra() as _)),
             Argument::None,
             Argument::None,
+            Argument::None,
+            Argument::None,
+            Argument::None,
         ],
     };
 }
@@ -5907,6 +11524,9 @@ fn basic_stw(out: &mut ParsedIns, ins: Ins) {
             Argument::GPR(GPR(ins.field_rs() as _)),
             Argument::Offset(Offset(ins.field_offset() as _)),
             Argument::GPR(GPR(ins.field_ra() as _)),
+            Argument::None,
+            Argument::None,
+            Argument::None,
             Argument::None,
             Argument::None,
         ],
@@ -5921,6 +11541,9 @@ fn basic_stwu(out: &mut ParsedIns, ins: Ins) {
             Argument::GPR(GPR(ins.field_ra() as _)),
             Argument::None,
             Argument::None,
+            Argument::None,
+            Argument::None,
+            Argument::None,
         ],
     };
 }
@@ -5931,6 +11554,9 @@ fn basic_stb(out: &mut ParsedIns, ins: Ins) {
             Argument::GPR(GPR(ins.field_rs() as _)),
             Argument::Offset(Offset(ins.field_offset() as _)),
             Argument::GPR(GPR(ins.field_ra() as _)),
+            Argument::None,
+            Argument::None,
+            Argument::None,
             Argument::None,
             Argument::None,
         ],
@@ -5945,6 +11571,9 @@ fn basic_stbu(out: &mut ParsedIns, ins: Ins) {
             Argument::GPR(GPR(ins.field_ra() as _)),
             Argument::None,
             Argument::None,
+            Argument::None,
+            Argument::None,
+            Argument::None,
         ],
     };
 }
@@ -5955,6 +11584,9 @@ fn basic_lhz(out: &mut ParsedIns, ins: Ins) {
             Argument::GPR(GPR(ins.field_rd() as _)),
             Argument::Offset(Offset(ins.field_offset() as _)),
             Argument::GPR(GPR(ins.field_ra() as _)),
+            Argument::None,
+            Argument::None,
+            Argument::None,
             Argument::None,
             Argument::None,
         ],
@@ -5969,6 +11601,9 @@ fn basic_lhzu(out: &mut ParsedIns, ins: Ins) {
             Argument::GPR(GPR(ins.field_ra() as _)),
             Argument::None,
             Argument::None,
+            Argument::None,
+            Argument::None,
+            Argument::None,
         ],
     };
 }
@@ -5979,6 +11614,9 @@ fn basic_lha(out: &mut ParsedIns, ins: Ins) {
             Argument::GPR(GPR(ins.field_rd() as _)),
             Argument::Offset(Offset(ins.field_offset() as _)),
             Argument::GPR(GPR(ins.field_ra() as _)),
+            Argument::None,
+            Argument::None,
+            Argument::None,
             Argument::None,
             Argument::None,
         ],
@@ -5993,6 +11631,9 @@ fn basic_lhau(out: &mut ParsedIns, ins: Ins) {
             Argument::GPR(GPR(ins.field_ra() as _)),
             Argument::None,
             Argument::None,
+            Argument::None,
+            Argument::None,
+            Argument::None,
         ],
     };
 }
@@ -6003,6 +11644,9 @@ fn basic_sth(out: &mut ParsedIns, ins: Ins) {
             Argument::GPR(GPR(ins.field_rs() as _)),
             Argument::Offset(Offset(ins.field_offset() as _)),
             Argument::GPR(GPR(ins.field_ra() as _)),
+            Argument::None,
+            Argument::None,
+            Argument::None,
             Argument::None,
             Argument::None,
         ],
@@ -6017,6 +11661,9 @@ fn basic_sthu(out: &mut ParsedIns, ins: Ins) {
             Argument::GPR(GPR(ins.field_ra() as _)),
             Argument::None,
             Argument::None,
+            Argument::None,
+            Argument::None,
+            Argument::None,
         ],
     };
 }
@@ -6027,6 +11674,9 @@ fn basic_lmw(out: &mut ParsedIns, ins: Ins) {
             Argument::GPR(GPR(ins.field_rd() as _)),
             Argument::Offset(Offset(ins.field_offset() as _)),
             Argument::GPR(GPR(ins.field_ra() as _)),
+            Argument::None,
+            Argument::None,
+            Argument::None,
             Argument::None,
             Argument::None,
         ],
@@ -6041,6 +11691,9 @@ fn basic_stmw(out: &mut ParsedIns, ins: Ins) {
             Argument::GPR(GPR(ins.field_ra() as _)),
             Argument::None,
             Argument::None,
+            Argument::None,
+            Argument::None,
+            Argument::None,
         ],
     };
 }
@@ -6051,6 +11704,9 @@ fn basic_lfs(out: &mut ParsedIns, ins: Ins) {
             Argument::FPR(FPR(ins.field_frd() as _)),
             Argument::Offset(Offset(ins.field_offset() as _)),
             Argument::GPR(GPR(ins.field_ra() as _)),
+            Argument::None,
+            Argument::None,
+            Argument::None,
             Argument::None,
             Argument::None,
         ],
@@ -6065,6 +11721,9 @@ fn basic_lfsu(out: &mut ParsedIns, ins: Ins) {
             Argument::GPR(GPR(ins.field_ra() as _)),
             Argument::None,
             Argument::None,
+            Argument::None,
+            Argument::None,
+            Argument::None,
         ],
     };
 }
@@ -6075,6 +11734,9 @@ fn basic_lfd(out: &mut ParsedIns, ins: Ins) {
             Argument::FPR(FPR(ins.field_frd() as _)),
             Argument::Offset(Offset(ins.field_offset() as _)),
             Argument::GPR(GPR(ins.field_ra() as _)),
+            Argument::None,
+            Argument::None,
+            Argument::None,
             Argument::None,
             Argument::None,
         ],
@@ -6089,6 +11751,9 @@ fn basic_lfdu(out: &mut ParsedIns, ins: Ins) {
             Argument::GPR(GPR(ins.field_ra() as _)),
             Argument::None,
             Argument::None,
+            Argument::None,
+            Argument::None,
+            Argument::None,
         ],
     };
 }
@@ -6099,6 +11764,9 @@ fn basic_stfs(out: &mut ParsedIns, ins: Ins) {
             Argument::FPR(FPR(ins.field_frs() as _)),
             Argument::Offset(Offset(ins.field_offset() as _)),
             Argument::GPR(GPR(ins.field_ra() as _)),
+            Argument::None,
+            Argument::None,
+            Argument::None,
             Argument::None,
             Argument::None,
         ],
@@ -6113,6 +11781,9 @@ fn basic_stfsu(out: &mut ParsedIns, ins: Ins) {
             Argument::GPR(GPR(ins.field_ra() as _)),
             Argument::None,
             Argument::None,
+            Argument::None,
+            Argument::None,
+            Argument::None,
         ],
     };
 }
@@ -6123,6 +11794,9 @@ fn basic_stfd(out: &mut ParsedIns, ins: Ins) {
             Argument::FPR(FPR(ins.field_frs() as _)),
             Argument::Offset(Offset(ins.field_offset() as _)),
             Argument::GPR(GPR(ins.field_ra() as _)),
+            Argument::None,
+            Argument::None,
+            Argument::None,
             Argument::None,
             Argument::None,
         ],
@@ -6137,30 +11811,54 @@ fn basic_stfdu(out: &mut ParsedIns, ins: Ins) {
             Argument::GPR(GPR(ins.field_ra() as _)),
             Argument::None,
             Argument::None,
+            Argument::None,
+            Argument::None,
+            Argument::None,
         ],
     };
 }
-fn basic_psq_l(out: &mut ParsedIns, ins: Ins) {
+fn basic_ld(out: &mut ParsedIns, ins: Ins) {
     *out = ParsedIns {
-        mnemonic: "psq_l",
+        mnemonic: "ld",
         args: [
-            Argument::FPR(FPR(ins.field_frd() as _)),
-            Argument::Offset(Offset(ins.field_ps_offset() as _)),
+            Argument::GPR(GPR(ins.field_rd() as _)),
+            Argument::Offset(Offset(ins.field_offset64() as _)),
             Argument::GPR(GPR(ins.field_ra() as _)),
-            Argument::OpaqueU(OpaqueU(ins.field_ps_w() as _)),
-            Argument::GQR(GQR(ins.field_ps_i() as _)),
+            Argument::None,
+            Argument::None,
+            Argument::None,
+            Argument::None,
+            Argument::None,
         ],
     };
 }
-fn basic_psq_lu(out: &mut ParsedIns, ins: Ins) {
+fn basic_ldu(out: &mut ParsedIns, ins: Ins) {
     *out = ParsedIns {
-        mnemonic: "psq_lu",
+        mnemonic: "ldu",
         args: [
-            Argument::FPR(FPR(ins.field_frd() as _)),
-            Argument::Offset(Offset(ins.field_ps_offset() as _)),
+            Argument::GPR(GPR(ins.field_rd() as _)),
+            Argument::Offset(Offset(ins.field_offset64() as _)),
             Argument::GPR(GPR(ins.field_ra() as _)),
-            Argument::OpaqueU(OpaqueU(ins.field_ps_w() as _)),
-            Argument::GQR(GQR(ins.field_ps_i() as _)),
+            Argument::None,
+            Argument::None,
+            Argument::None,
+            Argument::None,
+            Argument::None,
+        ],
+    };
+}
+fn basic_lwa(out: &mut ParsedIns, ins: Ins) {
+    *out = ParsedIns {
+        mnemonic: "lwa",
+        args: [
+            Argument::GPR(GPR(ins.field_rd() as _)),
+            Argument::Offset(Offset(ins.field_offset64() as _)),
+            Argument::GPR(GPR(ins.field_ra() as _)),
+            Argument::None,
+            Argument::None,
+            Argument::None,
+            Argument::None,
+            Argument::None,
         ],
     };
 }
@@ -6173,6 +11871,9 @@ fn basic_fadds(out: &mut ParsedIns, ins: Ins) {
                 Argument::FPR(FPR(ins.field_frd() as _)),
                 Argument::FPR(FPR(ins.field_fra() as _)),
                 Argument::FPR(FPR(ins.field_frb() as _)),
+                Argument::None,
+                Argument::None,
+                Argument::None,
                 Argument::None,
                 Argument::None,
             ],
@@ -6190,6 +11891,9 @@ fn basic_fdivs(out: &mut ParsedIns, ins: Ins) {
                 Argument::FPR(FPR(ins.field_frb() as _)),
                 Argument::None,
                 Argument::None,
+                Argument::None,
+                Argument::None,
+                Argument::None,
             ],
         }
     };
@@ -6204,6 +11908,9 @@ fn basic_fmadds(out: &mut ParsedIns, ins: Ins) {
                 Argument::FPR(FPR(ins.field_fra() as _)),
                 Argument::FPR(FPR(ins.field_frc() as _)),
                 Argument::FPR(FPR(ins.field_frb() as _)),
+                Argument::None,
+                Argument::None,
+                Argument::None,
                 Argument::None,
             ],
         }
@@ -6220,6 +11927,9 @@ fn basic_fmsubs(out: &mut ParsedIns, ins: Ins) {
                 Argument::FPR(FPR(ins.field_frc() as _)),
                 Argument::FPR(FPR(ins.field_frb() as _)),
                 Argument::None,
+                Argument::None,
+                Argument::None,
+                Argument::None,
             ],
         }
     };
@@ -6233,6 +11943,9 @@ fn basic_fmuls(out: &mut ParsedIns, ins: Ins) {
                 Argument::FPR(FPR(ins.field_frd() as _)),
                 Argument::FPR(FPR(ins.field_fra() as _)),
                 Argument::FPR(FPR(ins.field_frc() as _)),
+                Argument::None,
+                Argument::None,
+                Argument::None,
                 Argument::None,
                 Argument::None,
             ],
@@ -6250,6 +11963,9 @@ fn basic_fnmadds(out: &mut ParsedIns, ins: Ins) {
                 Argument::FPR(FPR(ins.field_frc() as _)),
                 Argument::FPR(FPR(ins.field_frb() as _)),
                 Argument::None,
+                Argument::None,
+                Argument::None,
+                Argument::None,
             ],
         }
     };
@@ -6265,6 +11981,9 @@ fn basic_fnmsubs(out: &mut ParsedIns, ins: Ins) {
                 Argument::FPR(FPR(ins.field_frc() as _)),
                 Argument::FPR(FPR(ins.field_frb() as _)),
                 Argument::None,
+                Argument::None,
+                Argument::None,
+                Argument::None,
             ],
         }
     };
@@ -6277,6 +11996,9 @@ fn basic_fres(out: &mut ParsedIns, ins: Ins) {
             args: [
                 Argument::FPR(FPR(ins.field_frd() as _)),
                 Argument::FPR(FPR(ins.field_frb() as _)),
+                Argument::None,
+                Argument::None,
+                Argument::None,
                 Argument::None,
                 Argument::None,
                 Argument::None,
@@ -6295,31 +12017,40 @@ fn basic_fsubs(out: &mut ParsedIns, ins: Ins) {
                 Argument::FPR(FPR(ins.field_frb() as _)),
                 Argument::None,
                 Argument::None,
+                Argument::None,
+                Argument::None,
+                Argument::None,
             ],
         }
     };
 }
-fn basic_psq_st(out: &mut ParsedIns, ins: Ins) {
+fn basic_std(out: &mut ParsedIns, ins: Ins) {
     *out = ParsedIns {
-        mnemonic: "psq_st",
+        mnemonic: "std",
         args: [
-            Argument::FPR(FPR(ins.field_frs() as _)),
-            Argument::Offset(Offset(ins.field_ps_offset() as _)),
+            Argument::GPR(GPR(ins.field_rs() as _)),
+            Argument::Offset(Offset(ins.field_offset64() as _)),
             Argument::GPR(GPR(ins.field_ra() as _)),
-            Argument::OpaqueU(OpaqueU(ins.field_ps_w() as _)),
-            Argument::GQR(GQR(ins.field_ps_i() as _)),
+            Argument::None,
+            Argument::None,
+            Argument::None,
+            Argument::None,
+            Argument::None,
         ],
     };
 }
-fn basic_psq_stu(out: &mut ParsedIns, ins: Ins) {
+fn basic_stdu(out: &mut ParsedIns, ins: Ins) {
     *out = ParsedIns {
-        mnemonic: "psq_stu",
+        mnemonic: "stdu",
         args: [
-            Argument::FPR(FPR(ins.field_frs() as _)),
-            Argument::Offset(Offset(ins.field_ps_offset() as _)),
+            Argument::GPR(GPR(ins.field_rs() as _)),
+            Argument::Offset(Offset(ins.field_offset64() as _)),
             Argument::GPR(GPR(ins.field_ra() as _)),
-            Argument::OpaqueU(OpaqueU(ins.field_ps_w() as _)),
-            Argument::GQR(GQR(ins.field_ps_i() as _)),
+            Argument::None,
+            Argument::None,
+            Argument::None,
+            Argument::None,
+            Argument::None,
         ],
     };
 }
@@ -6331,6 +12062,9 @@ fn basic_fabs(out: &mut ParsedIns, ins: Ins) {
             args: [
                 Argument::FPR(FPR(ins.field_frd() as _)),
                 Argument::FPR(FPR(ins.field_frb() as _)),
+                Argument::None,
+                Argument::None,
+                Argument::None,
                 Argument::None,
                 Argument::None,
                 Argument::None,
@@ -6349,6 +12083,27 @@ fn basic_fadd(out: &mut ParsedIns, ins: Ins) {
                 Argument::FPR(FPR(ins.field_frb() as _)),
                 Argument::None,
                 Argument::None,
+                Argument::None,
+                Argument::None,
+                Argument::None,
+            ],
+        }
+    };
+}
+fn basic_fcfid(out: &mut ParsedIns, ins: Ins) {
+    *out = {
+        const MODIFIERS: [&str; 2] = ["fcfid", "fcfid."];
+        ParsedIns {
+            mnemonic: MODIFIERS[ins.field_rc() as usize],
+            args: [
+                Argument::FPR(FPR(ins.field_frd() as _)),
+                Argument::FPR(FPR(ins.field_frb() as _)),
+                Argument::None,
+                Argument::None,
+                Argument::None,
+                Argument::None,
+                Argument::None,
+                Argument::None,
             ],
         }
     };
@@ -6360,6 +12115,9 @@ fn basic_fcmpo(out: &mut ParsedIns, ins: Ins) {
             Argument::CRField(CRField(ins.field_crfd() as _)),
             Argument::FPR(FPR(ins.field_fra() as _)),
             Argument::FPR(FPR(ins.field_frb() as _)),
+            Argument::None,
+            Argument::None,
+            Argument::None,
             Argument::None,
             Argument::None,
         ],
@@ -6374,7 +12132,46 @@ fn basic_fcmpu(out: &mut ParsedIns, ins: Ins) {
             Argument::FPR(FPR(ins.field_frb() as _)),
             Argument::None,
             Argument::None,
+            Argument::None,
+            Argument::None,
+            Argument::None,
         ],
+    };
+}
+fn basic_fctid(out: &mut ParsedIns, ins: Ins) {
+    *out = {
+        const MODIFIERS: [&str; 2] = ["fctid", "fctid."];
+        ParsedIns {
+            mnemonic: MODIFIERS[ins.field_rc() as usize],
+            args: [
+                Argument::FPR(FPR(ins.field_frd() as _)),
+                Argument::FPR(FPR(ins.field_frb() as _)),
+                Argument::None,
+                Argument::None,
+                Argument::None,
+                Argument::None,
+                Argument::None,
+                Argument::None,
+            ],
+        }
+    };
+}
+fn basic_fctidz(out: &mut ParsedIns, ins: Ins) {
+    *out = {
+        const MODIFIERS: [&str; 2] = ["fctidz", "fctidz."];
+        ParsedIns {
+            mnemonic: MODIFIERS[ins.field_rc() as usize],
+            args: [
+                Argument::FPR(FPR(ins.field_frd() as _)),
+                Argument::FPR(FPR(ins.field_frb() as _)),
+                Argument::None,
+                Argument::None,
+                Argument::None,
+                Argument::None,
+                Argument::None,
+                Argument::None,
+            ],
+        }
     };
 }
 fn basic_fctiw(out: &mut ParsedIns, ins: Ins) {
@@ -6385,6 +12182,9 @@ fn basic_fctiw(out: &mut ParsedIns, ins: Ins) {
             args: [
                 Argument::FPR(FPR(ins.field_frd() as _)),
                 Argument::FPR(FPR(ins.field_frb() as _)),
+                Argument::None,
+                Argument::None,
+                Argument::None,
                 Argument::None,
                 Argument::None,
                 Argument::None,
@@ -6403,6 +12203,9 @@ fn basic_fctiwz(out: &mut ParsedIns, ins: Ins) {
                 Argument::None,
                 Argument::None,
                 Argument::None,
+                Argument::None,
+                Argument::None,
+                Argument::None,
             ],
         }
     };
@@ -6416,6 +12219,9 @@ fn basic_fdiv(out: &mut ParsedIns, ins: Ins) {
                 Argument::FPR(FPR(ins.field_frd() as _)),
                 Argument::FPR(FPR(ins.field_fra() as _)),
                 Argument::FPR(FPR(ins.field_frb() as _)),
+                Argument::None,
+                Argument::None,
+                Argument::None,
                 Argument::None,
                 Argument::None,
             ],
@@ -6433,6 +12239,9 @@ fn basic_fmadd(out: &mut ParsedIns, ins: Ins) {
                 Argument::FPR(FPR(ins.field_frc() as _)),
                 Argument::FPR(FPR(ins.field_frb() as _)),
                 Argument::None,
+                Argument::None,
+                Argument::None,
+                Argument::None,
             ],
         }
     };
@@ -6445,6 +12254,9 @@ fn basic_fmr(out: &mut ParsedIns, ins: Ins) {
             args: [
                 Argument::FPR(FPR(ins.field_frd() as _)),
                 Argument::FPR(FPR(ins.field_frb() as _)),
+                Argument::None,
+                Argument::None,
+                Argument::None,
                 Argument::None,
                 Argument::None,
                 Argument::None,
@@ -6463,6 +12275,9 @@ fn basic_fmsub(out: &mut ParsedIns, ins: Ins) {
                 Argument::FPR(FPR(ins.field_frc() as _)),
                 Argument::FPR(FPR(ins.field_frb() as _)),
                 Argument::None,
+                Argument::None,
+                Argument::None,
+                Argument::None,
             ],
         }
     };
@@ -6478,6 +12293,9 @@ fn basic_fmul(out: &mut ParsedIns, ins: Ins) {
                 Argument::FPR(FPR(ins.field_frc() as _)),
                 Argument::None,
                 Argument::None,
+                Argument::None,
+                Argument::None,
+                Argument::None,
             ],
         }
     };
@@ -6490,6 +12308,9 @@ fn basic_fnabs(out: &mut ParsedIns, ins: Ins) {
             args: [
                 Argument::FPR(FPR(ins.field_frd() as _)),
                 Argument::FPR(FPR(ins.field_frb() as _)),
+                Argument::None,
+                Argument::None,
+                Argument::None,
                 Argument::None,
                 Argument::None,
                 Argument::None,
@@ -6508,6 +12329,9 @@ fn basic_fneg(out: &mut ParsedIns, ins: Ins) {
                 Argument::None,
                 Argument::None,
                 Argument::None,
+                Argument::None,
+                Argument::None,
+                Argument::None,
             ],
         }
     };
@@ -6522,6 +12346,9 @@ fn basic_fnmadd(out: &mut ParsedIns, ins: Ins) {
                 Argument::FPR(FPR(ins.field_fra() as _)),
                 Argument::FPR(FPR(ins.field_frc() as _)),
                 Argument::FPR(FPR(ins.field_frb() as _)),
+                Argument::None,
+                Argument::None,
+                Argument::None,
                 Argument::None,
             ],
         }
@@ -6538,6 +12365,9 @@ fn basic_fnmsub(out: &mut ParsedIns, ins: Ins) {
                 Argument::FPR(FPR(ins.field_frc() as _)),
                 Argument::FPR(FPR(ins.field_frb() as _)),
                 Argument::None,
+                Argument::None,
+                Argument::None,
+                Argument::None,
             ],
         }
     };
@@ -6550,6 +12380,9 @@ fn basic_frsp(out: &mut ParsedIns, ins: Ins) {
             args: [
                 Argument::FPR(FPR(ins.field_frd() as _)),
                 Argument::FPR(FPR(ins.field_frb() as _)),
+                Argument::None,
+                Argument::None,
+                Argument::None,
                 Argument::None,
                 Argument::None,
                 Argument::None,
@@ -6568,6 +12401,9 @@ fn basic_frsqrte(out: &mut ParsedIns, ins: Ins) {
                 Argument::None,
                 Argument::None,
                 Argument::None,
+                Argument::None,
+                Argument::None,
+                Argument::None,
             ],
         }
     };
@@ -6582,6 +12418,9 @@ fn basic_fsel(out: &mut ParsedIns, ins: Ins) {
                 Argument::FPR(FPR(ins.field_fra() as _)),
                 Argument::FPR(FPR(ins.field_frc() as _)),
                 Argument::FPR(FPR(ins.field_frb() as _)),
+                Argument::None,
+                Argument::None,
+                Argument::None,
                 Argument::None,
             ],
         }
@@ -6598,6 +12437,9 @@ fn basic_fsub(out: &mut ParsedIns, ins: Ins) {
                 Argument::FPR(FPR(ins.field_frb() as _)),
                 Argument::None,
                 Argument::None,
+                Argument::None,
+                Argument::None,
+                Argument::None,
             ],
         }
     };
@@ -6611,6 +12453,9 @@ fn basic_mcrfs(out: &mut ParsedIns, ins: Ins) {
             Argument::None,
             Argument::None,
             Argument::None,
+            Argument::None,
+            Argument::None,
+            Argument::None,
         ],
     };
 }
@@ -6621,6 +12466,9 @@ fn basic_mffs(out: &mut ParsedIns, ins: Ins) {
             mnemonic: MODIFIERS[ins.field_rc() as usize],
             args: [
                 Argument::FPR(FPR(ins.field_frd() as _)),
+                Argument::None,
+                Argument::None,
+                Argument::None,
                 Argument::None,
                 Argument::None,
                 Argument::None,
@@ -6640,6 +12488,9 @@ fn basic_mtfsb0(out: &mut ParsedIns, ins: Ins) {
                 Argument::None,
                 Argument::None,
                 Argument::None,
+                Argument::None,
+                Argument::None,
+                Argument::None,
             ],
         }
     };
@@ -6651,6 +12502,9 @@ fn basic_mtfsb1(out: &mut ParsedIns, ins: Ins) {
             mnemonic: MODIFIERS[ins.field_rc() as usize],
             args: [
                 Argument::CRBit(CRBit(ins.field_crbd() as _)),
+                Argument::None,
+                Argument::None,
+                Argument::None,
                 Argument::None,
                 Argument::None,
                 Argument::None,
@@ -6670,6 +12524,9 @@ fn basic_mtfsf(out: &mut ParsedIns, ins: Ins) {
                 Argument::None,
                 Argument::None,
                 Argument::None,
+                Argument::None,
+                Argument::None,
+                Argument::None,
             ],
         }
     };
@@ -6685,6 +12542,9 @@ fn basic_mtfsfi(out: &mut ParsedIns, ins: Ins) {
                 Argument::None,
                 Argument::None,
                 Argument::None,
+                Argument::None,
+                Argument::None,
+                Argument::None,
             ],
         }
     };
@@ -6692,42 +12552,229 @@ fn basic_mtfsfi(out: &mut ParsedIns, ins: Ins) {
 fn mnemonic_illegal(out: &mut ParsedIns, _ins: Ins) {
     *out = ParsedIns::new();
 }
-static BASIC_MNEMONICS: [MnemonicFunction; 256] = [
+static BASIC_MNEMONICS: [MnemonicFunction; 512] = [
+    basic_tdi,
     basic_twi,
     basic_dcbz_l,
-    basic_psq_lux,
-    basic_psq_lx,
-    basic_psq_stux,
-    basic_psq_stx,
-    basic_ps_abs,
-    basic_ps_add,
-    basic_ps_cmpo0,
-    basic_ps_cmpo1,
-    basic_ps_cmpu0,
-    basic_ps_cmpu1,
-    basic_ps_div,
-    basic_ps_madd,
-    basic_ps_madds0,
-    basic_ps_madds1,
-    basic_ps_merge00,
-    basic_ps_merge01,
-    basic_ps_merge10,
-    basic_ps_merge11,
-    basic_ps_mr,
-    basic_ps_msub,
-    basic_ps_mul,
-    basic_ps_muls0,
-    basic_ps_muls1,
-    basic_ps_nabs,
-    basic_ps_neg,
-    basic_ps_nmadd,
-    basic_ps_nmsub,
-    basic_ps_res,
-    basic_ps_rsqrte,
-    basic_ps_sel,
-    basic_ps_sub,
-    basic_ps_sum0,
-    basic_ps_sum1,
+    basic_mfvscr,
+    basic_mtvscr,
+    basic_vaddcuw,
+    basic_vaddfp,
+    basic_vaddsbs,
+    basic_vaddshs,
+    basic_vaddsws,
+    basic_vaddubm,
+    basic_vaddubs,
+    basic_vadduhm,
+    basic_vadduhs,
+    basic_vadduwm,
+    basic_vadduws,
+    basic_vand,
+    basic_vandc,
+    basic_vavgsb,
+    basic_vavgsh,
+    basic_vavgsw,
+    basic_vavgub,
+    basic_vavguh,
+    basic_vavguw,
+    basic_vcfsx,
+    basic_vcfux,
+    basic_vcmpbfp,
+    basic_vcmpeqfp,
+    basic_vcmpequb,
+    basic_vcmpequh,
+    basic_vcmpequw,
+    basic_vcmpgefp,
+    basic_vcmpgtfp,
+    basic_vcmpgtsb,
+    basic_vcmpgtsh,
+    basic_vcmpgtsw,
+    basic_vcmpgtub,
+    basic_vcmpgtuh,
+    basic_vcmpgtuw,
+    basic_vctsxs,
+    basic_vctuxs,
+    basic_vexptefp,
+    basic_vlogefp,
+    basic_vmaddfp,
+    basic_vmaxfp,
+    basic_vmaxsb,
+    basic_vmaxsh,
+    basic_vmaxsw,
+    basic_vmaxub,
+    basic_vmaxuh,
+    basic_vmaxuw,
+    basic_vmhaddshs,
+    basic_vmhraddshs,
+    basic_vminfp,
+    basic_vminsb,
+    basic_vminsh,
+    basic_vminsw,
+    basic_vminub,
+    basic_vminuh,
+    basic_vminuw,
+    basic_vmladduhm,
+    basic_vmrghb,
+    basic_vmrghh,
+    basic_vmrghw,
+    basic_vmrglb,
+    basic_vmrglh,
+    basic_vmrglw,
+    basic_vmsummbm,
+    basic_vmsumshm,
+    basic_vmsumshs,
+    basic_vmsumubm,
+    basic_vmsumuhm,
+    basic_vmsumuhs,
+    basic_vmulesb,
+    basic_vmulesh,
+    basic_vmuleub,
+    basic_vmuleuh,
+    basic_vmulosb,
+    basic_vmulosh,
+    basic_vmuloub,
+    basic_vmulouh,
+    basic_vnmsubfp,
+    basic_vnor,
+    basic_vor,
+    basic_vperm,
+    basic_vpkpx,
+    basic_vpkshss,
+    basic_vpkshus,
+    basic_vpkswss,
+    basic_vpkswus,
+    basic_vpkuhum,
+    basic_vpkuhus,
+    basic_vpkuwum,
+    basic_vpkuwus,
+    basic_vrefp,
+    basic_vrfim,
+    basic_vrfin,
+    basic_vrfip,
+    basic_vrfiz,
+    basic_vrlb,
+    basic_vrlh,
+    basic_vrlw,
+    basic_vrsqrtefp,
+    basic_vsel,
+    basic_vsl,
+    basic_vslb,
+    basic_vsldoi,
+    basic_vslh,
+    basic_vslo,
+    basic_vslw,
+    basic_vspltb,
+    basic_vsplth,
+    basic_vspltisb,
+    basic_vspltish,
+    basic_vspltisw,
+    basic_vspltw,
+    basic_vsr,
+    basic_vsrab,
+    basic_vsrah,
+    basic_vsraw,
+    basic_vsrb,
+    basic_vsrh,
+    basic_vsro,
+    basic_vsrw,
+    basic_vsubcuw,
+    basic_vsubfp,
+    basic_vsubsbs,
+    basic_vsubshs,
+    basic_vsubsws,
+    basic_vsububm,
+    basic_vsububs,
+    basic_vsubuhm,
+    basic_vsubuhs,
+    basic_vsubuwm,
+    basic_vsubuws,
+    basic_vsumsws,
+    basic_vsum2sws,
+    basic_vsum4sbs,
+    basic_vsum4shs,
+    basic_vsum4ubs,
+    basic_vupkhpx,
+    basic_vupkhsb,
+    basic_vupkhsh,
+    basic_vupklpx,
+    basic_vupklsb,
+    basic_vupklsh,
+    basic_vxor,
+    basic_lvewx128,
+    basic_lvlx128,
+    basic_lvrx128,
+    basic_lvlxl128,
+    basic_lvrxl128,
+    basic_lvsl128,
+    basic_lvsr128,
+    basic_lvx128,
+    basic_lvxl128,
+    basic_stvewx128,
+    basic_stvlx128,
+    basic_stvlxl128,
+    basic_stvrx128,
+    basic_stvrxl128,
+    basic_stvx128,
+    basic_stvxl128,
+    basic_vsldoi128,
+    basic_vaddfp128,
+    basic_vand128,
+    basic_vandc128,
+    basic_vmaddcfp128,
+    basic_vmaddfp128,
+    basic_vmsum3fp128,
+    basic_vmsum4fp128,
+    basic_vmulfp128,
+    basic_vnmsubfp128,
+    basic_vnor128,
+    basic_vor128,
+    basic_vperm128,
+    basic_vpkshss128,
+    basic_vpkshus128,
+    basic_vpkswss128,
+    basic_vpkswus128,
+    basic_vpkuhum128,
+    basic_vpkuhus128,
+    basic_vpkuwum128,
+    basic_vpkuwus128,
+    basic_vrlw128,
+    basic_vsel128,
+    basic_vslo128,
+    basic_vsubfp128,
+    basic_vxor128,
+    basic_vcfpsxws128,
+    basic_vcfpuxws128,
+    basic_vcmpbfp128,
+    basic_vcmpeqfp128,
+    basic_vcmpequw128,
+    basic_vcmpgefp128,
+    basic_vcmpgtfp128,
+    basic_vcsxwfp128,
+    basic_vcuxwfp128,
+    basic_vexptefp128,
+    basic_vlogefp128,
+    basic_vmaxfp128,
+    basic_vminfp128,
+    basic_vmrghw128,
+    basic_vmrglw128,
+    basic_vpermwi128,
+    basic_vpkd3d128,
+    basic_vrefp128,
+    basic_vrfim128,
+    basic_vrfin128,
+    basic_vrfip128,
+    basic_vrfiz128,
+    basic_vrlimi128,
+    basic_vrsqrtefp128,
+    basic_vslw128,
+    basic_vspltisw128,
+    basic_vspltw128,
+    basic_vsraw128,
+    basic_vsro128,
+    basic_vsrw128,
+    basic_vupkd3d128,
+    basic_vupkhsb128,
+    basic_vupklsb128,
     basic_mulli,
     basic_subfic,
     basic_cmpli,
@@ -6752,6 +12799,7 @@ static BASIC_MNEMONICS: [MnemonicFunction; 256] = [
     basic_isync,
     basic_mcrf,
     basic_rfi,
+    basic_rfid,
     basic_rlwimi,
     basic_rlwinm,
     basic_rlwnm,
@@ -6761,6 +12809,12 @@ static BASIC_MNEMONICS: [MnemonicFunction; 256] = [
     basic_xoris,
     basic_andi_,
     basic_andis_,
+    basic_rldcl,
+    basic_rldcr,
+    basic_rldic,
+    basic_rldicl,
+    basic_rldicr,
+    basic_rldimi,
     basic_add,
     basic_addc,
     basic_adde,
@@ -6770,6 +12824,7 @@ static BASIC_MNEMONICS: [MnemonicFunction; 256] = [
     basic_andc,
     basic_cmp,
     basic_cmpl,
+    basic_cntlzd,
     basic_cntlzw,
     basic_dcbf,
     basic_dcbi,
@@ -6777,6 +12832,8 @@ static BASIC_MNEMONICS: [MnemonicFunction; 256] = [
     basic_dcbt,
     basic_dcbtst,
     basic_dcbz,
+    basic_divd,
+    basic_divdu,
     basic_divw,
     basic_divwu,
     basic_eciwx,
@@ -6785,9 +12842,13 @@ static BASIC_MNEMONICS: [MnemonicFunction; 256] = [
     basic_eqv,
     basic_extsb,
     basic_extsh,
+    basic_extsw,
     basic_icbi,
     basic_lbzux,
     basic_lbzx,
+    basic_ldarx,
+    basic_ldux,
+    basic_ldx,
     basic_lfdux,
     basic_lfdx,
     basic_lfsux,
@@ -6800,6 +12861,8 @@ static BASIC_MNEMONICS: [MnemonicFunction; 256] = [
     basic_lswi,
     basic_lswx,
     basic_lwarx,
+    basic_lwaux,
+    basic_lwax,
     basic_lwbrx,
     basic_lwzux,
     basic_lwzx,
@@ -6812,23 +12875,38 @@ static BASIC_MNEMONICS: [MnemonicFunction; 256] = [
     basic_mftb,
     basic_mtcrf,
     basic_mtmsr,
+    basic_mtmsrd,
     basic_mtspr,
     basic_mtsr,
+    basic_mtsrd,
+    basic_mtsrdin,
     basic_mtsrin,
+    basic_mulhd,
+    basic_mulhdu,
     basic_mulhw,
     basic_mulhwu,
+    basic_mulld,
     basic_mullw,
     basic_nand,
     basic_neg,
     basic_nor,
     basic_or,
     basic_orc,
+    basic_slbia,
+    basic_slbie,
+    basic_sld,
     basic_slw,
+    basic_srad,
+    basic_sradi,
     basic_sraw,
     basic_srawi,
+    basic_srd,
     basic_srw,
     basic_stbux,
     basic_stbx,
+    basic_stdcx_,
+    basic_stdux,
+    basic_stdx,
     basic_stfdux,
     basic_stfdx,
     basic_stfiwx,
@@ -6849,10 +12927,26 @@ static BASIC_MNEMONICS: [MnemonicFunction; 256] = [
     basic_subfme,
     basic_subfze,
     basic_sync,
+    basic_td,
     basic_tlbie,
     basic_tlbsync,
     basic_tw,
     basic_xor,
+    basic_dss,
+    basic_dst,
+    basic_dstst,
+    basic_lvebx,
+    basic_lvehx,
+    basic_lvewx,
+    basic_lvsl,
+    basic_lvsr,
+    basic_lvx,
+    basic_lvxl,
+    basic_stvebx,
+    basic_stvehx,
+    basic_stvewx,
+    basic_stvx,
+    basic_stvxl,
     basic_lwz,
     basic_lwzu,
     basic_lbz,
@@ -6877,8 +12971,9 @@ static BASIC_MNEMONICS: [MnemonicFunction; 256] = [
     basic_stfsu,
     basic_stfd,
     basic_stfdu,
-    basic_psq_l,
-    basic_psq_lu,
+    basic_ld,
+    basic_ldu,
+    basic_lwa,
     basic_fadds,
     basic_fdivs,
     basic_fmadds,
@@ -6888,12 +12983,15 @@ static BASIC_MNEMONICS: [MnemonicFunction; 256] = [
     basic_fnmsubs,
     basic_fres,
     basic_fsubs,
-    basic_psq_st,
-    basic_psq_stu,
+    basic_std,
+    basic_stdu,
     basic_fabs,
     basic_fadd,
+    basic_fcfid,
     basic_fcmpo,
     basic_fcmpu,
+    basic_fctid,
+    basic_fctidz,
     basic_fctiw,
     basic_fctiwz,
     basic_fdiv,
@@ -6915,6 +13013,24 @@ static BASIC_MNEMONICS: [MnemonicFunction; 256] = [
     basic_mtfsb1,
     basic_mtfsf,
     basic_mtfsfi,
+    mnemonic_illegal,
+    mnemonic_illegal,
+    mnemonic_illegal,
+    mnemonic_illegal,
+    mnemonic_illegal,
+    mnemonic_illegal,
+    mnemonic_illegal,
+    mnemonic_illegal,
+    mnemonic_illegal,
+    mnemonic_illegal,
+    mnemonic_illegal,
+    mnemonic_illegal,
+    mnemonic_illegal,
+    mnemonic_illegal,
+    mnemonic_illegal,
+    mnemonic_illegal,
+    mnemonic_illegal,
+    mnemonic_illegal,
     mnemonic_illegal,
     mnemonic_illegal,
     mnemonic_illegal,
@@ -6954,42 +13070,229 @@ static BASIC_MNEMONICS: [MnemonicFunction; 256] = [
 pub fn parse_basic(out: &mut ParsedIns, ins: Ins) {
     BASIC_MNEMONICS[ins.op as usize](out, ins)
 }
-static SIMPLIFIED_MNEMONICS: [MnemonicFunction; 256] = [
+static SIMPLIFIED_MNEMONICS: [MnemonicFunction; 512] = [
+    simplified_tdi,
     simplified_twi,
     basic_dcbz_l,
-    basic_psq_lux,
-    basic_psq_lx,
-    basic_psq_stux,
-    basic_psq_stx,
-    basic_ps_abs,
-    basic_ps_add,
-    basic_ps_cmpo0,
-    basic_ps_cmpo1,
-    basic_ps_cmpu0,
-    basic_ps_cmpu1,
-    basic_ps_div,
-    basic_ps_madd,
-    basic_ps_madds0,
-    basic_ps_madds1,
-    basic_ps_merge00,
-    basic_ps_merge01,
-    basic_ps_merge10,
-    basic_ps_merge11,
-    basic_ps_mr,
-    basic_ps_msub,
-    basic_ps_mul,
-    basic_ps_muls0,
-    basic_ps_muls1,
-    basic_ps_nabs,
-    basic_ps_neg,
-    basic_ps_nmadd,
-    basic_ps_nmsub,
-    basic_ps_res,
-    basic_ps_rsqrte,
-    basic_ps_sel,
-    basic_ps_sub,
-    basic_ps_sum0,
-    basic_ps_sum1,
+    basic_mfvscr,
+    basic_mtvscr,
+    basic_vaddcuw,
+    basic_vaddfp,
+    basic_vaddsbs,
+    basic_vaddshs,
+    basic_vaddsws,
+    basic_vaddubm,
+    basic_vaddubs,
+    basic_vadduhm,
+    basic_vadduhs,
+    basic_vadduwm,
+    basic_vadduws,
+    basic_vand,
+    basic_vandc,
+    basic_vavgsb,
+    basic_vavgsh,
+    basic_vavgsw,
+    basic_vavgub,
+    basic_vavguh,
+    basic_vavguw,
+    basic_vcfsx,
+    basic_vcfux,
+    basic_vcmpbfp,
+    basic_vcmpeqfp,
+    basic_vcmpequb,
+    basic_vcmpequh,
+    basic_vcmpequw,
+    basic_vcmpgefp,
+    basic_vcmpgtfp,
+    basic_vcmpgtsb,
+    basic_vcmpgtsh,
+    basic_vcmpgtsw,
+    basic_vcmpgtub,
+    basic_vcmpgtuh,
+    basic_vcmpgtuw,
+    basic_vctsxs,
+    basic_vctuxs,
+    basic_vexptefp,
+    basic_vlogefp,
+    basic_vmaddfp,
+    basic_vmaxfp,
+    basic_vmaxsb,
+    basic_vmaxsh,
+    basic_vmaxsw,
+    basic_vmaxub,
+    basic_vmaxuh,
+    basic_vmaxuw,
+    basic_vmhaddshs,
+    basic_vmhraddshs,
+    basic_vminfp,
+    basic_vminsb,
+    basic_vminsh,
+    basic_vminsw,
+    basic_vminub,
+    basic_vminuh,
+    basic_vminuw,
+    basic_vmladduhm,
+    basic_vmrghb,
+    basic_vmrghh,
+    basic_vmrghw,
+    basic_vmrglb,
+    basic_vmrglh,
+    basic_vmrglw,
+    basic_vmsummbm,
+    basic_vmsumshm,
+    basic_vmsumshs,
+    basic_vmsumubm,
+    basic_vmsumuhm,
+    basic_vmsumuhs,
+    basic_vmulesb,
+    basic_vmulesh,
+    basic_vmuleub,
+    basic_vmuleuh,
+    basic_vmulosb,
+    basic_vmulosh,
+    basic_vmuloub,
+    basic_vmulouh,
+    basic_vnmsubfp,
+    basic_vnor,
+    basic_vor,
+    basic_vperm,
+    basic_vpkpx,
+    basic_vpkshss,
+    basic_vpkshus,
+    basic_vpkswss,
+    basic_vpkswus,
+    basic_vpkuhum,
+    basic_vpkuhus,
+    basic_vpkuwum,
+    basic_vpkuwus,
+    basic_vrefp,
+    basic_vrfim,
+    basic_vrfin,
+    basic_vrfip,
+    basic_vrfiz,
+    basic_vrlb,
+    basic_vrlh,
+    basic_vrlw,
+    basic_vrsqrtefp,
+    basic_vsel,
+    basic_vsl,
+    basic_vslb,
+    basic_vsldoi,
+    basic_vslh,
+    basic_vslo,
+    basic_vslw,
+    basic_vspltb,
+    basic_vsplth,
+    basic_vspltisb,
+    basic_vspltish,
+    basic_vspltisw,
+    basic_vspltw,
+    basic_vsr,
+    basic_vsrab,
+    basic_vsrah,
+    basic_vsraw,
+    basic_vsrb,
+    basic_vsrh,
+    basic_vsro,
+    basic_vsrw,
+    basic_vsubcuw,
+    basic_vsubfp,
+    basic_vsubsbs,
+    basic_vsubshs,
+    basic_vsubsws,
+    basic_vsububm,
+    basic_vsububs,
+    basic_vsubuhm,
+    basic_vsubuhs,
+    basic_vsubuwm,
+    basic_vsubuws,
+    basic_vsumsws,
+    basic_vsum2sws,
+    basic_vsum4sbs,
+    basic_vsum4shs,
+    basic_vsum4ubs,
+    basic_vupkhpx,
+    basic_vupkhsb,
+    basic_vupkhsh,
+    basic_vupklpx,
+    basic_vupklsb,
+    basic_vupklsh,
+    basic_vxor,
+    basic_lvewx128,
+    basic_lvlx128,
+    basic_lvrx128,
+    basic_lvlxl128,
+    basic_lvrxl128,
+    basic_lvsl128,
+    basic_lvsr128,
+    basic_lvx128,
+    basic_lvxl128,
+    basic_stvewx128,
+    basic_stvlx128,
+    basic_stvlxl128,
+    basic_stvrx128,
+    basic_stvrxl128,
+    basic_stvx128,
+    basic_stvxl128,
+    basic_vsldoi128,
+    basic_vaddfp128,
+    basic_vand128,
+    basic_vandc128,
+    basic_vmaddcfp128,
+    basic_vmaddfp128,
+    basic_vmsum3fp128,
+    basic_vmsum4fp128,
+    basic_vmulfp128,
+    basic_vnmsubfp128,
+    basic_vnor128,
+    basic_vor128,
+    basic_vperm128,
+    basic_vpkshss128,
+    basic_vpkshus128,
+    basic_vpkswss128,
+    basic_vpkswus128,
+    basic_vpkuhum128,
+    basic_vpkuhus128,
+    basic_vpkuwum128,
+    basic_vpkuwus128,
+    basic_vrlw128,
+    basic_vsel128,
+    basic_vslo128,
+    basic_vsubfp128,
+    basic_vxor128,
+    basic_vcfpsxws128,
+    basic_vcfpuxws128,
+    basic_vcmpbfp128,
+    basic_vcmpeqfp128,
+    basic_vcmpequw128,
+    basic_vcmpgefp128,
+    basic_vcmpgtfp128,
+    basic_vcsxwfp128,
+    basic_vcuxwfp128,
+    basic_vexptefp128,
+    basic_vlogefp128,
+    basic_vmaxfp128,
+    basic_vminfp128,
+    basic_vmrghw128,
+    basic_vmrglw128,
+    basic_vpermwi128,
+    basic_vpkd3d128,
+    basic_vrefp128,
+    basic_vrfim128,
+    basic_vrfin128,
+    basic_vrfip128,
+    basic_vrfiz128,
+    basic_vrlimi128,
+    basic_vrsqrtefp128,
+    basic_vslw128,
+    basic_vspltisw128,
+    basic_vspltw128,
+    basic_vsraw128,
+    basic_vsro128,
+    basic_vsrw128,
+    basic_vupkd3d128,
+    basic_vupkhsb128,
+    basic_vupklsb128,
     basic_mulli,
     basic_subfic,
     simplified_cmpli,
@@ -7014,6 +13317,7 @@ static SIMPLIFIED_MNEMONICS: [MnemonicFunction; 256] = [
     basic_isync,
     basic_mcrf,
     basic_rfi,
+    basic_rfid,
     basic_rlwimi,
     simplified_rlwinm,
     simplified_rlwnm,
@@ -7023,6 +13327,12 @@ static SIMPLIFIED_MNEMONICS: [MnemonicFunction; 256] = [
     basic_xoris,
     basic_andi_,
     basic_andis_,
+    simplified_rldcl,
+    basic_rldcr,
+    basic_rldic,
+    basic_rldicl,
+    basic_rldicr,
+    basic_rldimi,
     basic_add,
     basic_addc,
     basic_adde,
@@ -7032,6 +13342,7 @@ static SIMPLIFIED_MNEMONICS: [MnemonicFunction; 256] = [
     basic_andc,
     simplified_cmp,
     simplified_cmpl,
+    basic_cntlzd,
     basic_cntlzw,
     basic_dcbf,
     basic_dcbi,
@@ -7039,6 +13350,8 @@ static SIMPLIFIED_MNEMONICS: [MnemonicFunction; 256] = [
     basic_dcbt,
     basic_dcbtst,
     basic_dcbz,
+    basic_divd,
+    basic_divdu,
     basic_divw,
     basic_divwu,
     basic_eciwx,
@@ -7047,9 +13360,13 @@ static SIMPLIFIED_MNEMONICS: [MnemonicFunction; 256] = [
     basic_eqv,
     basic_extsb,
     basic_extsh,
+    basic_extsw,
     basic_icbi,
     basic_lbzux,
     basic_lbzx,
+    basic_ldarx,
+    basic_ldux,
+    basic_ldx,
     basic_lfdux,
     basic_lfdx,
     basic_lfsux,
@@ -7062,6 +13379,8 @@ static SIMPLIFIED_MNEMONICS: [MnemonicFunction; 256] = [
     basic_lswi,
     basic_lswx,
     basic_lwarx,
+    basic_lwaux,
+    basic_lwax,
     basic_lwbrx,
     basic_lwzux,
     basic_lwzx,
@@ -7074,23 +13393,38 @@ static SIMPLIFIED_MNEMONICS: [MnemonicFunction; 256] = [
     basic_mftb,
     basic_mtcrf,
     basic_mtmsr,
+    basic_mtmsrd,
     simplified_mtspr,
     basic_mtsr,
+    basic_mtsrd,
+    basic_mtsrdin,
     basic_mtsrin,
+    basic_mulhd,
+    basic_mulhdu,
     basic_mulhw,
     basic_mulhwu,
+    basic_mulld,
     basic_mullw,
     basic_nand,
     basic_neg,
     basic_nor,
     simplified_or,
     basic_orc,
+    basic_slbia,
+    basic_slbie,
+    basic_sld,
     basic_slw,
+    basic_srad,
+    basic_sradi,
     basic_sraw,
     basic_srawi,
+    basic_srd,
     basic_srw,
     basic_stbux,
     basic_stbx,
+    basic_stdcx_,
+    basic_stdux,
+    basic_stdx,
     basic_stfdux,
     basic_stfdx,
     basic_stfiwx,
@@ -7110,11 +13444,27 @@ static SIMPLIFIED_MNEMONICS: [MnemonicFunction; 256] = [
     basic_subfe,
     basic_subfme,
     basic_subfze,
-    basic_sync,
+    simplified_sync,
+    simplified_td,
     basic_tlbie,
     basic_tlbsync,
     simplified_tw,
     basic_xor,
+    basic_dss,
+    basic_dst,
+    basic_dstst,
+    basic_lvebx,
+    basic_lvehx,
+    basic_lvewx,
+    basic_lvsl,
+    basic_lvsr,
+    basic_lvx,
+    basic_lvxl,
+    basic_stvebx,
+    basic_stvehx,
+    basic_stvewx,
+    basic_stvx,
+    basic_stvxl,
     basic_lwz,
     basic_lwzu,
     basic_lbz,
@@ -7139,8 +13489,9 @@ static SIMPLIFIED_MNEMONICS: [MnemonicFunction; 256] = [
     basic_stfsu,
     basic_stfd,
     basic_stfdu,
-    basic_psq_l,
-    basic_psq_lu,
+    basic_ld,
+    basic_ldu,
+    basic_lwa,
     basic_fadds,
     basic_fdivs,
     basic_fmadds,
@@ -7150,12 +13501,15 @@ static SIMPLIFIED_MNEMONICS: [MnemonicFunction; 256] = [
     basic_fnmsubs,
     basic_fres,
     basic_fsubs,
-    basic_psq_st,
-    basic_psq_stu,
+    basic_std,
+    basic_stdu,
     basic_fabs,
     basic_fadd,
+    basic_fcfid,
     basic_fcmpo,
     basic_fcmpu,
+    basic_fctid,
+    basic_fctidz,
     basic_fctiw,
     basic_fctiwz,
     basic_fdiv,
@@ -7177,6 +13531,24 @@ static SIMPLIFIED_MNEMONICS: [MnemonicFunction; 256] = [
     basic_mtfsb1,
     basic_mtfsf,
     basic_mtfsfi,
+    mnemonic_illegal,
+    mnemonic_illegal,
+    mnemonic_illegal,
+    mnemonic_illegal,
+    mnemonic_illegal,
+    mnemonic_illegal,
+    mnemonic_illegal,
+    mnemonic_illegal,
+    mnemonic_illegal,
+    mnemonic_illegal,
+    mnemonic_illegal,
+    mnemonic_illegal,
+    mnemonic_illegal,
+    mnemonic_illegal,
+    mnemonic_illegal,
+    mnemonic_illegal,
+    mnemonic_illegal,
+    mnemonic_illegal,
     mnemonic_illegal,
     mnemonic_illegal,
     mnemonic_illegal,
@@ -7217,9 +13589,24 @@ pub fn parse_simplified(out: &mut ParsedIns, ins: Ins) {
     SIMPLIFIED_MNEMONICS[ins.op as usize](out, ins)
 }
 type DefsUsesFunction = fn(&mut Arguments, Ins);
+fn uses_tdi(out: &mut Arguments, ins: Ins) {
+    *out = [
+        Argument::GPR(GPR(ins.field_ra() as _)),
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+    ];
+}
 fn uses_twi(out: &mut Arguments, ins: Ins) {
     *out = [
         Argument::GPR(GPR(ins.field_ra() as _)),
+        Argument::None,
+        Argument::None,
+        Argument::None,
         Argument::None,
         Argument::None,
         Argument::None,
@@ -7237,613 +13624,5239 @@ fn uses_dcbz_l(out: &mut Arguments, ins: Ins) {
         Argument::None,
         Argument::None,
         Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
     ];
 }
-fn defs_psq_lux(out: &mut Arguments, ins: Ins) {
+fn defs_mfvscr(out: &mut Arguments, ins: Ins) {
     *out = [
-        Argument::FPR(FPR(ins.field_frd() as _)),
-        Argument::GPR(GPR(ins.field_ra() as _)),
+        Argument::GPR(GPR(ins.field_vd() as _)),
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
         Argument::None,
         Argument::None,
         Argument::None,
     ];
 }
-fn uses_psq_lux(out: &mut Arguments, ins: Ins) {
+fn uses_mtvscr(out: &mut Arguments, ins: Ins) {
+    *out = [
+        Argument::GPR(GPR(ins.field_vb() as _)),
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+    ];
+}
+fn defs_vaddcuw(out: &mut Arguments, ins: Ins) {
+    *out = [
+        Argument::GPR(GPR(ins.field_vd() as _)),
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+    ];
+}
+fn uses_vaddcuw(out: &mut Arguments, ins: Ins) {
+    *out = [
+        Argument::GPR(GPR(ins.field_va() as _)),
+        Argument::GPR(GPR(ins.field_vb() as _)),
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+    ];
+}
+fn defs_vaddfp(out: &mut Arguments, ins: Ins) {
+    *out = [
+        Argument::GPR(GPR(ins.field_vd() as _)),
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+    ];
+}
+fn uses_vaddfp(out: &mut Arguments, ins: Ins) {
+    *out = [
+        Argument::GPR(GPR(ins.field_va() as _)),
+        Argument::GPR(GPR(ins.field_vb() as _)),
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+    ];
+}
+fn defs_vaddsbs(out: &mut Arguments, ins: Ins) {
+    *out = [
+        Argument::GPR(GPR(ins.field_vd() as _)),
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+    ];
+}
+fn uses_vaddsbs(out: &mut Arguments, ins: Ins) {
+    *out = [
+        Argument::GPR(GPR(ins.field_va() as _)),
+        Argument::GPR(GPR(ins.field_vb() as _)),
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+    ];
+}
+fn defs_vaddshs(out: &mut Arguments, ins: Ins) {
+    *out = [
+        Argument::GPR(GPR(ins.field_vd() as _)),
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+    ];
+}
+fn uses_vaddshs(out: &mut Arguments, ins: Ins) {
+    *out = [
+        Argument::GPR(GPR(ins.field_va() as _)),
+        Argument::GPR(GPR(ins.field_vb() as _)),
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+    ];
+}
+fn defs_vaddsws(out: &mut Arguments, ins: Ins) {
+    *out = [
+        Argument::GPR(GPR(ins.field_vd() as _)),
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+    ];
+}
+fn uses_vaddsws(out: &mut Arguments, ins: Ins) {
+    *out = [
+        Argument::GPR(GPR(ins.field_va() as _)),
+        Argument::GPR(GPR(ins.field_vb() as _)),
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+    ];
+}
+fn defs_vaddubm(out: &mut Arguments, ins: Ins) {
+    *out = [
+        Argument::GPR(GPR(ins.field_vd() as _)),
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+    ];
+}
+fn uses_vaddubm(out: &mut Arguments, ins: Ins) {
+    *out = [
+        Argument::GPR(GPR(ins.field_va() as _)),
+        Argument::GPR(GPR(ins.field_vb() as _)),
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+    ];
+}
+fn defs_vaddubs(out: &mut Arguments, ins: Ins) {
+    *out = [
+        Argument::GPR(GPR(ins.field_vd() as _)),
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+    ];
+}
+fn uses_vaddubs(out: &mut Arguments, ins: Ins) {
+    *out = [
+        Argument::GPR(GPR(ins.field_va() as _)),
+        Argument::GPR(GPR(ins.field_vb() as _)),
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+    ];
+}
+fn defs_vadduhm(out: &mut Arguments, ins: Ins) {
+    *out = [
+        Argument::GPR(GPR(ins.field_vd() as _)),
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+    ];
+}
+fn uses_vadduhm(out: &mut Arguments, ins: Ins) {
+    *out = [
+        Argument::GPR(GPR(ins.field_va() as _)),
+        Argument::GPR(GPR(ins.field_vb() as _)),
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+    ];
+}
+fn defs_vadduhs(out: &mut Arguments, ins: Ins) {
+    *out = [
+        Argument::GPR(GPR(ins.field_vd() as _)),
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+    ];
+}
+fn uses_vadduhs(out: &mut Arguments, ins: Ins) {
+    *out = [
+        Argument::GPR(GPR(ins.field_va() as _)),
+        Argument::GPR(GPR(ins.field_vb() as _)),
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+    ];
+}
+fn defs_vadduwm(out: &mut Arguments, ins: Ins) {
+    *out = [
+        Argument::GPR(GPR(ins.field_vd() as _)),
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+    ];
+}
+fn uses_vadduwm(out: &mut Arguments, ins: Ins) {
+    *out = [
+        Argument::GPR(GPR(ins.field_va() as _)),
+        Argument::GPR(GPR(ins.field_vb() as _)),
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+    ];
+}
+fn defs_vadduws(out: &mut Arguments, ins: Ins) {
+    *out = [
+        Argument::GPR(GPR(ins.field_vd() as _)),
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+    ];
+}
+fn uses_vadduws(out: &mut Arguments, ins: Ins) {
+    *out = [
+        Argument::GPR(GPR(ins.field_va() as _)),
+        Argument::GPR(GPR(ins.field_vb() as _)),
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+    ];
+}
+fn defs_vand(out: &mut Arguments, ins: Ins) {
+    *out = [
+        Argument::GPR(GPR(ins.field_vd() as _)),
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+    ];
+}
+fn uses_vand(out: &mut Arguments, ins: Ins) {
+    *out = [
+        Argument::GPR(GPR(ins.field_va() as _)),
+        Argument::GPR(GPR(ins.field_vb() as _)),
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+    ];
+}
+fn defs_vandc(out: &mut Arguments, ins: Ins) {
+    *out = [
+        Argument::GPR(GPR(ins.field_vd() as _)),
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+    ];
+}
+fn uses_vandc(out: &mut Arguments, ins: Ins) {
+    *out = [
+        Argument::GPR(GPR(ins.field_va() as _)),
+        Argument::GPR(GPR(ins.field_vb() as _)),
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+    ];
+}
+fn defs_vavgsb(out: &mut Arguments, ins: Ins) {
+    *out = [
+        Argument::GPR(GPR(ins.field_vd() as _)),
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+    ];
+}
+fn uses_vavgsb(out: &mut Arguments, ins: Ins) {
+    *out = [
+        Argument::GPR(GPR(ins.field_va() as _)),
+        Argument::GPR(GPR(ins.field_vb() as _)),
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+    ];
+}
+fn defs_vavgsh(out: &mut Arguments, ins: Ins) {
+    *out = [
+        Argument::GPR(GPR(ins.field_vd() as _)),
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+    ];
+}
+fn uses_vavgsh(out: &mut Arguments, ins: Ins) {
+    *out = [
+        Argument::GPR(GPR(ins.field_va() as _)),
+        Argument::GPR(GPR(ins.field_vb() as _)),
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+    ];
+}
+fn defs_vavgsw(out: &mut Arguments, ins: Ins) {
+    *out = [
+        Argument::GPR(GPR(ins.field_vd() as _)),
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+    ];
+}
+fn uses_vavgsw(out: &mut Arguments, ins: Ins) {
+    *out = [
+        Argument::GPR(GPR(ins.field_va() as _)),
+        Argument::GPR(GPR(ins.field_vb() as _)),
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+    ];
+}
+fn defs_vavgub(out: &mut Arguments, ins: Ins) {
+    *out = [
+        Argument::GPR(GPR(ins.field_vd() as _)),
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+    ];
+}
+fn uses_vavgub(out: &mut Arguments, ins: Ins) {
+    *out = [
+        Argument::GPR(GPR(ins.field_va() as _)),
+        Argument::GPR(GPR(ins.field_vb() as _)),
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+    ];
+}
+fn defs_vavguh(out: &mut Arguments, ins: Ins) {
+    *out = [
+        Argument::GPR(GPR(ins.field_vd() as _)),
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+    ];
+}
+fn uses_vavguh(out: &mut Arguments, ins: Ins) {
+    *out = [
+        Argument::GPR(GPR(ins.field_va() as _)),
+        Argument::GPR(GPR(ins.field_vb() as _)),
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+    ];
+}
+fn defs_vavguw(out: &mut Arguments, ins: Ins) {
+    *out = [
+        Argument::GPR(GPR(ins.field_vd() as _)),
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+    ];
+}
+fn uses_vavguw(out: &mut Arguments, ins: Ins) {
+    *out = [
+        Argument::GPR(GPR(ins.field_va() as _)),
+        Argument::GPR(GPR(ins.field_vb() as _)),
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+    ];
+}
+fn defs_vcfsx(out: &mut Arguments, ins: Ins) {
+    *out = [
+        Argument::GPR(GPR(ins.field_vd() as _)),
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+    ];
+}
+fn uses_vcfsx(out: &mut Arguments, ins: Ins) {
+    *out = [
+        Argument::GPR(GPR(ins.field_vb() as _)),
+        Argument::Uimm(Uimm(ins.field_vuimm() as _)),
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+    ];
+}
+fn defs_vcfux(out: &mut Arguments, ins: Ins) {
+    *out = [
+        Argument::GPR(GPR(ins.field_vd() as _)),
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+    ];
+}
+fn uses_vcfux(out: &mut Arguments, ins: Ins) {
+    *out = [
+        Argument::GPR(GPR(ins.field_vb() as _)),
+        Argument::Uimm(Uimm(ins.field_vuimm() as _)),
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+    ];
+}
+fn defs_vcmpbfp(out: &mut Arguments, ins: Ins) {
+    *out = [
+        Argument::GPR(GPR(ins.field_vd() as _)),
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+    ];
+}
+fn uses_vcmpbfp(out: &mut Arguments, ins: Ins) {
+    *out = [
+        Argument::GPR(GPR(ins.field_va() as _)),
+        Argument::GPR(GPR(ins.field_vb() as _)),
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+    ];
+}
+fn defs_vcmpeqfp(out: &mut Arguments, ins: Ins) {
+    *out = [
+        Argument::GPR(GPR(ins.field_vd() as _)),
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+    ];
+}
+fn uses_vcmpeqfp(out: &mut Arguments, ins: Ins) {
+    *out = [
+        Argument::GPR(GPR(ins.field_va() as _)),
+        Argument::GPR(GPR(ins.field_vb() as _)),
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+    ];
+}
+fn defs_vcmpequb(out: &mut Arguments, ins: Ins) {
+    *out = [
+        Argument::GPR(GPR(ins.field_vd() as _)),
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+    ];
+}
+fn uses_vcmpequb(out: &mut Arguments, ins: Ins) {
+    *out = [
+        Argument::GPR(GPR(ins.field_va() as _)),
+        Argument::GPR(GPR(ins.field_vb() as _)),
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+    ];
+}
+fn defs_vcmpequh(out: &mut Arguments, ins: Ins) {
+    *out = [
+        Argument::GPR(GPR(ins.field_vd() as _)),
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+    ];
+}
+fn uses_vcmpequh(out: &mut Arguments, ins: Ins) {
+    *out = [
+        Argument::GPR(GPR(ins.field_va() as _)),
+        Argument::GPR(GPR(ins.field_vb() as _)),
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+    ];
+}
+fn defs_vcmpequw(out: &mut Arguments, ins: Ins) {
+    *out = [
+        Argument::GPR(GPR(ins.field_vd() as _)),
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+    ];
+}
+fn uses_vcmpequw(out: &mut Arguments, ins: Ins) {
+    *out = [
+        Argument::GPR(GPR(ins.field_va() as _)),
+        Argument::GPR(GPR(ins.field_vb() as _)),
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+    ];
+}
+fn defs_vcmpgefp(out: &mut Arguments, ins: Ins) {
+    *out = [
+        Argument::GPR(GPR(ins.field_vd() as _)),
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+    ];
+}
+fn uses_vcmpgefp(out: &mut Arguments, ins: Ins) {
+    *out = [
+        Argument::GPR(GPR(ins.field_va() as _)),
+        Argument::GPR(GPR(ins.field_vb() as _)),
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+    ];
+}
+fn defs_vcmpgtfp(out: &mut Arguments, ins: Ins) {
+    *out = [
+        Argument::GPR(GPR(ins.field_vd() as _)),
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+    ];
+}
+fn uses_vcmpgtfp(out: &mut Arguments, ins: Ins) {
+    *out = [
+        Argument::GPR(GPR(ins.field_va() as _)),
+        Argument::GPR(GPR(ins.field_vb() as _)),
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+    ];
+}
+fn defs_vcmpgtsb(out: &mut Arguments, ins: Ins) {
+    *out = [
+        Argument::GPR(GPR(ins.field_vd() as _)),
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+    ];
+}
+fn uses_vcmpgtsb(out: &mut Arguments, ins: Ins) {
+    *out = [
+        Argument::GPR(GPR(ins.field_va() as _)),
+        Argument::GPR(GPR(ins.field_vb() as _)),
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+    ];
+}
+fn defs_vcmpgtsh(out: &mut Arguments, ins: Ins) {
+    *out = [
+        Argument::GPR(GPR(ins.field_vd() as _)),
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+    ];
+}
+fn uses_vcmpgtsh(out: &mut Arguments, ins: Ins) {
+    *out = [
+        Argument::GPR(GPR(ins.field_va() as _)),
+        Argument::GPR(GPR(ins.field_vb() as _)),
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+    ];
+}
+fn defs_vcmpgtsw(out: &mut Arguments, ins: Ins) {
+    *out = [
+        Argument::GPR(GPR(ins.field_vd() as _)),
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+    ];
+}
+fn uses_vcmpgtsw(out: &mut Arguments, ins: Ins) {
+    *out = [
+        Argument::GPR(GPR(ins.field_va() as _)),
+        Argument::GPR(GPR(ins.field_vb() as _)),
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+    ];
+}
+fn defs_vcmpgtub(out: &mut Arguments, ins: Ins) {
+    *out = [
+        Argument::GPR(GPR(ins.field_vd() as _)),
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+    ];
+}
+fn uses_vcmpgtub(out: &mut Arguments, ins: Ins) {
+    *out = [
+        Argument::GPR(GPR(ins.field_va() as _)),
+        Argument::GPR(GPR(ins.field_vb() as _)),
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+    ];
+}
+fn defs_vcmpgtuh(out: &mut Arguments, ins: Ins) {
+    *out = [
+        Argument::GPR(GPR(ins.field_vd() as _)),
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+    ];
+}
+fn uses_vcmpgtuh(out: &mut Arguments, ins: Ins) {
+    *out = [
+        Argument::GPR(GPR(ins.field_va() as _)),
+        Argument::GPR(GPR(ins.field_vb() as _)),
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+    ];
+}
+fn defs_vcmpgtuw(out: &mut Arguments, ins: Ins) {
+    *out = [
+        Argument::GPR(GPR(ins.field_vd() as _)),
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+    ];
+}
+fn uses_vcmpgtuw(out: &mut Arguments, ins: Ins) {
+    *out = [
+        Argument::GPR(GPR(ins.field_va() as _)),
+        Argument::GPR(GPR(ins.field_vb() as _)),
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+    ];
+}
+fn defs_vctsxs(out: &mut Arguments, ins: Ins) {
+    *out = [
+        Argument::GPR(GPR(ins.field_vd() as _)),
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+    ];
+}
+fn uses_vctsxs(out: &mut Arguments, ins: Ins) {
+    *out = [
+        Argument::GPR(GPR(ins.field_vb() as _)),
+        Argument::Uimm(Uimm(ins.field_vuimm() as _)),
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+    ];
+}
+fn defs_vctuxs(out: &mut Arguments, ins: Ins) {
+    *out = [
+        Argument::GPR(GPR(ins.field_vd() as _)),
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+    ];
+}
+fn uses_vctuxs(out: &mut Arguments, ins: Ins) {
+    *out = [
+        Argument::GPR(GPR(ins.field_vb() as _)),
+        Argument::Uimm(Uimm(ins.field_vuimm() as _)),
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+    ];
+}
+fn defs_vexptefp(out: &mut Arguments, ins: Ins) {
+    *out = [
+        Argument::GPR(GPR(ins.field_vd() as _)),
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+    ];
+}
+fn uses_vexptefp(out: &mut Arguments, ins: Ins) {
+    *out = [
+        Argument::GPR(GPR(ins.field_vb() as _)),
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+    ];
+}
+fn defs_vlogefp(out: &mut Arguments, ins: Ins) {
+    *out = [
+        Argument::GPR(GPR(ins.field_vd() as _)),
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+    ];
+}
+fn uses_vlogefp(out: &mut Arguments, ins: Ins) {
+    *out = [
+        Argument::GPR(GPR(ins.field_vb() as _)),
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+    ];
+}
+fn defs_vmaddfp(out: &mut Arguments, ins: Ins) {
+    *out = [
+        Argument::GPR(GPR(ins.field_vd() as _)),
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+    ];
+}
+fn uses_vmaddfp(out: &mut Arguments, ins: Ins) {
+    *out = [
+        Argument::GPR(GPR(ins.field_va() as _)),
+        Argument::GPR(GPR(ins.field_vc() as _)),
+        Argument::GPR(GPR(ins.field_vb() as _)),
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+    ];
+}
+fn defs_vmaxfp(out: &mut Arguments, ins: Ins) {
+    *out = [
+        Argument::GPR(GPR(ins.field_vd() as _)),
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+    ];
+}
+fn uses_vmaxfp(out: &mut Arguments, ins: Ins) {
+    *out = [
+        Argument::GPR(GPR(ins.field_va() as _)),
+        Argument::GPR(GPR(ins.field_vb() as _)),
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+    ];
+}
+fn defs_vmaxsb(out: &mut Arguments, ins: Ins) {
+    *out = [
+        Argument::GPR(GPR(ins.field_vd() as _)),
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+    ];
+}
+fn uses_vmaxsb(out: &mut Arguments, ins: Ins) {
+    *out = [
+        Argument::GPR(GPR(ins.field_va() as _)),
+        Argument::GPR(GPR(ins.field_vb() as _)),
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+    ];
+}
+fn defs_vmaxsh(out: &mut Arguments, ins: Ins) {
+    *out = [
+        Argument::GPR(GPR(ins.field_vd() as _)),
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+    ];
+}
+fn uses_vmaxsh(out: &mut Arguments, ins: Ins) {
+    *out = [
+        Argument::GPR(GPR(ins.field_va() as _)),
+        Argument::GPR(GPR(ins.field_vb() as _)),
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+    ];
+}
+fn defs_vmaxsw(out: &mut Arguments, ins: Ins) {
+    *out = [
+        Argument::GPR(GPR(ins.field_vd() as _)),
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+    ];
+}
+fn uses_vmaxsw(out: &mut Arguments, ins: Ins) {
+    *out = [
+        Argument::GPR(GPR(ins.field_va() as _)),
+        Argument::GPR(GPR(ins.field_vb() as _)),
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+    ];
+}
+fn defs_vmaxub(out: &mut Arguments, ins: Ins) {
+    *out = [
+        Argument::GPR(GPR(ins.field_vd() as _)),
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+    ];
+}
+fn uses_vmaxub(out: &mut Arguments, ins: Ins) {
+    *out = [
+        Argument::GPR(GPR(ins.field_va() as _)),
+        Argument::GPR(GPR(ins.field_vb() as _)),
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+    ];
+}
+fn defs_vmaxuh(out: &mut Arguments, ins: Ins) {
+    *out = [
+        Argument::GPR(GPR(ins.field_vd() as _)),
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+    ];
+}
+fn uses_vmaxuh(out: &mut Arguments, ins: Ins) {
+    *out = [
+        Argument::GPR(GPR(ins.field_va() as _)),
+        Argument::GPR(GPR(ins.field_vb() as _)),
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+    ];
+}
+fn defs_vmaxuw(out: &mut Arguments, ins: Ins) {
+    *out = [
+        Argument::GPR(GPR(ins.field_vd() as _)),
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+    ];
+}
+fn uses_vmaxuw(out: &mut Arguments, ins: Ins) {
+    *out = [
+        Argument::GPR(GPR(ins.field_va() as _)),
+        Argument::GPR(GPR(ins.field_vb() as _)),
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+    ];
+}
+fn defs_vmhaddshs(out: &mut Arguments, ins: Ins) {
+    *out = [
+        Argument::GPR(GPR(ins.field_vd() as _)),
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+    ];
+}
+fn uses_vmhaddshs(out: &mut Arguments, ins: Ins) {
+    *out = [
+        Argument::GPR(GPR(ins.field_va() as _)),
+        Argument::GPR(GPR(ins.field_vb() as _)),
+        Argument::GPR(GPR(ins.field_vc() as _)),
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+    ];
+}
+fn defs_vmhraddshs(out: &mut Arguments, ins: Ins) {
+    *out = [
+        Argument::GPR(GPR(ins.field_vd() as _)),
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+    ];
+}
+fn uses_vmhraddshs(out: &mut Arguments, ins: Ins) {
+    *out = [
+        Argument::GPR(GPR(ins.field_va() as _)),
+        Argument::GPR(GPR(ins.field_vb() as _)),
+        Argument::GPR(GPR(ins.field_vc() as _)),
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+    ];
+}
+fn defs_vminfp(out: &mut Arguments, ins: Ins) {
+    *out = [
+        Argument::GPR(GPR(ins.field_vd() as _)),
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+    ];
+}
+fn uses_vminfp(out: &mut Arguments, ins: Ins) {
+    *out = [
+        Argument::GPR(GPR(ins.field_va() as _)),
+        Argument::GPR(GPR(ins.field_vb() as _)),
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+    ];
+}
+fn defs_vminsb(out: &mut Arguments, ins: Ins) {
+    *out = [
+        Argument::GPR(GPR(ins.field_vd() as _)),
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+    ];
+}
+fn uses_vminsb(out: &mut Arguments, ins: Ins) {
+    *out = [
+        Argument::GPR(GPR(ins.field_va() as _)),
+        Argument::GPR(GPR(ins.field_vb() as _)),
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+    ];
+}
+fn defs_vminsh(out: &mut Arguments, ins: Ins) {
+    *out = [
+        Argument::GPR(GPR(ins.field_vd() as _)),
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+    ];
+}
+fn uses_vminsh(out: &mut Arguments, ins: Ins) {
+    *out = [
+        Argument::GPR(GPR(ins.field_va() as _)),
+        Argument::GPR(GPR(ins.field_vb() as _)),
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+    ];
+}
+fn defs_vminsw(out: &mut Arguments, ins: Ins) {
+    *out = [
+        Argument::GPR(GPR(ins.field_vd() as _)),
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+    ];
+}
+fn uses_vminsw(out: &mut Arguments, ins: Ins) {
+    *out = [
+        Argument::GPR(GPR(ins.field_va() as _)),
+        Argument::GPR(GPR(ins.field_vb() as _)),
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+    ];
+}
+fn defs_vminub(out: &mut Arguments, ins: Ins) {
+    *out = [
+        Argument::GPR(GPR(ins.field_vd() as _)),
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+    ];
+}
+fn uses_vminub(out: &mut Arguments, ins: Ins) {
+    *out = [
+        Argument::GPR(GPR(ins.field_va() as _)),
+        Argument::GPR(GPR(ins.field_vb() as _)),
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+    ];
+}
+fn defs_vminuh(out: &mut Arguments, ins: Ins) {
+    *out = [
+        Argument::GPR(GPR(ins.field_vd() as _)),
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+    ];
+}
+fn uses_vminuh(out: &mut Arguments, ins: Ins) {
+    *out = [
+        Argument::GPR(GPR(ins.field_va() as _)),
+        Argument::GPR(GPR(ins.field_vb() as _)),
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+    ];
+}
+fn defs_vminuw(out: &mut Arguments, ins: Ins) {
+    *out = [
+        Argument::GPR(GPR(ins.field_vd() as _)),
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+    ];
+}
+fn uses_vminuw(out: &mut Arguments, ins: Ins) {
+    *out = [
+        Argument::GPR(GPR(ins.field_va() as _)),
+        Argument::GPR(GPR(ins.field_vb() as _)),
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+    ];
+}
+fn defs_vmladduhm(out: &mut Arguments, ins: Ins) {
+    *out = [
+        Argument::GPR(GPR(ins.field_vd() as _)),
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+    ];
+}
+fn uses_vmladduhm(out: &mut Arguments, ins: Ins) {
+    *out = [
+        Argument::GPR(GPR(ins.field_va() as _)),
+        Argument::GPR(GPR(ins.field_vb() as _)),
+        Argument::GPR(GPR(ins.field_vc() as _)),
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+    ];
+}
+fn defs_vmrghb(out: &mut Arguments, ins: Ins) {
+    *out = [
+        Argument::GPR(GPR(ins.field_vd() as _)),
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+    ];
+}
+fn uses_vmrghb(out: &mut Arguments, ins: Ins) {
+    *out = [
+        Argument::GPR(GPR(ins.field_va() as _)),
+        Argument::GPR(GPR(ins.field_vb() as _)),
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+    ];
+}
+fn defs_vmrghh(out: &mut Arguments, ins: Ins) {
+    *out = [
+        Argument::GPR(GPR(ins.field_vd() as _)),
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+    ];
+}
+fn uses_vmrghh(out: &mut Arguments, ins: Ins) {
+    *out = [
+        Argument::GPR(GPR(ins.field_va() as _)),
+        Argument::GPR(GPR(ins.field_vb() as _)),
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+    ];
+}
+fn defs_vmrghw(out: &mut Arguments, ins: Ins) {
+    *out = [
+        Argument::GPR(GPR(ins.field_vd() as _)),
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+    ];
+}
+fn uses_vmrghw(out: &mut Arguments, ins: Ins) {
+    *out = [
+        Argument::GPR(GPR(ins.field_va() as _)),
+        Argument::GPR(GPR(ins.field_vb() as _)),
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+    ];
+}
+fn defs_vmrglb(out: &mut Arguments, ins: Ins) {
+    *out = [
+        Argument::GPR(GPR(ins.field_vd() as _)),
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+    ];
+}
+fn uses_vmrglb(out: &mut Arguments, ins: Ins) {
+    *out = [
+        Argument::GPR(GPR(ins.field_va() as _)),
+        Argument::GPR(GPR(ins.field_vb() as _)),
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+    ];
+}
+fn defs_vmrglh(out: &mut Arguments, ins: Ins) {
+    *out = [
+        Argument::GPR(GPR(ins.field_vd() as _)),
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+    ];
+}
+fn uses_vmrglh(out: &mut Arguments, ins: Ins) {
+    *out = [
+        Argument::GPR(GPR(ins.field_va() as _)),
+        Argument::GPR(GPR(ins.field_vb() as _)),
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+    ];
+}
+fn defs_vmrglw(out: &mut Arguments, ins: Ins) {
+    *out = [
+        Argument::GPR(GPR(ins.field_vd() as _)),
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+    ];
+}
+fn uses_vmrglw(out: &mut Arguments, ins: Ins) {
+    *out = [
+        Argument::GPR(GPR(ins.field_va() as _)),
+        Argument::GPR(GPR(ins.field_vb() as _)),
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+    ];
+}
+fn defs_vmsummbm(out: &mut Arguments, ins: Ins) {
+    *out = [
+        Argument::GPR(GPR(ins.field_vd() as _)),
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+    ];
+}
+fn uses_vmsummbm(out: &mut Arguments, ins: Ins) {
+    *out = [
+        Argument::GPR(GPR(ins.field_va() as _)),
+        Argument::GPR(GPR(ins.field_vb() as _)),
+        Argument::GPR(GPR(ins.field_vc() as _)),
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+    ];
+}
+fn defs_vmsumshm(out: &mut Arguments, ins: Ins) {
+    *out = [
+        Argument::GPR(GPR(ins.field_vd() as _)),
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+    ];
+}
+fn uses_vmsumshm(out: &mut Arguments, ins: Ins) {
+    *out = [
+        Argument::GPR(GPR(ins.field_va() as _)),
+        Argument::GPR(GPR(ins.field_vb() as _)),
+        Argument::GPR(GPR(ins.field_vc() as _)),
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+    ];
+}
+fn defs_vmsumshs(out: &mut Arguments, ins: Ins) {
+    *out = [
+        Argument::GPR(GPR(ins.field_vd() as _)),
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+    ];
+}
+fn uses_vmsumshs(out: &mut Arguments, ins: Ins) {
+    *out = [
+        Argument::GPR(GPR(ins.field_va() as _)),
+        Argument::GPR(GPR(ins.field_vb() as _)),
+        Argument::GPR(GPR(ins.field_vc() as _)),
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+    ];
+}
+fn defs_vmsumubm(out: &mut Arguments, ins: Ins) {
+    *out = [
+        Argument::GPR(GPR(ins.field_vd() as _)),
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+    ];
+}
+fn uses_vmsumubm(out: &mut Arguments, ins: Ins) {
+    *out = [
+        Argument::GPR(GPR(ins.field_va() as _)),
+        Argument::GPR(GPR(ins.field_vb() as _)),
+        Argument::GPR(GPR(ins.field_vc() as _)),
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+    ];
+}
+fn defs_vmsumuhm(out: &mut Arguments, ins: Ins) {
+    *out = [
+        Argument::GPR(GPR(ins.field_vd() as _)),
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+    ];
+}
+fn uses_vmsumuhm(out: &mut Arguments, ins: Ins) {
+    *out = [
+        Argument::GPR(GPR(ins.field_va() as _)),
+        Argument::GPR(GPR(ins.field_vb() as _)),
+        Argument::GPR(GPR(ins.field_vc() as _)),
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+    ];
+}
+fn defs_vmsumuhs(out: &mut Arguments, ins: Ins) {
+    *out = [
+        Argument::GPR(GPR(ins.field_vd() as _)),
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+    ];
+}
+fn uses_vmsumuhs(out: &mut Arguments, ins: Ins) {
+    *out = [
+        Argument::GPR(GPR(ins.field_va() as _)),
+        Argument::GPR(GPR(ins.field_vb() as _)),
+        Argument::GPR(GPR(ins.field_vc() as _)),
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+    ];
+}
+fn defs_vmulesb(out: &mut Arguments, ins: Ins) {
+    *out = [
+        Argument::GPR(GPR(ins.field_vd() as _)),
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+    ];
+}
+fn uses_vmulesb(out: &mut Arguments, ins: Ins) {
+    *out = [
+        Argument::GPR(GPR(ins.field_va() as _)),
+        Argument::GPR(GPR(ins.field_vb() as _)),
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+    ];
+}
+fn defs_vmulesh(out: &mut Arguments, ins: Ins) {
+    *out = [
+        Argument::GPR(GPR(ins.field_vd() as _)),
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+    ];
+}
+fn uses_vmulesh(out: &mut Arguments, ins: Ins) {
+    *out = [
+        Argument::GPR(GPR(ins.field_va() as _)),
+        Argument::GPR(GPR(ins.field_vb() as _)),
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+    ];
+}
+fn defs_vmuleub(out: &mut Arguments, ins: Ins) {
+    *out = [
+        Argument::GPR(GPR(ins.field_vd() as _)),
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+    ];
+}
+fn uses_vmuleub(out: &mut Arguments, ins: Ins) {
+    *out = [
+        Argument::GPR(GPR(ins.field_va() as _)),
+        Argument::GPR(GPR(ins.field_vb() as _)),
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+    ];
+}
+fn defs_vmuleuh(out: &mut Arguments, ins: Ins) {
+    *out = [
+        Argument::GPR(GPR(ins.field_vd() as _)),
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+    ];
+}
+fn uses_vmuleuh(out: &mut Arguments, ins: Ins) {
+    *out = [
+        Argument::GPR(GPR(ins.field_va() as _)),
+        Argument::GPR(GPR(ins.field_vb() as _)),
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+    ];
+}
+fn defs_vmulosb(out: &mut Arguments, ins: Ins) {
+    *out = [
+        Argument::GPR(GPR(ins.field_vd() as _)),
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+    ];
+}
+fn uses_vmulosb(out: &mut Arguments, ins: Ins) {
+    *out = [
+        Argument::GPR(GPR(ins.field_va() as _)),
+        Argument::GPR(GPR(ins.field_vb() as _)),
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+    ];
+}
+fn defs_vmulosh(out: &mut Arguments, ins: Ins) {
+    *out = [
+        Argument::GPR(GPR(ins.field_vd() as _)),
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+    ];
+}
+fn uses_vmulosh(out: &mut Arguments, ins: Ins) {
+    *out = [
+        Argument::GPR(GPR(ins.field_va() as _)),
+        Argument::GPR(GPR(ins.field_vb() as _)),
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+    ];
+}
+fn defs_vmuloub(out: &mut Arguments, ins: Ins) {
+    *out = [
+        Argument::GPR(GPR(ins.field_vd() as _)),
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+    ];
+}
+fn uses_vmuloub(out: &mut Arguments, ins: Ins) {
+    *out = [
+        Argument::GPR(GPR(ins.field_va() as _)),
+        Argument::GPR(GPR(ins.field_vb() as _)),
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+    ];
+}
+fn defs_vmulouh(out: &mut Arguments, ins: Ins) {
+    *out = [
+        Argument::GPR(GPR(ins.field_vd() as _)),
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+    ];
+}
+fn uses_vmulouh(out: &mut Arguments, ins: Ins) {
+    *out = [
+        Argument::GPR(GPR(ins.field_va() as _)),
+        Argument::GPR(GPR(ins.field_vb() as _)),
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+    ];
+}
+fn defs_vnmsubfp(out: &mut Arguments, ins: Ins) {
+    *out = [
+        Argument::GPR(GPR(ins.field_vd() as _)),
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+    ];
+}
+fn uses_vnmsubfp(out: &mut Arguments, ins: Ins) {
+    *out = [
+        Argument::GPR(GPR(ins.field_va() as _)),
+        Argument::GPR(GPR(ins.field_vc() as _)),
+        Argument::GPR(GPR(ins.field_vb() as _)),
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+    ];
+}
+fn defs_vnor(out: &mut Arguments, ins: Ins) {
+    *out = [
+        Argument::GPR(GPR(ins.field_vd() as _)),
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+    ];
+}
+fn uses_vnor(out: &mut Arguments, ins: Ins) {
+    *out = [
+        Argument::GPR(GPR(ins.field_va() as _)),
+        Argument::GPR(GPR(ins.field_vb() as _)),
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+    ];
+}
+fn defs_vor(out: &mut Arguments, ins: Ins) {
+    *out = [
+        Argument::GPR(GPR(ins.field_vd() as _)),
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+    ];
+}
+fn uses_vor(out: &mut Arguments, ins: Ins) {
+    *out = [
+        Argument::GPR(GPR(ins.field_va() as _)),
+        Argument::GPR(GPR(ins.field_vb() as _)),
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+    ];
+}
+fn defs_vperm(out: &mut Arguments, ins: Ins) {
+    *out = [
+        Argument::GPR(GPR(ins.field_vd() as _)),
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+    ];
+}
+fn uses_vperm(out: &mut Arguments, ins: Ins) {
+    *out = [
+        Argument::GPR(GPR(ins.field_va() as _)),
+        Argument::GPR(GPR(ins.field_vb() as _)),
+        Argument::GPR(GPR(ins.field_vc() as _)),
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+    ];
+}
+fn defs_vpkpx(out: &mut Arguments, ins: Ins) {
+    *out = [
+        Argument::GPR(GPR(ins.field_vd() as _)),
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+    ];
+}
+fn uses_vpkpx(out: &mut Arguments, ins: Ins) {
+    *out = [
+        Argument::GPR(GPR(ins.field_va() as _)),
+        Argument::GPR(GPR(ins.field_vb() as _)),
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+    ];
+}
+fn defs_vpkshss(out: &mut Arguments, ins: Ins) {
+    *out = [
+        Argument::GPR(GPR(ins.field_vd() as _)),
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+    ];
+}
+fn uses_vpkshss(out: &mut Arguments, ins: Ins) {
+    *out = [
+        Argument::GPR(GPR(ins.field_va() as _)),
+        Argument::GPR(GPR(ins.field_vb() as _)),
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+    ];
+}
+fn defs_vpkshus(out: &mut Arguments, ins: Ins) {
+    *out = [
+        Argument::GPR(GPR(ins.field_vd() as _)),
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+    ];
+}
+fn uses_vpkshus(out: &mut Arguments, ins: Ins) {
+    *out = [
+        Argument::GPR(GPR(ins.field_va() as _)),
+        Argument::GPR(GPR(ins.field_vb() as _)),
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+    ];
+}
+fn defs_vpkswss(out: &mut Arguments, ins: Ins) {
+    *out = [
+        Argument::GPR(GPR(ins.field_vd() as _)),
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+    ];
+}
+fn uses_vpkswss(out: &mut Arguments, ins: Ins) {
+    *out = [
+        Argument::GPR(GPR(ins.field_va() as _)),
+        Argument::GPR(GPR(ins.field_vb() as _)),
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+    ];
+}
+fn defs_vpkswus(out: &mut Arguments, ins: Ins) {
+    *out = [
+        Argument::GPR(GPR(ins.field_vd() as _)),
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+    ];
+}
+fn uses_vpkswus(out: &mut Arguments, ins: Ins) {
+    *out = [
+        Argument::GPR(GPR(ins.field_va() as _)),
+        Argument::GPR(GPR(ins.field_vb() as _)),
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+    ];
+}
+fn defs_vpkuhum(out: &mut Arguments, ins: Ins) {
+    *out = [
+        Argument::GPR(GPR(ins.field_vd() as _)),
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+    ];
+}
+fn uses_vpkuhum(out: &mut Arguments, ins: Ins) {
+    *out = [
+        Argument::GPR(GPR(ins.field_va() as _)),
+        Argument::GPR(GPR(ins.field_vb() as _)),
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+    ];
+}
+fn defs_vpkuhus(out: &mut Arguments, ins: Ins) {
+    *out = [
+        Argument::GPR(GPR(ins.field_vd() as _)),
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+    ];
+}
+fn uses_vpkuhus(out: &mut Arguments, ins: Ins) {
+    *out = [
+        Argument::GPR(GPR(ins.field_va() as _)),
+        Argument::GPR(GPR(ins.field_vb() as _)),
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+    ];
+}
+fn defs_vpkuwum(out: &mut Arguments, ins: Ins) {
+    *out = [
+        Argument::GPR(GPR(ins.field_vd() as _)),
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+    ];
+}
+fn uses_vpkuwum(out: &mut Arguments, ins: Ins) {
+    *out = [
+        Argument::GPR(GPR(ins.field_va() as _)),
+        Argument::GPR(GPR(ins.field_vb() as _)),
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+    ];
+}
+fn defs_vpkuwus(out: &mut Arguments, ins: Ins) {
+    *out = [
+        Argument::GPR(GPR(ins.field_vd() as _)),
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+    ];
+}
+fn uses_vpkuwus(out: &mut Arguments, ins: Ins) {
+    *out = [
+        Argument::GPR(GPR(ins.field_va() as _)),
+        Argument::GPR(GPR(ins.field_vb() as _)),
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+    ];
+}
+fn defs_vrefp(out: &mut Arguments, ins: Ins) {
+    *out = [
+        Argument::GPR(GPR(ins.field_vd() as _)),
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+    ];
+}
+fn uses_vrefp(out: &mut Arguments, ins: Ins) {
+    *out = [
+        Argument::GPR(GPR(ins.field_vb() as _)),
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+    ];
+}
+fn defs_vrfim(out: &mut Arguments, ins: Ins) {
+    *out = [
+        Argument::GPR(GPR(ins.field_vd() as _)),
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+    ];
+}
+fn uses_vrfim(out: &mut Arguments, ins: Ins) {
+    *out = [
+        Argument::GPR(GPR(ins.field_vb() as _)),
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+    ];
+}
+fn defs_vrfin(out: &mut Arguments, ins: Ins) {
+    *out = [
+        Argument::GPR(GPR(ins.field_vd() as _)),
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+    ];
+}
+fn uses_vrfin(out: &mut Arguments, ins: Ins) {
+    *out = [
+        Argument::GPR(GPR(ins.field_vb() as _)),
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+    ];
+}
+fn defs_vrfip(out: &mut Arguments, ins: Ins) {
+    *out = [
+        Argument::GPR(GPR(ins.field_vd() as _)),
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+    ];
+}
+fn uses_vrfip(out: &mut Arguments, ins: Ins) {
+    *out = [
+        Argument::GPR(GPR(ins.field_vb() as _)),
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+    ];
+}
+fn defs_vrfiz(out: &mut Arguments, ins: Ins) {
+    *out = [
+        Argument::GPR(GPR(ins.field_vd() as _)),
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+    ];
+}
+fn uses_vrfiz(out: &mut Arguments, ins: Ins) {
+    *out = [
+        Argument::GPR(GPR(ins.field_vb() as _)),
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+    ];
+}
+fn defs_vrlb(out: &mut Arguments, ins: Ins) {
+    *out = [
+        Argument::GPR(GPR(ins.field_vd() as _)),
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+    ];
+}
+fn uses_vrlb(out: &mut Arguments, ins: Ins) {
+    *out = [
+        Argument::GPR(GPR(ins.field_va() as _)),
+        Argument::GPR(GPR(ins.field_vb() as _)),
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+    ];
+}
+fn defs_vrlh(out: &mut Arguments, ins: Ins) {
+    *out = [
+        Argument::GPR(GPR(ins.field_vd() as _)),
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+    ];
+}
+fn uses_vrlh(out: &mut Arguments, ins: Ins) {
+    *out = [
+        Argument::GPR(GPR(ins.field_va() as _)),
+        Argument::GPR(GPR(ins.field_vb() as _)),
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+    ];
+}
+fn defs_vrlw(out: &mut Arguments, ins: Ins) {
+    *out = [
+        Argument::GPR(GPR(ins.field_vd() as _)),
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+    ];
+}
+fn uses_vrlw(out: &mut Arguments, ins: Ins) {
+    *out = [
+        Argument::GPR(GPR(ins.field_va() as _)),
+        Argument::GPR(GPR(ins.field_vb() as _)),
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+    ];
+}
+fn defs_vrsqrtefp(out: &mut Arguments, ins: Ins) {
+    *out = [
+        Argument::GPR(GPR(ins.field_vd() as _)),
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+    ];
+}
+fn uses_vrsqrtefp(out: &mut Arguments, ins: Ins) {
+    *out = [
+        Argument::GPR(GPR(ins.field_vb() as _)),
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+    ];
+}
+fn defs_vsel(out: &mut Arguments, ins: Ins) {
+    *out = [
+        Argument::GPR(GPR(ins.field_vd() as _)),
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+    ];
+}
+fn uses_vsel(out: &mut Arguments, ins: Ins) {
+    *out = [
+        Argument::GPR(GPR(ins.field_va() as _)),
+        Argument::GPR(GPR(ins.field_vb() as _)),
+        Argument::GPR(GPR(ins.field_vc() as _)),
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+    ];
+}
+fn defs_vsl(out: &mut Arguments, ins: Ins) {
+    *out = [
+        Argument::GPR(GPR(ins.field_vd() as _)),
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+    ];
+}
+fn uses_vsl(out: &mut Arguments, ins: Ins) {
+    *out = [
+        Argument::GPR(GPR(ins.field_va() as _)),
+        Argument::GPR(GPR(ins.field_vb() as _)),
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+    ];
+}
+fn defs_vslb(out: &mut Arguments, ins: Ins) {
+    *out = [
+        Argument::GPR(GPR(ins.field_vd() as _)),
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+    ];
+}
+fn uses_vslb(out: &mut Arguments, ins: Ins) {
+    *out = [
+        Argument::GPR(GPR(ins.field_va() as _)),
+        Argument::GPR(GPR(ins.field_vb() as _)),
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+    ];
+}
+fn defs_vsldoi(out: &mut Arguments, ins: Ins) {
+    *out = [
+        Argument::GPR(GPR(ins.field_vd() as _)),
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+    ];
+}
+fn uses_vsldoi(out: &mut Arguments, ins: Ins) {
+    *out = [
+        Argument::GPR(GPR(ins.field_va() as _)),
+        Argument::GPR(GPR(ins.field_vb() as _)),
+        Argument::OpaqueU(OpaqueU(ins.field_shb() as _)),
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+    ];
+}
+fn defs_vslh(out: &mut Arguments, ins: Ins) {
+    *out = [
+        Argument::GPR(GPR(ins.field_vd() as _)),
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+    ];
+}
+fn uses_vslh(out: &mut Arguments, ins: Ins) {
+    *out = [
+        Argument::GPR(GPR(ins.field_va() as _)),
+        Argument::GPR(GPR(ins.field_vb() as _)),
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+    ];
+}
+fn defs_vslo(out: &mut Arguments, ins: Ins) {
+    *out = [
+        Argument::GPR(GPR(ins.field_vd() as _)),
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+    ];
+}
+fn uses_vslo(out: &mut Arguments, ins: Ins) {
+    *out = [
+        Argument::GPR(GPR(ins.field_va() as _)),
+        Argument::GPR(GPR(ins.field_vb() as _)),
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+    ];
+}
+fn defs_vslw(out: &mut Arguments, ins: Ins) {
+    *out = [
+        Argument::GPR(GPR(ins.field_vd() as _)),
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+    ];
+}
+fn uses_vslw(out: &mut Arguments, ins: Ins) {
+    *out = [
+        Argument::GPR(GPR(ins.field_va() as _)),
+        Argument::GPR(GPR(ins.field_vb() as _)),
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+    ];
+}
+fn defs_vspltb(out: &mut Arguments, ins: Ins) {
+    *out = [
+        Argument::GPR(GPR(ins.field_vd() as _)),
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+    ];
+}
+fn uses_vspltb(out: &mut Arguments, ins: Ins) {
+    *out = [
+        Argument::GPR(GPR(ins.field_vb() as _)),
+        Argument::Uimm(Uimm(ins.field_vuimm() as _)),
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+    ];
+}
+fn defs_vsplth(out: &mut Arguments, ins: Ins) {
+    *out = [
+        Argument::GPR(GPR(ins.field_vd() as _)),
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+    ];
+}
+fn uses_vsplth(out: &mut Arguments, ins: Ins) {
+    *out = [
+        Argument::GPR(GPR(ins.field_vb() as _)),
+        Argument::Uimm(Uimm(ins.field_vuimm() as _)),
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+    ];
+}
+fn defs_vspltisb(out: &mut Arguments, ins: Ins) {
+    *out = [
+        Argument::GPR(GPR(ins.field_vd() as _)),
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+    ];
+}
+fn uses_vspltisb(out: &mut Arguments, ins: Ins) {
+    *out = [
+        Argument::Simm(Simm(ins.field_vsimm() as _)),
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+    ];
+}
+fn defs_vspltish(out: &mut Arguments, ins: Ins) {
+    *out = [
+        Argument::GPR(GPR(ins.field_vd() as _)),
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+    ];
+}
+fn uses_vspltish(out: &mut Arguments, ins: Ins) {
+    *out = [
+        Argument::Simm(Simm(ins.field_vsimm() as _)),
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+    ];
+}
+fn defs_vspltisw(out: &mut Arguments, ins: Ins) {
+    *out = [
+        Argument::GPR(GPR(ins.field_vd() as _)),
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+    ];
+}
+fn uses_vspltisw(out: &mut Arguments, ins: Ins) {
+    *out = [
+        Argument::Simm(Simm(ins.field_vsimm() as _)),
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+    ];
+}
+fn defs_vspltw(out: &mut Arguments, ins: Ins) {
+    *out = [
+        Argument::GPR(GPR(ins.field_vd() as _)),
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+    ];
+}
+fn uses_vspltw(out: &mut Arguments, ins: Ins) {
+    *out = [
+        Argument::GPR(GPR(ins.field_vb() as _)),
+        Argument::Uimm(Uimm(ins.field_vuimm() as _)),
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+    ];
+}
+fn defs_vsr(out: &mut Arguments, ins: Ins) {
+    *out = [
+        Argument::GPR(GPR(ins.field_vd() as _)),
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+    ];
+}
+fn uses_vsr(out: &mut Arguments, ins: Ins) {
+    *out = [
+        Argument::GPR(GPR(ins.field_va() as _)),
+        Argument::GPR(GPR(ins.field_vb() as _)),
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+    ];
+}
+fn defs_vsrab(out: &mut Arguments, ins: Ins) {
+    *out = [
+        Argument::GPR(GPR(ins.field_vd() as _)),
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+    ];
+}
+fn uses_vsrab(out: &mut Arguments, ins: Ins) {
+    *out = [
+        Argument::GPR(GPR(ins.field_va() as _)),
+        Argument::GPR(GPR(ins.field_vb() as _)),
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+    ];
+}
+fn defs_vsrah(out: &mut Arguments, ins: Ins) {
+    *out = [
+        Argument::GPR(GPR(ins.field_vd() as _)),
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+    ];
+}
+fn uses_vsrah(out: &mut Arguments, ins: Ins) {
+    *out = [
+        Argument::GPR(GPR(ins.field_va() as _)),
+        Argument::GPR(GPR(ins.field_vb() as _)),
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+    ];
+}
+fn defs_vsraw(out: &mut Arguments, ins: Ins) {
+    *out = [
+        Argument::GPR(GPR(ins.field_vd() as _)),
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+    ];
+}
+fn uses_vsraw(out: &mut Arguments, ins: Ins) {
+    *out = [
+        Argument::GPR(GPR(ins.field_va() as _)),
+        Argument::GPR(GPR(ins.field_vb() as _)),
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+    ];
+}
+fn defs_vsrb(out: &mut Arguments, ins: Ins) {
+    *out = [
+        Argument::GPR(GPR(ins.field_vd() as _)),
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+    ];
+}
+fn uses_vsrb(out: &mut Arguments, ins: Ins) {
+    *out = [
+        Argument::GPR(GPR(ins.field_va() as _)),
+        Argument::GPR(GPR(ins.field_vb() as _)),
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+    ];
+}
+fn defs_vsrh(out: &mut Arguments, ins: Ins) {
+    *out = [
+        Argument::GPR(GPR(ins.field_vd() as _)),
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+    ];
+}
+fn uses_vsrh(out: &mut Arguments, ins: Ins) {
+    *out = [
+        Argument::GPR(GPR(ins.field_va() as _)),
+        Argument::GPR(GPR(ins.field_vb() as _)),
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+    ];
+}
+fn defs_vsro(out: &mut Arguments, ins: Ins) {
+    *out = [
+        Argument::GPR(GPR(ins.field_vd() as _)),
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+    ];
+}
+fn uses_vsro(out: &mut Arguments, ins: Ins) {
+    *out = [
+        Argument::GPR(GPR(ins.field_va() as _)),
+        Argument::GPR(GPR(ins.field_vb() as _)),
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+    ];
+}
+fn defs_vsrw(out: &mut Arguments, ins: Ins) {
+    *out = [
+        Argument::GPR(GPR(ins.field_vd() as _)),
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+    ];
+}
+fn uses_vsrw(out: &mut Arguments, ins: Ins) {
+    *out = [
+        Argument::GPR(GPR(ins.field_va() as _)),
+        Argument::GPR(GPR(ins.field_vb() as _)),
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+    ];
+}
+fn defs_vsubcuw(out: &mut Arguments, ins: Ins) {
+    *out = [
+        Argument::GPR(GPR(ins.field_vd() as _)),
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+    ];
+}
+fn uses_vsubcuw(out: &mut Arguments, ins: Ins) {
+    *out = [
+        Argument::GPR(GPR(ins.field_va() as _)),
+        Argument::GPR(GPR(ins.field_vb() as _)),
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+    ];
+}
+fn defs_vsubfp(out: &mut Arguments, ins: Ins) {
+    *out = [
+        Argument::GPR(GPR(ins.field_vd() as _)),
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+    ];
+}
+fn uses_vsubfp(out: &mut Arguments, ins: Ins) {
+    *out = [
+        Argument::GPR(GPR(ins.field_va() as _)),
+        Argument::GPR(GPR(ins.field_vb() as _)),
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+    ];
+}
+fn defs_vsubsbs(out: &mut Arguments, ins: Ins) {
+    *out = [
+        Argument::GPR(GPR(ins.field_vd() as _)),
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+    ];
+}
+fn uses_vsubsbs(out: &mut Arguments, ins: Ins) {
+    *out = [
+        Argument::GPR(GPR(ins.field_va() as _)),
+        Argument::GPR(GPR(ins.field_vb() as _)),
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+    ];
+}
+fn defs_vsubshs(out: &mut Arguments, ins: Ins) {
+    *out = [
+        Argument::GPR(GPR(ins.field_vd() as _)),
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+    ];
+}
+fn uses_vsubshs(out: &mut Arguments, ins: Ins) {
+    *out = [
+        Argument::GPR(GPR(ins.field_va() as _)),
+        Argument::GPR(GPR(ins.field_vb() as _)),
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+    ];
+}
+fn defs_vsubsws(out: &mut Arguments, ins: Ins) {
+    *out = [
+        Argument::GPR(GPR(ins.field_vd() as _)),
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+    ];
+}
+fn uses_vsubsws(out: &mut Arguments, ins: Ins) {
+    *out = [
+        Argument::GPR(GPR(ins.field_va() as _)),
+        Argument::GPR(GPR(ins.field_vb() as _)),
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+    ];
+}
+fn defs_vsububm(out: &mut Arguments, ins: Ins) {
+    *out = [
+        Argument::GPR(GPR(ins.field_vd() as _)),
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+    ];
+}
+fn uses_vsububm(out: &mut Arguments, ins: Ins) {
+    *out = [
+        Argument::GPR(GPR(ins.field_va() as _)),
+        Argument::GPR(GPR(ins.field_vb() as _)),
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+    ];
+}
+fn defs_vsububs(out: &mut Arguments, ins: Ins) {
+    *out = [
+        Argument::GPR(GPR(ins.field_vd() as _)),
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+    ];
+}
+fn uses_vsububs(out: &mut Arguments, ins: Ins) {
+    *out = [
+        Argument::GPR(GPR(ins.field_va() as _)),
+        Argument::GPR(GPR(ins.field_vb() as _)),
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+    ];
+}
+fn defs_vsubuhm(out: &mut Arguments, ins: Ins) {
+    *out = [
+        Argument::GPR(GPR(ins.field_vd() as _)),
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+    ];
+}
+fn uses_vsubuhm(out: &mut Arguments, ins: Ins) {
+    *out = [
+        Argument::GPR(GPR(ins.field_va() as _)),
+        Argument::GPR(GPR(ins.field_vb() as _)),
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+    ];
+}
+fn defs_vsubuhs(out: &mut Arguments, ins: Ins) {
+    *out = [
+        Argument::GPR(GPR(ins.field_vd() as _)),
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+    ];
+}
+fn uses_vsubuhs(out: &mut Arguments, ins: Ins) {
+    *out = [
+        Argument::GPR(GPR(ins.field_va() as _)),
+        Argument::GPR(GPR(ins.field_vb() as _)),
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+    ];
+}
+fn defs_vsubuwm(out: &mut Arguments, ins: Ins) {
+    *out = [
+        Argument::GPR(GPR(ins.field_vd() as _)),
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+    ];
+}
+fn uses_vsubuwm(out: &mut Arguments, ins: Ins) {
+    *out = [
+        Argument::GPR(GPR(ins.field_va() as _)),
+        Argument::GPR(GPR(ins.field_vb() as _)),
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+    ];
+}
+fn defs_vsubuws(out: &mut Arguments, ins: Ins) {
+    *out = [
+        Argument::GPR(GPR(ins.field_vd() as _)),
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+    ];
+}
+fn uses_vsubuws(out: &mut Arguments, ins: Ins) {
+    *out = [
+        Argument::GPR(GPR(ins.field_va() as _)),
+        Argument::GPR(GPR(ins.field_vb() as _)),
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+    ];
+}
+fn defs_vsumsws(out: &mut Arguments, ins: Ins) {
+    *out = [
+        Argument::GPR(GPR(ins.field_vd() as _)),
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+    ];
+}
+fn uses_vsumsws(out: &mut Arguments, ins: Ins) {
+    *out = [
+        Argument::GPR(GPR(ins.field_va() as _)),
+        Argument::GPR(GPR(ins.field_vb() as _)),
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+    ];
+}
+fn defs_vsum2sws(out: &mut Arguments, ins: Ins) {
+    *out = [
+        Argument::GPR(GPR(ins.field_vd() as _)),
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+    ];
+}
+fn uses_vsum2sws(out: &mut Arguments, ins: Ins) {
+    *out = [
+        Argument::GPR(GPR(ins.field_va() as _)),
+        Argument::GPR(GPR(ins.field_vb() as _)),
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+    ];
+}
+fn defs_vsum4sbs(out: &mut Arguments, ins: Ins) {
+    *out = [
+        Argument::GPR(GPR(ins.field_vd() as _)),
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+    ];
+}
+fn uses_vsum4sbs(out: &mut Arguments, ins: Ins) {
+    *out = [
+        Argument::GPR(GPR(ins.field_va() as _)),
+        Argument::GPR(GPR(ins.field_vb() as _)),
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+    ];
+}
+fn defs_vsum4shs(out: &mut Arguments, ins: Ins) {
+    *out = [
+        Argument::GPR(GPR(ins.field_vd() as _)),
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+    ];
+}
+fn uses_vsum4shs(out: &mut Arguments, ins: Ins) {
+    *out = [
+        Argument::GPR(GPR(ins.field_va() as _)),
+        Argument::GPR(GPR(ins.field_vb() as _)),
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+    ];
+}
+fn defs_vsum4ubs(out: &mut Arguments, ins: Ins) {
+    *out = [
+        Argument::GPR(GPR(ins.field_vd() as _)),
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+    ];
+}
+fn uses_vsum4ubs(out: &mut Arguments, ins: Ins) {
+    *out = [
+        Argument::GPR(GPR(ins.field_va() as _)),
+        Argument::GPR(GPR(ins.field_vb() as _)),
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+    ];
+}
+fn defs_vupkhpx(out: &mut Arguments, ins: Ins) {
+    *out = [
+        Argument::GPR(GPR(ins.field_vd() as _)),
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+    ];
+}
+fn uses_vupkhpx(out: &mut Arguments, ins: Ins) {
+    *out = [
+        Argument::GPR(GPR(ins.field_vb() as _)),
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+    ];
+}
+fn defs_vupkhsb(out: &mut Arguments, ins: Ins) {
+    *out = [
+        Argument::GPR(GPR(ins.field_vd() as _)),
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+    ];
+}
+fn uses_vupkhsb(out: &mut Arguments, ins: Ins) {
+    *out = [
+        Argument::GPR(GPR(ins.field_vb() as _)),
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+    ];
+}
+fn defs_vupkhsh(out: &mut Arguments, ins: Ins) {
+    *out = [
+        Argument::GPR(GPR(ins.field_vd() as _)),
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+    ];
+}
+fn uses_vupkhsh(out: &mut Arguments, ins: Ins) {
+    *out = [
+        Argument::GPR(GPR(ins.field_vb() as _)),
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+    ];
+}
+fn defs_vupklpx(out: &mut Arguments, ins: Ins) {
+    *out = [
+        Argument::GPR(GPR(ins.field_vd() as _)),
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+    ];
+}
+fn uses_vupklpx(out: &mut Arguments, ins: Ins) {
+    *out = [
+        Argument::GPR(GPR(ins.field_vb() as _)),
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+    ];
+}
+fn defs_vupklsb(out: &mut Arguments, ins: Ins) {
+    *out = [
+        Argument::GPR(GPR(ins.field_vd() as _)),
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+    ];
+}
+fn uses_vupklsb(out: &mut Arguments, ins: Ins) {
+    *out = [
+        Argument::GPR(GPR(ins.field_vb() as _)),
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+    ];
+}
+fn defs_vupklsh(out: &mut Arguments, ins: Ins) {
+    *out = [
+        Argument::GPR(GPR(ins.field_vd() as _)),
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+    ];
+}
+fn uses_vupklsh(out: &mut Arguments, ins: Ins) {
+    *out = [
+        Argument::GPR(GPR(ins.field_vb() as _)),
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+    ];
+}
+fn defs_vxor(out: &mut Arguments, ins: Ins) {
+    *out = [
+        Argument::GPR(GPR(ins.field_vd() as _)),
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+    ];
+}
+fn uses_vxor(out: &mut Arguments, ins: Ins) {
+    *out = [
+        Argument::GPR(GPR(ins.field_va() as _)),
+        Argument::GPR(GPR(ins.field_vb() as _)),
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+    ];
+}
+fn defs_lvewx128(out: &mut Arguments, ins: Ins) {
+    *out = [
+        Argument::GPR(GPR(ins.field_vd128() as _)),
+        Argument::GPR(GPR(ins.field_vdh() as _)),
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+    ];
+}
+fn uses_lvewx128(out: &mut Arguments, ins: Ins) {
     *out = [
         Argument::GPR(GPR(ins.field_ra() as _)),
         Argument::GPR(GPR(ins.field_rb() as _)),
         Argument::None,
         Argument::None,
         Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
     ];
 }
-fn defs_psq_lx(out: &mut Arguments, ins: Ins) {
+fn defs_lvlx128(out: &mut Arguments, ins: Ins) {
     *out = [
-        Argument::FPR(FPR(ins.field_frd() as _)),
+        Argument::GPR(GPR(ins.field_vd128() as _)),
+        Argument::GPR(GPR(ins.field_vdh() as _)),
         Argument::None,
         Argument::None,
         Argument::None,
-        Argument::None,
-    ];
-}
-fn uses_psq_lx(out: &mut Arguments, ins: Ins) {
-    *out = [
-        if ins.field_ra() != 0 {
-            Argument::GPR(GPR(ins.field_ra() as _))
-        } else {
-            Argument::None
-        },
-        Argument::GPR(GPR(ins.field_rb() as _)),
         Argument::None,
         Argument::None,
         Argument::None,
     ];
 }
-fn defs_psq_stux(out: &mut Arguments, ins: Ins) {
+fn uses_lvlx128(out: &mut Arguments, ins: Ins) {
     *out = [
         Argument::GPR(GPR(ins.field_ra() as _)),
+        Argument::GPR(GPR(ins.field_rb() as _)),
+        Argument::None,
+        Argument::None,
         Argument::None,
         Argument::None,
         Argument::None,
         Argument::None,
     ];
 }
-fn uses_psq_stux(out: &mut Arguments, ins: Ins) {
+fn defs_lvrx128(out: &mut Arguments, ins: Ins) {
     *out = [
-        Argument::FPR(FPR(ins.field_frs() as _)),
+        Argument::GPR(GPR(ins.field_vd128() as _)),
+        Argument::GPR(GPR(ins.field_vdh() as _)),
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+    ];
+}
+fn uses_lvrx128(out: &mut Arguments, ins: Ins) {
+    *out = [
         Argument::GPR(GPR(ins.field_ra() as _)),
         Argument::GPR(GPR(ins.field_rb() as _)),
         Argument::None,
         Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
     ];
 }
-fn uses_psq_stx(out: &mut Arguments, ins: Ins) {
+fn defs_lvlxl128(out: &mut Arguments, ins: Ins) {
     *out = [
-        Argument::FPR(FPR(ins.field_frs() as _)),
-        if ins.field_ra() != 0 {
-            Argument::GPR(GPR(ins.field_ra() as _))
-        } else {
-            Argument::None
-        },
+        Argument::GPR(GPR(ins.field_vd128() as _)),
+        Argument::GPR(GPR(ins.field_vdh() as _)),
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+    ];
+}
+fn uses_lvlxl128(out: &mut Arguments, ins: Ins) {
+    *out = [
+        Argument::GPR(GPR(ins.field_ra() as _)),
         Argument::GPR(GPR(ins.field_rb() as _)),
         Argument::None,
         Argument::None,
-    ];
-}
-fn defs_ps_abs(out: &mut Arguments, ins: Ins) {
-    *out = [
-        Argument::FPR(FPR(ins.field_frd() as _)),
         Argument::None,
         Argument::None,
         Argument::None,
         Argument::None,
     ];
 }
-fn uses_ps_abs(out: &mut Arguments, ins: Ins) {
+fn defs_lvrxl128(out: &mut Arguments, ins: Ins) {
     *out = [
-        Argument::FPR(FPR(ins.field_frb() as _)),
+        Argument::GPR(GPR(ins.field_vd128() as _)),
+        Argument::GPR(GPR(ins.field_vdh() as _)),
+        Argument::None,
+        Argument::None,
         Argument::None,
         Argument::None,
         Argument::None,
         Argument::None,
     ];
 }
-fn defs_ps_add(out: &mut Arguments, ins: Ins) {
+fn uses_lvrxl128(out: &mut Arguments, ins: Ins) {
     *out = [
-        Argument::FPR(FPR(ins.field_frd() as _)),
+        Argument::GPR(GPR(ins.field_ra() as _)),
+        Argument::GPR(GPR(ins.field_rb() as _)),
+        Argument::None,
+        Argument::None,
         Argument::None,
         Argument::None,
         Argument::None,
         Argument::None,
     ];
 }
-fn uses_ps_add(out: &mut Arguments, ins: Ins) {
+fn defs_lvsl128(out: &mut Arguments, ins: Ins) {
     *out = [
-        Argument::FPR(FPR(ins.field_fra() as _)),
-        Argument::FPR(FPR(ins.field_frb() as _)),
+        Argument::GPR(GPR(ins.field_vd128() as _)),
+        Argument::GPR(GPR(ins.field_vdh() as _)),
         Argument::None,
         Argument::None,
-        Argument::None,
-    ];
-}
-fn defs_ps_cmpo0(out: &mut Arguments, ins: Ins) {
-    *out = [
-        Argument::CRField(CRField(ins.field_crfd() as _)),
         Argument::None,
         Argument::None,
         Argument::None,
         Argument::None,
     ];
 }
-fn uses_ps_cmpo0(out: &mut Arguments, ins: Ins) {
+fn uses_lvsl128(out: &mut Arguments, ins: Ins) {
     *out = [
-        if ins.field_fra() != 0 {
-            Argument::FPR(FPR(ins.field_fra() as _))
-        } else {
-            Argument::None
-        },
-        Argument::FPR(FPR(ins.field_frb() as _)),
+        Argument::GPR(GPR(ins.field_ra() as _)),
+        Argument::GPR(GPR(ins.field_rb() as _)),
         Argument::None,
         Argument::None,
-        Argument::None,
-    ];
-}
-fn defs_ps_cmpo1(out: &mut Arguments, ins: Ins) {
-    *out = [
-        Argument::CRField(CRField(ins.field_crfd() as _)),
         Argument::None,
         Argument::None,
         Argument::None,
         Argument::None,
     ];
 }
-fn uses_ps_cmpo1(out: &mut Arguments, ins: Ins) {
+fn defs_lvsr128(out: &mut Arguments, ins: Ins) {
     *out = [
-        if ins.field_fra() != 0 {
-            Argument::FPR(FPR(ins.field_fra() as _))
-        } else {
-            Argument::None
-        },
-        Argument::FPR(FPR(ins.field_frb() as _)),
+        Argument::GPR(GPR(ins.field_vd128() as _)),
+        Argument::GPR(GPR(ins.field_vdh() as _)),
         Argument::None,
         Argument::None,
-        Argument::None,
-    ];
-}
-fn defs_ps_cmpu0(out: &mut Arguments, ins: Ins) {
-    *out = [
-        Argument::CRField(CRField(ins.field_crfd() as _)),
         Argument::None,
         Argument::None,
         Argument::None,
         Argument::None,
     ];
 }
-fn uses_ps_cmpu0(out: &mut Arguments, ins: Ins) {
+fn uses_lvsr128(out: &mut Arguments, ins: Ins) {
     *out = [
-        if ins.field_fra() != 0 {
-            Argument::FPR(FPR(ins.field_fra() as _))
-        } else {
-            Argument::None
-        },
-        Argument::FPR(FPR(ins.field_frb() as _)),
+        Argument::GPR(GPR(ins.field_ra() as _)),
+        Argument::GPR(GPR(ins.field_rb() as _)),
         Argument::None,
         Argument::None,
-        Argument::None,
-    ];
-}
-fn defs_ps_cmpu1(out: &mut Arguments, ins: Ins) {
-    *out = [
-        Argument::CRField(CRField(ins.field_crfd() as _)),
         Argument::None,
         Argument::None,
         Argument::None,
         Argument::None,
     ];
 }
-fn uses_ps_cmpu1(out: &mut Arguments, ins: Ins) {
+fn defs_lvx128(out: &mut Arguments, ins: Ins) {
     *out = [
-        if ins.field_fra() != 0 {
-            Argument::FPR(FPR(ins.field_fra() as _))
-        } else {
-            Argument::None
-        },
-        Argument::FPR(FPR(ins.field_frb() as _)),
+        Argument::GPR(GPR(ins.field_vd128() as _)),
+        Argument::GPR(GPR(ins.field_vdh() as _)),
         Argument::None,
         Argument::None,
-        Argument::None,
-    ];
-}
-fn defs_ps_div(out: &mut Arguments, ins: Ins) {
-    *out = [
-        Argument::FPR(FPR(ins.field_frd() as _)),
         Argument::None,
         Argument::None,
         Argument::None,
         Argument::None,
     ];
 }
-fn uses_ps_div(out: &mut Arguments, ins: Ins) {
+fn uses_lvx128(out: &mut Arguments, ins: Ins) {
     *out = [
-        Argument::FPR(FPR(ins.field_fra() as _)),
-        Argument::FPR(FPR(ins.field_frb() as _)),
+        Argument::GPR(GPR(ins.field_ra() as _)),
+        Argument::GPR(GPR(ins.field_rb() as _)),
         Argument::None,
         Argument::None,
-        Argument::None,
-    ];
-}
-fn defs_ps_madd(out: &mut Arguments, ins: Ins) {
-    *out = [
-        Argument::FPR(FPR(ins.field_frd() as _)),
         Argument::None,
         Argument::None,
         Argument::None,
         Argument::None,
     ];
 }
-fn uses_ps_madd(out: &mut Arguments, ins: Ins) {
+fn defs_lvxl128(out: &mut Arguments, ins: Ins) {
     *out = [
-        Argument::FPR(FPR(ins.field_fra() as _)),
-        Argument::FPR(FPR(ins.field_frc() as _)),
-        Argument::FPR(FPR(ins.field_frb() as _)),
+        Argument::GPR(GPR(ins.field_vd128() as _)),
+        Argument::GPR(GPR(ins.field_vdh() as _)),
         Argument::None,
         Argument::None,
-    ];
-}
-fn defs_ps_madds0(out: &mut Arguments, ins: Ins) {
-    *out = [
-        Argument::FPR(FPR(ins.field_frd() as _)),
         Argument::None,
         Argument::None,
         Argument::None,
         Argument::None,
     ];
 }
-fn uses_ps_madds0(out: &mut Arguments, ins: Ins) {
+fn uses_lvxl128(out: &mut Arguments, ins: Ins) {
     *out = [
-        Argument::FPR(FPR(ins.field_fra() as _)),
-        Argument::FPR(FPR(ins.field_frc() as _)),
-        Argument::FPR(FPR(ins.field_frb() as _)),
+        Argument::GPR(GPR(ins.field_ra() as _)),
+        Argument::GPR(GPR(ins.field_rb() as _)),
         Argument::None,
         Argument::None,
-    ];
-}
-fn defs_ps_madds1(out: &mut Arguments, ins: Ins) {
-    *out = [
-        Argument::FPR(FPR(ins.field_frd() as _)),
         Argument::None,
         Argument::None,
         Argument::None,
         Argument::None,
     ];
 }
-fn uses_ps_madds1(out: &mut Arguments, ins: Ins) {
+fn defs_stvewx128(out: &mut Arguments, ins: Ins) {
     *out = [
-        Argument::FPR(FPR(ins.field_fra() as _)),
-        Argument::FPR(FPR(ins.field_frc() as _)),
-        Argument::FPR(FPR(ins.field_frb() as _)),
+        Argument::GPR(GPR(ins.field_vd128() as _)),
+        Argument::GPR(GPR(ins.field_vdh() as _)),
         Argument::None,
         Argument::None,
-    ];
-}
-fn defs_ps_merge00(out: &mut Arguments, ins: Ins) {
-    *out = [
-        Argument::FPR(FPR(ins.field_frd() as _)),
         Argument::None,
         Argument::None,
         Argument::None,
         Argument::None,
     ];
 }
-fn uses_ps_merge00(out: &mut Arguments, ins: Ins) {
+fn uses_stvewx128(out: &mut Arguments, ins: Ins) {
     *out = [
-        Argument::FPR(FPR(ins.field_fra() as _)),
-        Argument::FPR(FPR(ins.field_frb() as _)),
+        Argument::GPR(GPR(ins.field_ra() as _)),
+        Argument::GPR(GPR(ins.field_rb() as _)),
         Argument::None,
         Argument::None,
-        Argument::None,
-    ];
-}
-fn defs_ps_merge01(out: &mut Arguments, ins: Ins) {
-    *out = [
-        Argument::FPR(FPR(ins.field_frd() as _)),
         Argument::None,
         Argument::None,
         Argument::None,
         Argument::None,
     ];
 }
-fn uses_ps_merge01(out: &mut Arguments, ins: Ins) {
+fn defs_stvlx128(out: &mut Arguments, ins: Ins) {
     *out = [
-        Argument::FPR(FPR(ins.field_fra() as _)),
-        Argument::FPR(FPR(ins.field_frb() as _)),
+        Argument::GPR(GPR(ins.field_vd128() as _)),
+        Argument::GPR(GPR(ins.field_vdh() as _)),
         Argument::None,
         Argument::None,
-        Argument::None,
-    ];
-}
-fn defs_ps_merge10(out: &mut Arguments, ins: Ins) {
-    *out = [
-        Argument::FPR(FPR(ins.field_frd() as _)),
         Argument::None,
         Argument::None,
         Argument::None,
         Argument::None,
     ];
 }
-fn uses_ps_merge10(out: &mut Arguments, ins: Ins) {
+fn uses_stvlx128(out: &mut Arguments, ins: Ins) {
     *out = [
-        Argument::FPR(FPR(ins.field_fra() as _)),
-        Argument::FPR(FPR(ins.field_frb() as _)),
+        Argument::GPR(GPR(ins.field_ra() as _)),
+        Argument::GPR(GPR(ins.field_rb() as _)),
         Argument::None,
         Argument::None,
-        Argument::None,
-    ];
-}
-fn defs_ps_merge11(out: &mut Arguments, ins: Ins) {
-    *out = [
-        Argument::FPR(FPR(ins.field_frd() as _)),
         Argument::None,
         Argument::None,
         Argument::None,
         Argument::None,
     ];
 }
-fn uses_ps_merge11(out: &mut Arguments, ins: Ins) {
+fn defs_stvlxl128(out: &mut Arguments, ins: Ins) {
     *out = [
-        Argument::FPR(FPR(ins.field_fra() as _)),
-        Argument::FPR(FPR(ins.field_frb() as _)),
+        Argument::GPR(GPR(ins.field_vd128() as _)),
+        Argument::GPR(GPR(ins.field_vdh() as _)),
         Argument::None,
         Argument::None,
-        Argument::None,
-    ];
-}
-fn defs_ps_mr(out: &mut Arguments, ins: Ins) {
-    *out = [
-        Argument::FPR(FPR(ins.field_frd() as _)),
         Argument::None,
         Argument::None,
         Argument::None,
         Argument::None,
     ];
 }
-fn uses_ps_mr(out: &mut Arguments, ins: Ins) {
+fn uses_stvlxl128(out: &mut Arguments, ins: Ins) {
     *out = [
-        Argument::FPR(FPR(ins.field_frb() as _)),
+        Argument::GPR(GPR(ins.field_ra() as _)),
+        Argument::GPR(GPR(ins.field_rb() as _)),
+        Argument::None,
+        Argument::None,
         Argument::None,
         Argument::None,
         Argument::None,
         Argument::None,
     ];
 }
-fn defs_ps_msub(out: &mut Arguments, ins: Ins) {
+fn defs_stvrx128(out: &mut Arguments, ins: Ins) {
     *out = [
-        Argument::FPR(FPR(ins.field_frd() as _)),
+        Argument::GPR(GPR(ins.field_vd128() as _)),
+        Argument::GPR(GPR(ins.field_vdh() as _)),
+        Argument::None,
+        Argument::None,
         Argument::None,
         Argument::None,
         Argument::None,
         Argument::None,
     ];
 }
-fn uses_ps_msub(out: &mut Arguments, ins: Ins) {
+fn uses_stvrx128(out: &mut Arguments, ins: Ins) {
     *out = [
-        Argument::FPR(FPR(ins.field_fra() as _)),
-        Argument::FPR(FPR(ins.field_frc() as _)),
-        Argument::FPR(FPR(ins.field_frb() as _)),
+        Argument::GPR(GPR(ins.field_ra() as _)),
+        Argument::GPR(GPR(ins.field_rb() as _)),
         Argument::None,
         Argument::None,
-    ];
-}
-fn defs_ps_mul(out: &mut Arguments, ins: Ins) {
-    *out = [
-        Argument::FPR(FPR(ins.field_frd() as _)),
         Argument::None,
         Argument::None,
         Argument::None,
         Argument::None,
     ];
 }
-fn uses_ps_mul(out: &mut Arguments, ins: Ins) {
+fn defs_stvrxl128(out: &mut Arguments, ins: Ins) {
     *out = [
-        Argument::FPR(FPR(ins.field_fra() as _)),
-        Argument::FPR(FPR(ins.field_frc() as _)),
+        Argument::GPR(GPR(ins.field_vd128() as _)),
+        Argument::GPR(GPR(ins.field_vdh() as _)),
         Argument::None,
         Argument::None,
-        Argument::None,
-    ];
-}
-fn defs_ps_muls0(out: &mut Arguments, ins: Ins) {
-    *out = [
-        Argument::FPR(FPR(ins.field_frd() as _)),
         Argument::None,
         Argument::None,
         Argument::None,
         Argument::None,
     ];
 }
-fn uses_ps_muls0(out: &mut Arguments, ins: Ins) {
+fn uses_stvrxl128(out: &mut Arguments, ins: Ins) {
     *out = [
-        Argument::FPR(FPR(ins.field_fra() as _)),
-        Argument::FPR(FPR(ins.field_frc() as _)),
+        Argument::GPR(GPR(ins.field_ra() as _)),
+        Argument::GPR(GPR(ins.field_rb() as _)),
         Argument::None,
         Argument::None,
-        Argument::None,
-    ];
-}
-fn defs_ps_muls1(out: &mut Arguments, ins: Ins) {
-    *out = [
-        Argument::FPR(FPR(ins.field_frd() as _)),
         Argument::None,
         Argument::None,
         Argument::None,
         Argument::None,
     ];
 }
-fn uses_ps_muls1(out: &mut Arguments, ins: Ins) {
+fn defs_stvx128(out: &mut Arguments, ins: Ins) {
     *out = [
-        Argument::FPR(FPR(ins.field_fra() as _)),
-        Argument::FPR(FPR(ins.field_frc() as _)),
+        Argument::GPR(GPR(ins.field_vd128() as _)),
+        Argument::GPR(GPR(ins.field_vdh() as _)),
         Argument::None,
         Argument::None,
-        Argument::None,
-    ];
-}
-fn defs_ps_nabs(out: &mut Arguments, ins: Ins) {
-    *out = [
-        Argument::FPR(FPR(ins.field_frd() as _)),
         Argument::None,
         Argument::None,
         Argument::None,
         Argument::None,
     ];
 }
-fn uses_ps_nabs(out: &mut Arguments, ins: Ins) {
+fn uses_stvx128(out: &mut Arguments, ins: Ins) {
     *out = [
-        Argument::FPR(FPR(ins.field_frb() as _)),
+        Argument::GPR(GPR(ins.field_ra() as _)),
+        Argument::GPR(GPR(ins.field_rb() as _)),
+        Argument::None,
+        Argument::None,
         Argument::None,
         Argument::None,
         Argument::None,
         Argument::None,
     ];
 }
-fn defs_ps_neg(out: &mut Arguments, ins: Ins) {
+fn defs_stvxl128(out: &mut Arguments, ins: Ins) {
     *out = [
-        Argument::FPR(FPR(ins.field_frd() as _)),
+        Argument::GPR(GPR(ins.field_vd128() as _)),
+        Argument::GPR(GPR(ins.field_vdh() as _)),
+        Argument::None,
+        Argument::None,
         Argument::None,
         Argument::None,
         Argument::None,
         Argument::None,
     ];
 }
-fn uses_ps_neg(out: &mut Arguments, ins: Ins) {
+fn uses_stvxl128(out: &mut Arguments, ins: Ins) {
     *out = [
-        Argument::FPR(FPR(ins.field_frb() as _)),
+        Argument::GPR(GPR(ins.field_ra() as _)),
+        Argument::GPR(GPR(ins.field_rb() as _)),
+        Argument::None,
+        Argument::None,
         Argument::None,
         Argument::None,
         Argument::None,
         Argument::None,
     ];
 }
-fn defs_ps_nmadd(out: &mut Arguments, ins: Ins) {
+fn defs_vsldoi128(out: &mut Arguments, ins: Ins) {
     *out = [
-        Argument::FPR(FPR(ins.field_frd() as _)),
+        Argument::GPR(GPR(ins.field_vd128() as _)),
+        Argument::GPR(GPR(ins.field_vdh() as _)),
+        Argument::None,
+        Argument::None,
         Argument::None,
         Argument::None,
         Argument::None,
         Argument::None,
     ];
 }
-fn uses_ps_nmadd(out: &mut Arguments, ins: Ins) {
+fn uses_vsldoi128(out: &mut Arguments, ins: Ins) {
     *out = [
-        Argument::FPR(FPR(ins.field_fra() as _)),
-        Argument::FPR(FPR(ins.field_frc() as _)),
-        Argument::FPR(FPR(ins.field_frb() as _)),
+        Argument::GPR(GPR(ins.field_va128() as _)),
+        Argument::GPR(GPR(ins.field_vb128() as _)),
+        Argument::GPR(GPR(ins.field_va128_6() as _)),
+        Argument::GPR(GPR(ins.field_va128_5() as _)),
+        Argument::GPR(GPR(ins.field_vbh() as _)),
+        Argument::OpaqueU(OpaqueU(ins.field_shb() as _)),
         Argument::None,
         Argument::None,
     ];
 }
-fn defs_ps_nmsub(out: &mut Arguments, ins: Ins) {
+fn defs_vaddfp128(out: &mut Arguments, ins: Ins) {
     *out = [
-        Argument::FPR(FPR(ins.field_frd() as _)),
+        Argument::GPR(GPR(ins.field_vd128() as _)),
+        Argument::GPR(GPR(ins.field_vdh() as _)),
         Argument::None,
         Argument::None,
-        Argument::None,
-        Argument::None,
-    ];
-}
-fn uses_ps_nmsub(out: &mut Arguments, ins: Ins) {
-    *out = [
-        Argument::FPR(FPR(ins.field_fra() as _)),
-        Argument::FPR(FPR(ins.field_frc() as _)),
-        Argument::FPR(FPR(ins.field_frb() as _)),
-        Argument::None,
-        Argument::None,
-    ];
-}
-fn defs_ps_res(out: &mut Arguments, ins: Ins) {
-    *out = [
-        Argument::FPR(FPR(ins.field_frd() as _)),
         Argument::None,
         Argument::None,
         Argument::None,
         Argument::None,
     ];
 }
-fn uses_ps_res(out: &mut Arguments, ins: Ins) {
+fn uses_vaddfp128(out: &mut Arguments, ins: Ins) {
     *out = [
-        Argument::FPR(FPR(ins.field_frb() as _)),
+        Argument::GPR(GPR(ins.field_va128() as _)),
+        Argument::GPR(GPR(ins.field_vb128() as _)),
+        Argument::GPR(GPR(ins.field_va128_6() as _)),
+        Argument::GPR(GPR(ins.field_va128_5() as _)),
+        Argument::GPR(GPR(ins.field_vbh() as _)),
+        Argument::None,
+        Argument::None,
+        Argument::None,
+    ];
+}
+fn defs_vand128(out: &mut Arguments, ins: Ins) {
+    *out = [
+        Argument::GPR(GPR(ins.field_vd128() as _)),
+        Argument::GPR(GPR(ins.field_vdh() as _)),
+        Argument::None,
+        Argument::None,
         Argument::None,
         Argument::None,
         Argument::None,
         Argument::None,
     ];
 }
-fn defs_ps_rsqrte(out: &mut Arguments, ins: Ins) {
+fn uses_vand128(out: &mut Arguments, ins: Ins) {
     *out = [
-        Argument::FPR(FPR(ins.field_frd() as _)),
+        Argument::GPR(GPR(ins.field_va128() as _)),
+        Argument::GPR(GPR(ins.field_vb128() as _)),
+        Argument::GPR(GPR(ins.field_va128_6() as _)),
+        Argument::GPR(GPR(ins.field_va128_5() as _)),
+        Argument::GPR(GPR(ins.field_vbh() as _)),
+        Argument::None,
+        Argument::None,
+        Argument::None,
+    ];
+}
+fn defs_vandc128(out: &mut Arguments, ins: Ins) {
+    *out = [
+        Argument::GPR(GPR(ins.field_vd128() as _)),
+        Argument::GPR(GPR(ins.field_vdh() as _)),
+        Argument::None,
+        Argument::None,
         Argument::None,
         Argument::None,
         Argument::None,
         Argument::None,
     ];
 }
-fn uses_ps_rsqrte(out: &mut Arguments, ins: Ins) {
+fn uses_vandc128(out: &mut Arguments, ins: Ins) {
     *out = [
-        Argument::FPR(FPR(ins.field_frb() as _)),
+        Argument::GPR(GPR(ins.field_va128() as _)),
+        Argument::GPR(GPR(ins.field_vb128() as _)),
+        Argument::GPR(GPR(ins.field_va128_6() as _)),
+        Argument::GPR(GPR(ins.field_va128_5() as _)),
+        Argument::GPR(GPR(ins.field_vbh() as _)),
+        Argument::None,
+        Argument::None,
+        Argument::None,
+    ];
+}
+fn defs_vmaddcfp128(out: &mut Arguments, ins: Ins) {
+    *out = [
+        Argument::GPR(GPR(ins.field_vd128() as _)),
+        Argument::GPR(GPR(ins.field_vdh() as _)),
+        Argument::None,
+        Argument::None,
         Argument::None,
         Argument::None,
         Argument::None,
         Argument::None,
     ];
 }
-fn defs_ps_sel(out: &mut Arguments, ins: Ins) {
+fn uses_vmaddcfp128(out: &mut Arguments, ins: Ins) {
     *out = [
-        Argument::FPR(FPR(ins.field_frd() as _)),
+        Argument::GPR(GPR(ins.field_va128() as _)),
+        Argument::GPR(GPR(ins.field_vb128() as _)),
+        Argument::GPR(GPR(ins.field_va128_6() as _)),
+        Argument::GPR(GPR(ins.field_va128_5() as _)),
+        Argument::GPR(GPR(ins.field_vbh() as _)),
+        Argument::None,
+        Argument::None,
+        Argument::None,
+    ];
+}
+fn defs_vmaddfp128(out: &mut Arguments, ins: Ins) {
+    *out = [
+        Argument::GPR(GPR(ins.field_vd128() as _)),
+        Argument::GPR(GPR(ins.field_vdh() as _)),
+        Argument::None,
+        Argument::None,
         Argument::None,
         Argument::None,
         Argument::None,
         Argument::None,
     ];
 }
-fn uses_ps_sel(out: &mut Arguments, ins: Ins) {
+fn uses_vmaddfp128(out: &mut Arguments, ins: Ins) {
     *out = [
-        Argument::FPR(FPR(ins.field_fra() as _)),
-        Argument::FPR(FPR(ins.field_frc() as _)),
-        Argument::FPR(FPR(ins.field_frb() as _)),
-        Argument::None,
-        Argument::None,
-    ];
-}
-fn defs_ps_sub(out: &mut Arguments, ins: Ins) {
-    *out = [
-        Argument::FPR(FPR(ins.field_frd() as _)),
-        Argument::None,
+        Argument::GPR(GPR(ins.field_va128() as _)),
+        Argument::GPR(GPR(ins.field_vb128() as _)),
+        Argument::GPR(GPR(ins.field_va128_6() as _)),
+        Argument::GPR(GPR(ins.field_va128_5() as _)),
+        Argument::GPR(GPR(ins.field_vbh() as _)),
         Argument::None,
         Argument::None,
         Argument::None,
     ];
 }
-fn uses_ps_sub(out: &mut Arguments, ins: Ins) {
+fn defs_vmsum3fp128(out: &mut Arguments, ins: Ins) {
     *out = [
-        Argument::FPR(FPR(ins.field_fra() as _)),
-        Argument::FPR(FPR(ins.field_frb() as _)),
+        Argument::GPR(GPR(ins.field_vd128() as _)),
+        Argument::GPR(GPR(ins.field_vdh() as _)),
         Argument::None,
         Argument::None,
-        Argument::None,
-    ];
-}
-fn defs_ps_sum0(out: &mut Arguments, ins: Ins) {
-    *out = [
-        Argument::FPR(FPR(ins.field_frd() as _)),
         Argument::None,
         Argument::None,
         Argument::None,
         Argument::None,
     ];
 }
-fn uses_ps_sum0(out: &mut Arguments, ins: Ins) {
+fn uses_vmsum3fp128(out: &mut Arguments, ins: Ins) {
     *out = [
-        Argument::FPR(FPR(ins.field_fra() as _)),
-        Argument::FPR(FPR(ins.field_frc() as _)),
-        Argument::FPR(FPR(ins.field_frb() as _)),
-        Argument::None,
-        Argument::None,
-    ];
-}
-fn defs_ps_sum1(out: &mut Arguments, ins: Ins) {
-    *out = [
-        Argument::FPR(FPR(ins.field_frd() as _)),
-        Argument::None,
+        Argument::GPR(GPR(ins.field_va128() as _)),
+        Argument::GPR(GPR(ins.field_vb128() as _)),
+        Argument::GPR(GPR(ins.field_va128_6() as _)),
+        Argument::GPR(GPR(ins.field_va128_5() as _)),
+        Argument::GPR(GPR(ins.field_vbh() as _)),
         Argument::None,
         Argument::None,
         Argument::None,
     ];
 }
-fn uses_ps_sum1(out: &mut Arguments, ins: Ins) {
+fn defs_vmsum4fp128(out: &mut Arguments, ins: Ins) {
     *out = [
-        Argument::FPR(FPR(ins.field_fra() as _)),
-        Argument::FPR(FPR(ins.field_frc() as _)),
-        Argument::FPR(FPR(ins.field_frb() as _)),
+        Argument::GPR(GPR(ins.field_vd128() as _)),
+        Argument::GPR(GPR(ins.field_vdh() as _)),
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+    ];
+}
+fn uses_vmsum4fp128(out: &mut Arguments, ins: Ins) {
+    *out = [
+        Argument::GPR(GPR(ins.field_va128() as _)),
+        Argument::GPR(GPR(ins.field_vb128() as _)),
+        Argument::GPR(GPR(ins.field_va128_6() as _)),
+        Argument::GPR(GPR(ins.field_va128_5() as _)),
+        Argument::GPR(GPR(ins.field_vbh() as _)),
+        Argument::None,
+        Argument::None,
+        Argument::None,
+    ];
+}
+fn defs_vmulfp128(out: &mut Arguments, ins: Ins) {
+    *out = [
+        Argument::GPR(GPR(ins.field_vd128() as _)),
+        Argument::GPR(GPR(ins.field_vdh() as _)),
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+    ];
+}
+fn uses_vmulfp128(out: &mut Arguments, ins: Ins) {
+    *out = [
+        Argument::GPR(GPR(ins.field_va128() as _)),
+        Argument::GPR(GPR(ins.field_vb128() as _)),
+        Argument::GPR(GPR(ins.field_va128_6() as _)),
+        Argument::GPR(GPR(ins.field_va128_5() as _)),
+        Argument::GPR(GPR(ins.field_vbh() as _)),
+        Argument::None,
+        Argument::None,
+        Argument::None,
+    ];
+}
+fn defs_vnmsubfp128(out: &mut Arguments, ins: Ins) {
+    *out = [
+        Argument::GPR(GPR(ins.field_vd128() as _)),
+        Argument::GPR(GPR(ins.field_vdh() as _)),
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+    ];
+}
+fn uses_vnmsubfp128(out: &mut Arguments, ins: Ins) {
+    *out = [
+        Argument::GPR(GPR(ins.field_va128() as _)),
+        Argument::GPR(GPR(ins.field_vb128() as _)),
+        Argument::GPR(GPR(ins.field_va128_6() as _)),
+        Argument::GPR(GPR(ins.field_va128_5() as _)),
+        Argument::GPR(GPR(ins.field_vbh() as _)),
+        Argument::None,
+        Argument::None,
+        Argument::None,
+    ];
+}
+fn defs_vnor128(out: &mut Arguments, ins: Ins) {
+    *out = [
+        Argument::GPR(GPR(ins.field_vd128() as _)),
+        Argument::GPR(GPR(ins.field_vdh() as _)),
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+    ];
+}
+fn uses_vnor128(out: &mut Arguments, ins: Ins) {
+    *out = [
+        Argument::GPR(GPR(ins.field_va128() as _)),
+        Argument::GPR(GPR(ins.field_vb128() as _)),
+        Argument::GPR(GPR(ins.field_va128_6() as _)),
+        Argument::GPR(GPR(ins.field_va128_5() as _)),
+        Argument::GPR(GPR(ins.field_vbh() as _)),
+        Argument::None,
+        Argument::None,
+        Argument::None,
+    ];
+}
+fn defs_vor128(out: &mut Arguments, ins: Ins) {
+    *out = [
+        Argument::GPR(GPR(ins.field_vd128() as _)),
+        Argument::GPR(GPR(ins.field_vdh() as _)),
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+    ];
+}
+fn uses_vor128(out: &mut Arguments, ins: Ins) {
+    *out = [
+        Argument::GPR(GPR(ins.field_va128() as _)),
+        Argument::GPR(GPR(ins.field_vb128() as _)),
+        Argument::GPR(GPR(ins.field_va128_6() as _)),
+        Argument::GPR(GPR(ins.field_va128_5() as _)),
+        Argument::GPR(GPR(ins.field_vbh() as _)),
+        Argument::None,
+        Argument::None,
+        Argument::None,
+    ];
+}
+fn defs_vperm128(out: &mut Arguments, ins: Ins) {
+    *out = [
+        Argument::GPR(GPR(ins.field_vd128() as _)),
+        Argument::GPR(GPR(ins.field_vdh() as _)),
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+    ];
+}
+fn uses_vperm128(out: &mut Arguments, ins: Ins) {
+    *out = [
+        Argument::GPR(GPR(ins.field_va128() as _)),
+        Argument::GPR(GPR(ins.field_vb128() as _)),
+        Argument::GPR(GPR(ins.field_va128_6() as _)),
+        Argument::GPR(GPR(ins.field_va128_5() as _)),
+        Argument::GPR(GPR(ins.field_vbh() as _)),
+        Argument::GPR(GPR(ins.field_vc128() as _)),
+        Argument::None,
+        Argument::None,
+    ];
+}
+fn defs_vpkshss128(out: &mut Arguments, ins: Ins) {
+    *out = [
+        Argument::GPR(GPR(ins.field_vd128() as _)),
+        Argument::GPR(GPR(ins.field_vdh() as _)),
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+    ];
+}
+fn uses_vpkshss128(out: &mut Arguments, ins: Ins) {
+    *out = [
+        Argument::GPR(GPR(ins.field_va128() as _)),
+        Argument::GPR(GPR(ins.field_vb128() as _)),
+        Argument::GPR(GPR(ins.field_va128_6() as _)),
+        Argument::GPR(GPR(ins.field_va128_5() as _)),
+        Argument::GPR(GPR(ins.field_vbh() as _)),
+        Argument::None,
+        Argument::None,
+        Argument::None,
+    ];
+}
+fn defs_vpkshus128(out: &mut Arguments, ins: Ins) {
+    *out = [
+        Argument::GPR(GPR(ins.field_vd128() as _)),
+        Argument::GPR(GPR(ins.field_vdh() as _)),
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+    ];
+}
+fn uses_vpkshus128(out: &mut Arguments, ins: Ins) {
+    *out = [
+        Argument::GPR(GPR(ins.field_va128() as _)),
+        Argument::GPR(GPR(ins.field_vb128() as _)),
+        Argument::GPR(GPR(ins.field_va128_6() as _)),
+        Argument::GPR(GPR(ins.field_va128_5() as _)),
+        Argument::GPR(GPR(ins.field_vbh() as _)),
+        Argument::None,
+        Argument::None,
+        Argument::None,
+    ];
+}
+fn defs_vpkswss128(out: &mut Arguments, ins: Ins) {
+    *out = [
+        Argument::GPR(GPR(ins.field_vd128() as _)),
+        Argument::GPR(GPR(ins.field_vdh() as _)),
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+    ];
+}
+fn uses_vpkswss128(out: &mut Arguments, ins: Ins) {
+    *out = [
+        Argument::GPR(GPR(ins.field_va128() as _)),
+        Argument::GPR(GPR(ins.field_vb128() as _)),
+        Argument::GPR(GPR(ins.field_va128_6() as _)),
+        Argument::GPR(GPR(ins.field_va128_5() as _)),
+        Argument::GPR(GPR(ins.field_vbh() as _)),
+        Argument::None,
+        Argument::None,
+        Argument::None,
+    ];
+}
+fn defs_vpkswus128(out: &mut Arguments, ins: Ins) {
+    *out = [
+        Argument::GPR(GPR(ins.field_vd128() as _)),
+        Argument::GPR(GPR(ins.field_vdh() as _)),
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+    ];
+}
+fn uses_vpkswus128(out: &mut Arguments, ins: Ins) {
+    *out = [
+        Argument::GPR(GPR(ins.field_va128() as _)),
+        Argument::GPR(GPR(ins.field_vb128() as _)),
+        Argument::GPR(GPR(ins.field_va128_6() as _)),
+        Argument::GPR(GPR(ins.field_va128_5() as _)),
+        Argument::GPR(GPR(ins.field_vbh() as _)),
+        Argument::None,
+        Argument::None,
+        Argument::None,
+    ];
+}
+fn defs_vpkuhum128(out: &mut Arguments, ins: Ins) {
+    *out = [
+        Argument::GPR(GPR(ins.field_vd128() as _)),
+        Argument::GPR(GPR(ins.field_vdh() as _)),
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+    ];
+}
+fn uses_vpkuhum128(out: &mut Arguments, ins: Ins) {
+    *out = [
+        Argument::GPR(GPR(ins.field_va128() as _)),
+        Argument::GPR(GPR(ins.field_vb128() as _)),
+        Argument::GPR(GPR(ins.field_va128_6() as _)),
+        Argument::GPR(GPR(ins.field_va128_5() as _)),
+        Argument::GPR(GPR(ins.field_vbh() as _)),
+        Argument::None,
+        Argument::None,
+        Argument::None,
+    ];
+}
+fn defs_vpkuhus128(out: &mut Arguments, ins: Ins) {
+    *out = [
+        Argument::GPR(GPR(ins.field_vd128() as _)),
+        Argument::GPR(GPR(ins.field_vdh() as _)),
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+    ];
+}
+fn uses_vpkuhus128(out: &mut Arguments, ins: Ins) {
+    *out = [
+        Argument::GPR(GPR(ins.field_va128() as _)),
+        Argument::GPR(GPR(ins.field_vb128() as _)),
+        Argument::GPR(GPR(ins.field_va128_6() as _)),
+        Argument::GPR(GPR(ins.field_va128_5() as _)),
+        Argument::GPR(GPR(ins.field_vbh() as _)),
+        Argument::None,
+        Argument::None,
+        Argument::None,
+    ];
+}
+fn defs_vpkuwum128(out: &mut Arguments, ins: Ins) {
+    *out = [
+        Argument::GPR(GPR(ins.field_vd128() as _)),
+        Argument::GPR(GPR(ins.field_vdh() as _)),
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+    ];
+}
+fn uses_vpkuwum128(out: &mut Arguments, ins: Ins) {
+    *out = [
+        Argument::GPR(GPR(ins.field_va128() as _)),
+        Argument::GPR(GPR(ins.field_vb128() as _)),
+        Argument::GPR(GPR(ins.field_va128_6() as _)),
+        Argument::GPR(GPR(ins.field_va128_5() as _)),
+        Argument::GPR(GPR(ins.field_vbh() as _)),
+        Argument::None,
+        Argument::None,
+        Argument::None,
+    ];
+}
+fn defs_vpkuwus128(out: &mut Arguments, ins: Ins) {
+    *out = [
+        Argument::GPR(GPR(ins.field_vd128() as _)),
+        Argument::GPR(GPR(ins.field_vdh() as _)),
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+    ];
+}
+fn uses_vpkuwus128(out: &mut Arguments, ins: Ins) {
+    *out = [
+        Argument::GPR(GPR(ins.field_va128() as _)),
+        Argument::GPR(GPR(ins.field_vb128() as _)),
+        Argument::GPR(GPR(ins.field_va128_6() as _)),
+        Argument::GPR(GPR(ins.field_va128_5() as _)),
+        Argument::GPR(GPR(ins.field_vbh() as _)),
+        Argument::None,
+        Argument::None,
+        Argument::None,
+    ];
+}
+fn defs_vrlw128(out: &mut Arguments, ins: Ins) {
+    *out = [
+        Argument::GPR(GPR(ins.field_vd128() as _)),
+        Argument::GPR(GPR(ins.field_vdh() as _)),
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+    ];
+}
+fn uses_vrlw128(out: &mut Arguments, ins: Ins) {
+    *out = [
+        Argument::GPR(GPR(ins.field_va128() as _)),
+        Argument::GPR(GPR(ins.field_vb128() as _)),
+        Argument::GPR(GPR(ins.field_va128_6() as _)),
+        Argument::GPR(GPR(ins.field_va128_5() as _)),
+        Argument::GPR(GPR(ins.field_vbh() as _)),
+        Argument::None,
+        Argument::None,
+        Argument::None,
+    ];
+}
+fn defs_vsel128(out: &mut Arguments, ins: Ins) {
+    *out = [
+        Argument::GPR(GPR(ins.field_vd128() as _)),
+        Argument::GPR(GPR(ins.field_vdh() as _)),
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+    ];
+}
+fn uses_vsel128(out: &mut Arguments, ins: Ins) {
+    *out = [
+        Argument::GPR(GPR(ins.field_va128() as _)),
+        Argument::GPR(GPR(ins.field_vb128() as _)),
+        Argument::GPR(GPR(ins.field_va128_6() as _)),
+        Argument::GPR(GPR(ins.field_va128_5() as _)),
+        Argument::GPR(GPR(ins.field_vbh() as _)),
+        Argument::None,
+        Argument::None,
+        Argument::None,
+    ];
+}
+fn defs_vslo128(out: &mut Arguments, ins: Ins) {
+    *out = [
+        Argument::GPR(GPR(ins.field_vd128() as _)),
+        Argument::GPR(GPR(ins.field_vdh() as _)),
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+    ];
+}
+fn uses_vslo128(out: &mut Arguments, ins: Ins) {
+    *out = [
+        Argument::GPR(GPR(ins.field_va128() as _)),
+        Argument::GPR(GPR(ins.field_vb128() as _)),
+        Argument::GPR(GPR(ins.field_va128_6() as _)),
+        Argument::GPR(GPR(ins.field_va128_5() as _)),
+        Argument::GPR(GPR(ins.field_vbh() as _)),
+        Argument::None,
+        Argument::None,
+        Argument::None,
+    ];
+}
+fn defs_vsubfp128(out: &mut Arguments, ins: Ins) {
+    *out = [
+        Argument::GPR(GPR(ins.field_vd128() as _)),
+        Argument::GPR(GPR(ins.field_vdh() as _)),
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+    ];
+}
+fn uses_vsubfp128(out: &mut Arguments, ins: Ins) {
+    *out = [
+        Argument::GPR(GPR(ins.field_va128() as _)),
+        Argument::GPR(GPR(ins.field_vb128() as _)),
+        Argument::GPR(GPR(ins.field_va128_6() as _)),
+        Argument::GPR(GPR(ins.field_va128_5() as _)),
+        Argument::GPR(GPR(ins.field_vbh() as _)),
+        Argument::None,
+        Argument::None,
+        Argument::None,
+    ];
+}
+fn defs_vxor128(out: &mut Arguments, ins: Ins) {
+    *out = [
+        Argument::GPR(GPR(ins.field_vd128() as _)),
+        Argument::GPR(GPR(ins.field_vdh() as _)),
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+    ];
+}
+fn uses_vxor128(out: &mut Arguments, ins: Ins) {
+    *out = [
+        Argument::GPR(GPR(ins.field_va128() as _)),
+        Argument::GPR(GPR(ins.field_vb128() as _)),
+        Argument::GPR(GPR(ins.field_va128_6() as _)),
+        Argument::GPR(GPR(ins.field_va128_5() as _)),
+        Argument::GPR(GPR(ins.field_vbh() as _)),
+        Argument::None,
+        Argument::None,
+        Argument::None,
+    ];
+}
+fn defs_vcfpsxws128(out: &mut Arguments, ins: Ins) {
+    *out = [
+        Argument::GPR(GPR(ins.field_vd128() as _)),
+        Argument::GPR(GPR(ins.field_vdh() as _)),
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+    ];
+}
+fn uses_vcfpsxws128(out: &mut Arguments, ins: Ins) {
+    *out = [
+        Argument::Simm(Simm(ins.field_vsimm() as _)),
+        Argument::GPR(GPR(ins.field_vb128() as _)),
+        Argument::GPR(GPR(ins.field_vbh() as _)),
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+    ];
+}
+fn defs_vcfpuxws128(out: &mut Arguments, ins: Ins) {
+    *out = [
+        Argument::GPR(GPR(ins.field_vd128() as _)),
+        Argument::GPR(GPR(ins.field_vdh() as _)),
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+    ];
+}
+fn uses_vcfpuxws128(out: &mut Arguments, ins: Ins) {
+    *out = [
+        Argument::Uimm(Uimm(ins.field_vuimm() as _)),
+        Argument::GPR(GPR(ins.field_vb128() as _)),
+        Argument::GPR(GPR(ins.field_vbh() as _)),
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+    ];
+}
+fn defs_vcmpbfp128(out: &mut Arguments, ins: Ins) {
+    *out = [
+        Argument::GPR(GPR(ins.field_vd128() as _)),
+        Argument::GPR(GPR(ins.field_vdh() as _)),
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+    ];
+}
+fn uses_vcmpbfp128(out: &mut Arguments, ins: Ins) {
+    *out = [
+        Argument::GPR(GPR(ins.field_va128() as _)),
+        Argument::GPR(GPR(ins.field_vb128() as _)),
+        Argument::GPR(GPR(ins.field_va128_6() as _)),
+        Argument::GPR(GPR(ins.field_va128_5() as _)),
+        Argument::GPR(GPR(ins.field_vbh() as _)),
+        Argument::None,
+        Argument::None,
+        Argument::None,
+    ];
+}
+fn defs_vcmpeqfp128(out: &mut Arguments, ins: Ins) {
+    *out = [
+        Argument::GPR(GPR(ins.field_vd128() as _)),
+        Argument::GPR(GPR(ins.field_vdh() as _)),
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+    ];
+}
+fn uses_vcmpeqfp128(out: &mut Arguments, ins: Ins) {
+    *out = [
+        Argument::GPR(GPR(ins.field_va128() as _)),
+        Argument::GPR(GPR(ins.field_vb128() as _)),
+        Argument::GPR(GPR(ins.field_va128_6() as _)),
+        Argument::GPR(GPR(ins.field_va128_5() as _)),
+        Argument::GPR(GPR(ins.field_vbh() as _)),
+        Argument::None,
+        Argument::None,
+        Argument::None,
+    ];
+}
+fn defs_vcmpequw128(out: &mut Arguments, ins: Ins) {
+    *out = [
+        Argument::GPR(GPR(ins.field_vd128() as _)),
+        Argument::GPR(GPR(ins.field_vdh() as _)),
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+    ];
+}
+fn uses_vcmpequw128(out: &mut Arguments, ins: Ins) {
+    *out = [
+        Argument::GPR(GPR(ins.field_va128() as _)),
+        Argument::GPR(GPR(ins.field_vb128() as _)),
+        Argument::GPR(GPR(ins.field_va128_6() as _)),
+        Argument::GPR(GPR(ins.field_va128_5() as _)),
+        Argument::GPR(GPR(ins.field_vbh() as _)),
+        Argument::None,
+        Argument::None,
+        Argument::None,
+    ];
+}
+fn defs_vcmpgefp128(out: &mut Arguments, ins: Ins) {
+    *out = [
+        Argument::GPR(GPR(ins.field_vd128() as _)),
+        Argument::GPR(GPR(ins.field_vdh() as _)),
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+    ];
+}
+fn uses_vcmpgefp128(out: &mut Arguments, ins: Ins) {
+    *out = [
+        Argument::GPR(GPR(ins.field_va128() as _)),
+        Argument::GPR(GPR(ins.field_vb128() as _)),
+        Argument::GPR(GPR(ins.field_va128_6() as _)),
+        Argument::GPR(GPR(ins.field_va128_5() as _)),
+        Argument::GPR(GPR(ins.field_vbh() as _)),
+        Argument::None,
+        Argument::None,
+        Argument::None,
+    ];
+}
+fn defs_vcmpgtfp128(out: &mut Arguments, ins: Ins) {
+    *out = [
+        Argument::GPR(GPR(ins.field_vd128() as _)),
+        Argument::GPR(GPR(ins.field_vdh() as _)),
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+    ];
+}
+fn uses_vcmpgtfp128(out: &mut Arguments, ins: Ins) {
+    *out = [
+        Argument::GPR(GPR(ins.field_va128() as _)),
+        Argument::GPR(GPR(ins.field_vb128() as _)),
+        Argument::GPR(GPR(ins.field_va128_6() as _)),
+        Argument::GPR(GPR(ins.field_va128_5() as _)),
+        Argument::GPR(GPR(ins.field_vbh() as _)),
+        Argument::None,
+        Argument::None,
+        Argument::None,
+    ];
+}
+fn defs_vcsxwfp128(out: &mut Arguments, ins: Ins) {
+    *out = [
+        Argument::GPR(GPR(ins.field_vd128() as _)),
+        Argument::GPR(GPR(ins.field_vdh() as _)),
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+    ];
+}
+fn uses_vcsxwfp128(out: &mut Arguments, ins: Ins) {
+    *out = [
+        Argument::Simm(Simm(ins.field_vsimm() as _)),
+        Argument::GPR(GPR(ins.field_vb128() as _)),
+        Argument::GPR(GPR(ins.field_vbh() as _)),
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+    ];
+}
+fn defs_vcuxwfp128(out: &mut Arguments, ins: Ins) {
+    *out = [
+        Argument::GPR(GPR(ins.field_vd128() as _)),
+        Argument::GPR(GPR(ins.field_vdh() as _)),
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+    ];
+}
+fn uses_vcuxwfp128(out: &mut Arguments, ins: Ins) {
+    *out = [
+        Argument::Uimm(Uimm(ins.field_vuimm() as _)),
+        Argument::GPR(GPR(ins.field_vb128() as _)),
+        Argument::GPR(GPR(ins.field_vbh() as _)),
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+    ];
+}
+fn defs_vexptefp128(out: &mut Arguments, ins: Ins) {
+    *out = [
+        Argument::GPR(GPR(ins.field_vd128() as _)),
+        Argument::GPR(GPR(ins.field_vdh() as _)),
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+    ];
+}
+fn uses_vexptefp128(out: &mut Arguments, ins: Ins) {
+    *out = [
+        Argument::GPR(GPR(ins.field_vb128() as _)),
+        Argument::GPR(GPR(ins.field_vbh() as _)),
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+    ];
+}
+fn defs_vlogefp128(out: &mut Arguments, ins: Ins) {
+    *out = [
+        Argument::GPR(GPR(ins.field_vd128() as _)),
+        Argument::GPR(GPR(ins.field_vdh() as _)),
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+    ];
+}
+fn uses_vlogefp128(out: &mut Arguments, ins: Ins) {
+    *out = [
+        Argument::GPR(GPR(ins.field_vb128() as _)),
+        Argument::GPR(GPR(ins.field_vbh() as _)),
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+    ];
+}
+fn defs_vmaxfp128(out: &mut Arguments, ins: Ins) {
+    *out = [
+        Argument::GPR(GPR(ins.field_vd128() as _)),
+        Argument::GPR(GPR(ins.field_vdh() as _)),
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+    ];
+}
+fn uses_vmaxfp128(out: &mut Arguments, ins: Ins) {
+    *out = [
+        Argument::GPR(GPR(ins.field_va128() as _)),
+        Argument::GPR(GPR(ins.field_vb128() as _)),
+        Argument::GPR(GPR(ins.field_va128_6() as _)),
+        Argument::GPR(GPR(ins.field_va128_5() as _)),
+        Argument::GPR(GPR(ins.field_vbh() as _)),
+        Argument::None,
+        Argument::None,
+        Argument::None,
+    ];
+}
+fn defs_vminfp128(out: &mut Arguments, ins: Ins) {
+    *out = [
+        Argument::GPR(GPR(ins.field_vd128() as _)),
+        Argument::GPR(GPR(ins.field_vdh() as _)),
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+    ];
+}
+fn uses_vminfp128(out: &mut Arguments, ins: Ins) {
+    *out = [
+        Argument::GPR(GPR(ins.field_va128() as _)),
+        Argument::GPR(GPR(ins.field_vb128() as _)),
+        Argument::GPR(GPR(ins.field_va128_6() as _)),
+        Argument::GPR(GPR(ins.field_va128_5() as _)),
+        Argument::GPR(GPR(ins.field_vbh() as _)),
+        Argument::None,
+        Argument::None,
+        Argument::None,
+    ];
+}
+fn defs_vmrghw128(out: &mut Arguments, ins: Ins) {
+    *out = [
+        Argument::GPR(GPR(ins.field_vd128() as _)),
+        Argument::GPR(GPR(ins.field_vdh() as _)),
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+    ];
+}
+fn uses_vmrghw128(out: &mut Arguments, ins: Ins) {
+    *out = [
+        Argument::GPR(GPR(ins.field_va128() as _)),
+        Argument::GPR(GPR(ins.field_vb128() as _)),
+        Argument::GPR(GPR(ins.field_va128_6() as _)),
+        Argument::GPR(GPR(ins.field_va128_5() as _)),
+        Argument::GPR(GPR(ins.field_vbh() as _)),
+        Argument::None,
+        Argument::None,
+        Argument::None,
+    ];
+}
+fn defs_vmrglw128(out: &mut Arguments, ins: Ins) {
+    *out = [
+        Argument::GPR(GPR(ins.field_vd128() as _)),
+        Argument::GPR(GPR(ins.field_vdh() as _)),
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+    ];
+}
+fn uses_vmrglw128(out: &mut Arguments, ins: Ins) {
+    *out = [
+        Argument::GPR(GPR(ins.field_va128() as _)),
+        Argument::GPR(GPR(ins.field_vb128() as _)),
+        Argument::GPR(GPR(ins.field_va128_6() as _)),
+        Argument::GPR(GPR(ins.field_va128_5() as _)),
+        Argument::GPR(GPR(ins.field_vbh() as _)),
+        Argument::None,
+        Argument::None,
+        Argument::None,
+    ];
+}
+fn defs_vpermwi128(out: &mut Arguments, ins: Ins) {
+    *out = [
+        Argument::GPR(GPR(ins.field_vd128() as _)),
+        Argument::GPR(GPR(ins.field_vdh() as _)),
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+    ];
+}
+fn uses_vpermwi128(out: &mut Arguments, ins: Ins) {
+    *out = [
+        Argument::GPR(GPR(ins.field_vb128() as _)),
+        Argument::GPR(GPR(ins.field_vbh() as _)),
+        Argument::OpaqueU(OpaqueU(ins.field_permh() as _)),
+        Argument::OpaqueU(OpaqueU(ins.field_perml() as _)),
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+    ];
+}
+fn defs_vpkd3d128(out: &mut Arguments, ins: Ins) {
+    *out = [
+        Argument::GPR(GPR(ins.field_vd128() as _)),
+        Argument::GPR(GPR(ins.field_vdh() as _)),
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+    ];
+}
+fn uses_vpkd3d128(out: &mut Arguments, ins: Ins) {
+    *out = [
+        Argument::GPR(GPR(ins.field_vb128() as _)),
+        Argument::GPR(GPR(ins.field_vbh() as _)),
+        Argument::OpaqueU(OpaqueU(ins.field_ximm() as _)),
+        Argument::OpaqueU(OpaqueU(ins.field_yimm() as _)),
+        Argument::OpaqueU(OpaqueU(ins.field_zimm() as _)),
+        Argument::None,
+        Argument::None,
+        Argument::None,
+    ];
+}
+fn defs_vrefp128(out: &mut Arguments, ins: Ins) {
+    *out = [
+        Argument::GPR(GPR(ins.field_vd128() as _)),
+        Argument::GPR(GPR(ins.field_vdh() as _)),
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+    ];
+}
+fn uses_vrefp128(out: &mut Arguments, ins: Ins) {
+    *out = [
+        Argument::GPR(GPR(ins.field_vb128() as _)),
+        Argument::GPR(GPR(ins.field_vbh() as _)),
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+    ];
+}
+fn defs_vrfim128(out: &mut Arguments, ins: Ins) {
+    *out = [
+        Argument::GPR(GPR(ins.field_vd128() as _)),
+        Argument::GPR(GPR(ins.field_vdh() as _)),
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+    ];
+}
+fn uses_vrfim128(out: &mut Arguments, ins: Ins) {
+    *out = [
+        Argument::GPR(GPR(ins.field_vb128() as _)),
+        Argument::GPR(GPR(ins.field_vbh() as _)),
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+    ];
+}
+fn defs_vrfin128(out: &mut Arguments, ins: Ins) {
+    *out = [
+        Argument::GPR(GPR(ins.field_vd128() as _)),
+        Argument::GPR(GPR(ins.field_vdh() as _)),
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+    ];
+}
+fn uses_vrfin128(out: &mut Arguments, ins: Ins) {
+    *out = [
+        Argument::GPR(GPR(ins.field_vb128() as _)),
+        Argument::GPR(GPR(ins.field_vbh() as _)),
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+    ];
+}
+fn defs_vrfip128(out: &mut Arguments, ins: Ins) {
+    *out = [
+        Argument::GPR(GPR(ins.field_vd128() as _)),
+        Argument::GPR(GPR(ins.field_vdh() as _)),
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+    ];
+}
+fn uses_vrfip128(out: &mut Arguments, ins: Ins) {
+    *out = [
+        Argument::GPR(GPR(ins.field_vb128() as _)),
+        Argument::GPR(GPR(ins.field_vbh() as _)),
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+    ];
+}
+fn defs_vrfiz128(out: &mut Arguments, ins: Ins) {
+    *out = [
+        Argument::GPR(GPR(ins.field_vd128() as _)),
+        Argument::GPR(GPR(ins.field_vdh() as _)),
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+    ];
+}
+fn uses_vrfiz128(out: &mut Arguments, ins: Ins) {
+    *out = [
+        Argument::GPR(GPR(ins.field_vb128() as _)),
+        Argument::GPR(GPR(ins.field_vbh() as _)),
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+    ];
+}
+fn defs_vrlimi128(out: &mut Arguments, ins: Ins) {
+    *out = [
+        Argument::GPR(GPR(ins.field_vd128() as _)),
+        Argument::GPR(GPR(ins.field_vdh() as _)),
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+    ];
+}
+fn uses_vrlimi128(out: &mut Arguments, ins: Ins) {
+    *out = [
+        Argument::Uimm(Uimm(ins.field_vuimm() as _)),
+        Argument::GPR(GPR(ins.field_vb128() as _)),
+        Argument::GPR(GPR(ins.field_vbh() as _)),
+        Argument::OpaqueU(OpaqueU(ins.field_zimm() as _)),
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+    ];
+}
+fn defs_vrsqrtefp128(out: &mut Arguments, ins: Ins) {
+    *out = [
+        Argument::GPR(GPR(ins.field_vd128() as _)),
+        Argument::GPR(GPR(ins.field_vdh() as _)),
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+    ];
+}
+fn uses_vrsqrtefp128(out: &mut Arguments, ins: Ins) {
+    *out = [
+        Argument::GPR(GPR(ins.field_vb128() as _)),
+        Argument::GPR(GPR(ins.field_vbh() as _)),
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+    ];
+}
+fn defs_vslw128(out: &mut Arguments, ins: Ins) {
+    *out = [
+        Argument::GPR(GPR(ins.field_vd128() as _)),
+        Argument::GPR(GPR(ins.field_vdh() as _)),
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+    ];
+}
+fn uses_vslw128(out: &mut Arguments, ins: Ins) {
+    *out = [
+        Argument::GPR(GPR(ins.field_va128() as _)),
+        Argument::GPR(GPR(ins.field_vb128() as _)),
+        Argument::GPR(GPR(ins.field_va128_6() as _)),
+        Argument::GPR(GPR(ins.field_va128_5() as _)),
+        Argument::GPR(GPR(ins.field_vbh() as _)),
+        Argument::None,
+        Argument::None,
+        Argument::None,
+    ];
+}
+fn defs_vspltisw128(out: &mut Arguments, ins: Ins) {
+    *out = [
+        Argument::GPR(GPR(ins.field_vd128() as _)),
+        Argument::GPR(GPR(ins.field_vdh() as _)),
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+    ];
+}
+fn uses_vspltisw128(out: &mut Arguments, ins: Ins) {
+    *out = [
+        Argument::Simm(Simm(ins.field_vsimm() as _)),
+        Argument::GPR(GPR(ins.field_vb128() as _)),
+        Argument::GPR(GPR(ins.field_vbh() as _)),
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+    ];
+}
+fn defs_vspltw128(out: &mut Arguments, ins: Ins) {
+    *out = [
+        Argument::GPR(GPR(ins.field_vd128() as _)),
+        Argument::GPR(GPR(ins.field_vdh() as _)),
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+    ];
+}
+fn uses_vspltw128(out: &mut Arguments, ins: Ins) {
+    *out = [
+        Argument::Uimm(Uimm(ins.field_vuimm() as _)),
+        Argument::GPR(GPR(ins.field_vb128() as _)),
+        Argument::GPR(GPR(ins.field_vbh() as _)),
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+    ];
+}
+fn defs_vsraw128(out: &mut Arguments, ins: Ins) {
+    *out = [
+        Argument::GPR(GPR(ins.field_vd128() as _)),
+        Argument::GPR(GPR(ins.field_vdh() as _)),
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+    ];
+}
+fn uses_vsraw128(out: &mut Arguments, ins: Ins) {
+    *out = [
+        Argument::GPR(GPR(ins.field_va128() as _)),
+        Argument::GPR(GPR(ins.field_vb128() as _)),
+        Argument::GPR(GPR(ins.field_va128_6() as _)),
+        Argument::GPR(GPR(ins.field_va128_5() as _)),
+        Argument::GPR(GPR(ins.field_vbh() as _)),
+        Argument::None,
+        Argument::None,
+        Argument::None,
+    ];
+}
+fn defs_vsro128(out: &mut Arguments, ins: Ins) {
+    *out = [
+        Argument::GPR(GPR(ins.field_vd128() as _)),
+        Argument::GPR(GPR(ins.field_vdh() as _)),
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+    ];
+}
+fn uses_vsro128(out: &mut Arguments, ins: Ins) {
+    *out = [
+        Argument::GPR(GPR(ins.field_va128() as _)),
+        Argument::GPR(GPR(ins.field_vb128() as _)),
+        Argument::GPR(GPR(ins.field_va128_6() as _)),
+        Argument::GPR(GPR(ins.field_va128_5() as _)),
+        Argument::GPR(GPR(ins.field_vbh() as _)),
+        Argument::None,
+        Argument::None,
+        Argument::None,
+    ];
+}
+fn defs_vsrw128(out: &mut Arguments, ins: Ins) {
+    *out = [
+        Argument::GPR(GPR(ins.field_vd128() as _)),
+        Argument::GPR(GPR(ins.field_vdh() as _)),
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+    ];
+}
+fn uses_vsrw128(out: &mut Arguments, ins: Ins) {
+    *out = [
+        Argument::GPR(GPR(ins.field_va128() as _)),
+        Argument::GPR(GPR(ins.field_vb128() as _)),
+        Argument::GPR(GPR(ins.field_va128_6() as _)),
+        Argument::GPR(GPR(ins.field_va128_5() as _)),
+        Argument::GPR(GPR(ins.field_vbh() as _)),
+        Argument::None,
+        Argument::None,
+        Argument::None,
+    ];
+}
+fn defs_vupkd3d128(out: &mut Arguments, ins: Ins) {
+    *out = [
+        Argument::GPR(GPR(ins.field_vd128() as _)),
+        Argument::GPR(GPR(ins.field_vdh() as _)),
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+    ];
+}
+fn uses_vupkd3d128(out: &mut Arguments, ins: Ins) {
+    *out = [
+        Argument::Uimm(Uimm(ins.field_vuimm() as _)),
+        Argument::GPR(GPR(ins.field_vb128() as _)),
+        Argument::GPR(GPR(ins.field_vbh() as _)),
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+    ];
+}
+fn defs_vupkhsb128(out: &mut Arguments, ins: Ins) {
+    *out = [
+        Argument::GPR(GPR(ins.field_vd128() as _)),
+        Argument::GPR(GPR(ins.field_vdh() as _)),
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+    ];
+}
+fn uses_vupkhsb128(out: &mut Arguments, ins: Ins) {
+    *out = [
+        Argument::GPR(GPR(ins.field_vb128() as _)),
+        Argument::GPR(GPR(ins.field_vbh() as _)),
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+    ];
+}
+fn defs_vupklsb128(out: &mut Arguments, ins: Ins) {
+    *out = [
+        Argument::GPR(GPR(ins.field_vd128() as _)),
+        Argument::GPR(GPR(ins.field_vdh() as _)),
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+    ];
+}
+fn uses_vupklsb128(out: &mut Arguments, ins: Ins) {
+    *out = [
+        Argument::GPR(GPR(ins.field_vb128() as _)),
+        Argument::GPR(GPR(ins.field_vbh() as _)),
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
         Argument::None,
         Argument::None,
     ];
@@ -7851,6 +18864,9 @@ fn uses_ps_sum1(out: &mut Arguments, ins: Ins) {
 fn defs_mulli(out: &mut Arguments, ins: Ins) {
     *out = [
         Argument::GPR(GPR(ins.field_rd() as _)),
+        Argument::None,
+        Argument::None,
+        Argument::None,
         Argument::None,
         Argument::None,
         Argument::None,
@@ -7864,11 +18880,17 @@ fn uses_mulli(out: &mut Arguments, ins: Ins) {
         Argument::None,
         Argument::None,
         Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
     ];
 }
 fn defs_subfic(out: &mut Arguments, ins: Ins) {
     *out = [
         Argument::GPR(GPR(ins.field_rd() as _)),
+        Argument::None,
+        Argument::None,
+        Argument::None,
         Argument::None,
         Argument::None,
         Argument::None,
@@ -7882,11 +18904,17 @@ fn uses_subfic(out: &mut Arguments, ins: Ins) {
         Argument::None,
         Argument::None,
         Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
     ];
 }
 fn defs_cmpli(out: &mut Arguments, ins: Ins) {
     *out = [
         Argument::CRField(CRField(ins.field_crfd() as _)),
+        Argument::None,
+        Argument::None,
+        Argument::None,
         Argument::None,
         Argument::None,
         Argument::None,
@@ -7900,11 +18928,17 @@ fn uses_cmpli(out: &mut Arguments, ins: Ins) {
         Argument::None,
         Argument::None,
         Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
     ];
 }
 fn defs_cmpi(out: &mut Arguments, ins: Ins) {
     *out = [
         Argument::CRField(CRField(ins.field_crfd() as _)),
+        Argument::None,
+        Argument::None,
+        Argument::None,
         Argument::None,
         Argument::None,
         Argument::None,
@@ -7918,11 +18952,17 @@ fn uses_cmpi(out: &mut Arguments, ins: Ins) {
         Argument::None,
         Argument::None,
         Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
     ];
 }
 fn defs_addic(out: &mut Arguments, ins: Ins) {
     *out = [
         Argument::GPR(GPR(ins.field_rd() as _)),
+        Argument::None,
+        Argument::None,
+        Argument::None,
         Argument::None,
         Argument::None,
         Argument::None,
@@ -7936,11 +18976,17 @@ fn uses_addic(out: &mut Arguments, ins: Ins) {
         Argument::None,
         Argument::None,
         Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
     ];
 }
 fn defs_addic_(out: &mut Arguments, ins: Ins) {
     *out = [
         Argument::GPR(GPR(ins.field_rd() as _)),
+        Argument::None,
+        Argument::None,
+        Argument::None,
         Argument::None,
         Argument::None,
         Argument::None,
@@ -7954,11 +19000,17 @@ fn uses_addic_(out: &mut Arguments, ins: Ins) {
         Argument::None,
         Argument::None,
         Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
     ];
 }
 fn defs_addi(out: &mut Arguments, ins: Ins) {
     *out = [
         Argument::GPR(GPR(ins.field_rd() as _)),
+        Argument::None,
+        Argument::None,
+        Argument::None,
         Argument::None,
         Argument::None,
         Argument::None,
@@ -7976,11 +19028,17 @@ fn uses_addi(out: &mut Arguments, ins: Ins) {
         Argument::None,
         Argument::None,
         Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
     ];
 }
 fn defs_addis(out: &mut Arguments, ins: Ins) {
     *out = [
         Argument::GPR(GPR(ins.field_rd() as _)),
+        Argument::None,
+        Argument::None,
+        Argument::None,
         Argument::None,
         Argument::None,
         Argument::None,
@@ -7998,11 +19056,17 @@ fn uses_addis(out: &mut Arguments, ins: Ins) {
         Argument::None,
         Argument::None,
         Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
     ];
 }
 fn defs_crand(out: &mut Arguments, ins: Ins) {
     *out = [
         Argument::CRBit(CRBit(ins.field_crbd() as _)),
+        Argument::None,
+        Argument::None,
+        Argument::None,
         Argument::None,
         Argument::None,
         Argument::None,
@@ -8016,11 +19080,17 @@ fn uses_crand(out: &mut Arguments, ins: Ins) {
         Argument::None,
         Argument::None,
         Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
     ];
 }
 fn defs_crandc(out: &mut Arguments, ins: Ins) {
     *out = [
         Argument::CRBit(CRBit(ins.field_crbd() as _)),
+        Argument::None,
+        Argument::None,
+        Argument::None,
         Argument::None,
         Argument::None,
         Argument::None,
@@ -8034,11 +19104,17 @@ fn uses_crandc(out: &mut Arguments, ins: Ins) {
         Argument::None,
         Argument::None,
         Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
     ];
 }
 fn defs_creqv(out: &mut Arguments, ins: Ins) {
     *out = [
         Argument::CRBit(CRBit(ins.field_crbd() as _)),
+        Argument::None,
+        Argument::None,
+        Argument::None,
         Argument::None,
         Argument::None,
         Argument::None,
@@ -8052,11 +19128,17 @@ fn uses_creqv(out: &mut Arguments, ins: Ins) {
         Argument::None,
         Argument::None,
         Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
     ];
 }
 fn defs_crnand(out: &mut Arguments, ins: Ins) {
     *out = [
         Argument::CRBit(CRBit(ins.field_crbd() as _)),
+        Argument::None,
+        Argument::None,
+        Argument::None,
         Argument::None,
         Argument::None,
         Argument::None,
@@ -8070,11 +19152,17 @@ fn uses_crnand(out: &mut Arguments, ins: Ins) {
         Argument::None,
         Argument::None,
         Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
     ];
 }
 fn defs_crnor(out: &mut Arguments, ins: Ins) {
     *out = [
         Argument::CRBit(CRBit(ins.field_crbd() as _)),
+        Argument::None,
+        Argument::None,
+        Argument::None,
         Argument::None,
         Argument::None,
         Argument::None,
@@ -8088,11 +19176,17 @@ fn uses_crnor(out: &mut Arguments, ins: Ins) {
         Argument::None,
         Argument::None,
         Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
     ];
 }
 fn defs_cror(out: &mut Arguments, ins: Ins) {
     *out = [
         Argument::CRBit(CRBit(ins.field_crbd() as _)),
+        Argument::None,
+        Argument::None,
+        Argument::None,
         Argument::None,
         Argument::None,
         Argument::None,
@@ -8106,11 +19200,17 @@ fn uses_cror(out: &mut Arguments, ins: Ins) {
         Argument::None,
         Argument::None,
         Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
     ];
 }
 fn defs_crorc(out: &mut Arguments, ins: Ins) {
     *out = [
         Argument::CRBit(CRBit(ins.field_crbd() as _)),
+        Argument::None,
+        Argument::None,
+        Argument::None,
         Argument::None,
         Argument::None,
         Argument::None,
@@ -8124,11 +19224,17 @@ fn uses_crorc(out: &mut Arguments, ins: Ins) {
         Argument::None,
         Argument::None,
         Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
     ];
 }
 fn defs_crxor(out: &mut Arguments, ins: Ins) {
     *out = [
         Argument::CRBit(CRBit(ins.field_crbd() as _)),
+        Argument::None,
+        Argument::None,
+        Argument::None,
         Argument::None,
         Argument::None,
         Argument::None,
@@ -8142,11 +19248,17 @@ fn uses_crxor(out: &mut Arguments, ins: Ins) {
         Argument::None,
         Argument::None,
         Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
     ];
 }
 fn defs_mcrf(out: &mut Arguments, ins: Ins) {
     *out = [
         Argument::CRField(CRField(ins.field_crfd() as _)),
+        Argument::None,
+        Argument::None,
+        Argument::None,
         Argument::None,
         Argument::None,
         Argument::None,
@@ -8160,11 +19272,17 @@ fn uses_mcrf(out: &mut Arguments, ins: Ins) {
         Argument::None,
         Argument::None,
         Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
     ];
 }
 fn defs_rlwimi(out: &mut Arguments, ins: Ins) {
     *out = [
         Argument::GPR(GPR(ins.field_ra() as _)),
+        Argument::None,
+        Argument::None,
+        Argument::None,
         Argument::None,
         Argument::None,
         Argument::None,
@@ -8178,11 +19296,17 @@ fn uses_rlwimi(out: &mut Arguments, ins: Ins) {
         Argument::OpaqueU(OpaqueU(ins.field_sh() as _)),
         Argument::None,
         Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
     ];
 }
 fn defs_rlwinm(out: &mut Arguments, ins: Ins) {
     *out = [
         Argument::GPR(GPR(ins.field_ra() as _)),
+        Argument::None,
+        Argument::None,
+        Argument::None,
         Argument::None,
         Argument::None,
         Argument::None,
@@ -8196,11 +19320,17 @@ fn uses_rlwinm(out: &mut Arguments, ins: Ins) {
         Argument::None,
         Argument::None,
         Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
     ];
 }
 fn defs_rlwnm(out: &mut Arguments, ins: Ins) {
     *out = [
         Argument::GPR(GPR(ins.field_ra() as _)),
+        Argument::None,
+        Argument::None,
+        Argument::None,
         Argument::None,
         Argument::None,
         Argument::None,
@@ -8214,11 +19344,17 @@ fn uses_rlwnm(out: &mut Arguments, ins: Ins) {
         Argument::None,
         Argument::None,
         Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
     ];
 }
 fn defs_ori(out: &mut Arguments, ins: Ins) {
     *out = [
         Argument::GPR(GPR(ins.field_ra() as _)),
+        Argument::None,
+        Argument::None,
+        Argument::None,
         Argument::None,
         Argument::None,
         Argument::None,
@@ -8232,11 +19368,17 @@ fn uses_ori(out: &mut Arguments, ins: Ins) {
         Argument::None,
         Argument::None,
         Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
     ];
 }
 fn defs_oris(out: &mut Arguments, ins: Ins) {
     *out = [
         Argument::GPR(GPR(ins.field_ra() as _)),
+        Argument::None,
+        Argument::None,
+        Argument::None,
         Argument::None,
         Argument::None,
         Argument::None,
@@ -8250,11 +19392,17 @@ fn uses_oris(out: &mut Arguments, ins: Ins) {
         Argument::None,
         Argument::None,
         Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
     ];
 }
 fn defs_xori(out: &mut Arguments, ins: Ins) {
     *out = [
         Argument::GPR(GPR(ins.field_ra() as _)),
+        Argument::None,
+        Argument::None,
+        Argument::None,
         Argument::None,
         Argument::None,
         Argument::None,
@@ -8268,11 +19416,17 @@ fn uses_xori(out: &mut Arguments, ins: Ins) {
         Argument::None,
         Argument::None,
         Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
     ];
 }
 fn defs_xoris(out: &mut Arguments, ins: Ins) {
     *out = [
         Argument::GPR(GPR(ins.field_ra() as _)),
+        Argument::None,
+        Argument::None,
+        Argument::None,
         Argument::None,
         Argument::None,
         Argument::None,
@@ -8286,11 +19440,17 @@ fn uses_xoris(out: &mut Arguments, ins: Ins) {
         Argument::None,
         Argument::None,
         Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
     ];
 }
 fn defs_andi_(out: &mut Arguments, ins: Ins) {
     *out = [
         Argument::GPR(GPR(ins.field_ra() as _)),
+        Argument::None,
+        Argument::None,
+        Argument::None,
         Argument::None,
         Argument::None,
         Argument::None,
@@ -8304,11 +19464,17 @@ fn uses_andi_(out: &mut Arguments, ins: Ins) {
         Argument::None,
         Argument::None,
         Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
     ];
 }
 fn defs_andis_(out: &mut Arguments, ins: Ins) {
     *out = [
         Argument::GPR(GPR(ins.field_ra() as _)),
+        Argument::None,
+        Argument::None,
+        Argument::None,
         Argument::None,
         Argument::None,
         Argument::None,
@@ -8322,11 +19488,161 @@ fn uses_andis_(out: &mut Arguments, ins: Ins) {
         Argument::None,
         Argument::None,
         Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+    ];
+}
+fn defs_rldcl(out: &mut Arguments, ins: Ins) {
+    *out = [
+        Argument::GPR(GPR(ins.field_ra() as _)),
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+    ];
+}
+fn uses_rldcl(out: &mut Arguments, ins: Ins) {
+    *out = [
+        Argument::GPR(GPR(ins.field_rs() as _)),
+        Argument::GPR(GPR(ins.field_rb() as _)),
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+    ];
+}
+fn defs_rldcr(out: &mut Arguments, ins: Ins) {
+    *out = [
+        Argument::GPR(GPR(ins.field_ra() as _)),
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+    ];
+}
+fn uses_rldcr(out: &mut Arguments, ins: Ins) {
+    *out = [
+        Argument::GPR(GPR(ins.field_rs() as _)),
+        Argument::GPR(GPR(ins.field_rb() as _)),
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+    ];
+}
+fn defs_rldic(out: &mut Arguments, ins: Ins) {
+    *out = [
+        Argument::GPR(GPR(ins.field_ra() as _)),
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+    ];
+}
+fn uses_rldic(out: &mut Arguments, ins: Ins) {
+    *out = [
+        Argument::GPR(GPR(ins.field_rs() as _)),
+        Argument::OpaqueU(OpaqueU(ins.field_sh1() as _)),
+        Argument::OpaqueU(OpaqueU(ins.field_sh2() as _)),
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+    ];
+}
+fn defs_rldicl(out: &mut Arguments, ins: Ins) {
+    *out = [
+        Argument::GPR(GPR(ins.field_ra() as _)),
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+    ];
+}
+fn uses_rldicl(out: &mut Arguments, ins: Ins) {
+    *out = [
+        Argument::GPR(GPR(ins.field_rs() as _)),
+        Argument::OpaqueU(OpaqueU(ins.field_sh1() as _)),
+        Argument::OpaqueU(OpaqueU(ins.field_sh2() as _)),
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+    ];
+}
+fn defs_rldicr(out: &mut Arguments, ins: Ins) {
+    *out = [
+        Argument::GPR(GPR(ins.field_ra() as _)),
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+    ];
+}
+fn uses_rldicr(out: &mut Arguments, ins: Ins) {
+    *out = [
+        Argument::GPR(GPR(ins.field_rs() as _)),
+        Argument::OpaqueU(OpaqueU(ins.field_sh1() as _)),
+        Argument::OpaqueU(OpaqueU(ins.field_sh2() as _)),
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+    ];
+}
+fn defs_rldimi(out: &mut Arguments, ins: Ins) {
+    *out = [
+        Argument::GPR(GPR(ins.field_ra() as _)),
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+    ];
+}
+fn uses_rldimi(out: &mut Arguments, ins: Ins) {
+    *out = [
+        Argument::GPR(GPR(ins.field_rs() as _)),
+        Argument::OpaqueU(OpaqueU(ins.field_sh1() as _)),
+        Argument::OpaqueU(OpaqueU(ins.field_sh2() as _)),
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
     ];
 }
 fn defs_add(out: &mut Arguments, ins: Ins) {
     *out = [
         Argument::GPR(GPR(ins.field_rd() as _)),
+        Argument::None,
+        Argument::None,
+        Argument::None,
         Argument::None,
         Argument::None,
         Argument::None,
@@ -8340,11 +19656,17 @@ fn uses_add(out: &mut Arguments, ins: Ins) {
         Argument::None,
         Argument::None,
         Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
     ];
 }
 fn defs_addc(out: &mut Arguments, ins: Ins) {
     *out = [
         Argument::GPR(GPR(ins.field_rd() as _)),
+        Argument::None,
+        Argument::None,
+        Argument::None,
         Argument::None,
         Argument::None,
         Argument::None,
@@ -8358,11 +19680,17 @@ fn uses_addc(out: &mut Arguments, ins: Ins) {
         Argument::None,
         Argument::None,
         Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
     ];
 }
 fn defs_adde(out: &mut Arguments, ins: Ins) {
     *out = [
         Argument::GPR(GPR(ins.field_rd() as _)),
+        Argument::None,
+        Argument::None,
+        Argument::None,
         Argument::None,
         Argument::None,
         Argument::None,
@@ -8376,11 +19704,17 @@ fn uses_adde(out: &mut Arguments, ins: Ins) {
         Argument::None,
         Argument::None,
         Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
     ];
 }
 fn defs_addme(out: &mut Arguments, ins: Ins) {
     *out = [
         Argument::GPR(GPR(ins.field_rd() as _)),
+        Argument::None,
+        Argument::None,
+        Argument::None,
         Argument::None,
         Argument::None,
         Argument::None,
@@ -8394,11 +19728,17 @@ fn uses_addme(out: &mut Arguments, ins: Ins) {
         Argument::None,
         Argument::None,
         Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
     ];
 }
 fn defs_addze(out: &mut Arguments, ins: Ins) {
     *out = [
         Argument::GPR(GPR(ins.field_rd() as _)),
+        Argument::None,
+        Argument::None,
+        Argument::None,
         Argument::None,
         Argument::None,
         Argument::None,
@@ -8412,11 +19752,17 @@ fn uses_addze(out: &mut Arguments, ins: Ins) {
         Argument::None,
         Argument::None,
         Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
     ];
 }
 fn defs_and(out: &mut Arguments, ins: Ins) {
     *out = [
         Argument::GPR(GPR(ins.field_ra() as _)),
+        Argument::None,
+        Argument::None,
+        Argument::None,
         Argument::None,
         Argument::None,
         Argument::None,
@@ -8430,11 +19776,17 @@ fn uses_and(out: &mut Arguments, ins: Ins) {
         Argument::None,
         Argument::None,
         Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
     ];
 }
 fn defs_andc(out: &mut Arguments, ins: Ins) {
     *out = [
         Argument::GPR(GPR(ins.field_ra() as _)),
+        Argument::None,
+        Argument::None,
+        Argument::None,
         Argument::None,
         Argument::None,
         Argument::None,
@@ -8448,11 +19800,17 @@ fn uses_andc(out: &mut Arguments, ins: Ins) {
         Argument::None,
         Argument::None,
         Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
     ];
 }
 fn defs_cmp(out: &mut Arguments, ins: Ins) {
     *out = [
         Argument::CRField(CRField(ins.field_crfd() as _)),
+        Argument::None,
+        Argument::None,
+        Argument::None,
         Argument::None,
         Argument::None,
         Argument::None,
@@ -8466,11 +19824,17 @@ fn uses_cmp(out: &mut Arguments, ins: Ins) {
         Argument::None,
         Argument::None,
         Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
     ];
 }
 fn defs_cmpl(out: &mut Arguments, ins: Ins) {
     *out = [
         Argument::CRField(CRField(ins.field_crfd() as _)),
+        Argument::None,
+        Argument::None,
+        Argument::None,
         Argument::None,
         Argument::None,
         Argument::None,
@@ -8484,6 +19848,33 @@ fn uses_cmpl(out: &mut Arguments, ins: Ins) {
         Argument::None,
         Argument::None,
         Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+    ];
+}
+fn defs_cntlzd(out: &mut Arguments, ins: Ins) {
+    *out = [
+        Argument::GPR(GPR(ins.field_ra() as _)),
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+    ];
+}
+fn uses_cntlzd(out: &mut Arguments, ins: Ins) {
+    *out = [
+        Argument::GPR(GPR(ins.field_rs() as _)),
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
     ];
 }
 fn defs_cntlzw(out: &mut Arguments, ins: Ins) {
@@ -8493,11 +19884,17 @@ fn defs_cntlzw(out: &mut Arguments, ins: Ins) {
         Argument::None,
         Argument::None,
         Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
     ];
 }
 fn uses_cntlzw(out: &mut Arguments, ins: Ins) {
     *out = [
         Argument::GPR(GPR(ins.field_rs() as _)),
+        Argument::None,
+        Argument::None,
+        Argument::None,
         Argument::None,
         Argument::None,
         Argument::None,
@@ -8515,6 +19912,9 @@ fn uses_dcbf(out: &mut Arguments, ins: Ins) {
         Argument::None,
         Argument::None,
         Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
     ];
 }
 fn uses_dcbi(out: &mut Arguments, ins: Ins) {
@@ -8525,6 +19925,9 @@ fn uses_dcbi(out: &mut Arguments, ins: Ins) {
             Argument::None
         },
         Argument::GPR(GPR(ins.field_rb() as _)),
+        Argument::None,
+        Argument::None,
+        Argument::None,
         Argument::None,
         Argument::None,
         Argument::None,
@@ -8541,6 +19944,9 @@ fn uses_dcbst(out: &mut Arguments, ins: Ins) {
         Argument::None,
         Argument::None,
         Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
     ];
 }
 fn uses_dcbt(out: &mut Arguments, ins: Ins) {
@@ -8551,6 +19957,9 @@ fn uses_dcbt(out: &mut Arguments, ins: Ins) {
             Argument::None
         },
         Argument::GPR(GPR(ins.field_rb() as _)),
+        Argument::None,
+        Argument::None,
+        Argument::None,
         Argument::None,
         Argument::None,
         Argument::None,
@@ -8567,6 +19976,9 @@ fn uses_dcbtst(out: &mut Arguments, ins: Ins) {
         Argument::None,
         Argument::None,
         Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
     ];
 }
 fn uses_dcbz(out: &mut Arguments, ins: Ins) {
@@ -8580,11 +19992,65 @@ fn uses_dcbz(out: &mut Arguments, ins: Ins) {
         Argument::None,
         Argument::None,
         Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+    ];
+}
+fn defs_divd(out: &mut Arguments, ins: Ins) {
+    *out = [
+        Argument::GPR(GPR(ins.field_rd() as _)),
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+    ];
+}
+fn uses_divd(out: &mut Arguments, ins: Ins) {
+    *out = [
+        Argument::GPR(GPR(ins.field_ra() as _)),
+        Argument::GPR(GPR(ins.field_rb() as _)),
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+    ];
+}
+fn defs_divdu(out: &mut Arguments, ins: Ins) {
+    *out = [
+        Argument::GPR(GPR(ins.field_rd() as _)),
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+    ];
+}
+fn uses_divdu(out: &mut Arguments, ins: Ins) {
+    *out = [
+        Argument::GPR(GPR(ins.field_ra() as _)),
+        Argument::GPR(GPR(ins.field_rb() as _)),
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
     ];
 }
 fn defs_divw(out: &mut Arguments, ins: Ins) {
     *out = [
         Argument::GPR(GPR(ins.field_rd() as _)),
+        Argument::None,
+        Argument::None,
+        Argument::None,
         Argument::None,
         Argument::None,
         Argument::None,
@@ -8598,11 +20064,17 @@ fn uses_divw(out: &mut Arguments, ins: Ins) {
         Argument::None,
         Argument::None,
         Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
     ];
 }
 fn defs_divwu(out: &mut Arguments, ins: Ins) {
     *out = [
         Argument::GPR(GPR(ins.field_rd() as _)),
+        Argument::None,
+        Argument::None,
+        Argument::None,
         Argument::None,
         Argument::None,
         Argument::None,
@@ -8616,11 +20088,17 @@ fn uses_divwu(out: &mut Arguments, ins: Ins) {
         Argument::None,
         Argument::None,
         Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
     ];
 }
 fn defs_eciwx(out: &mut Arguments, ins: Ins) {
     *out = [
         Argument::GPR(GPR(ins.field_rd() as _)),
+        Argument::None,
+        Argument::None,
+        Argument::None,
         Argument::None,
         Argument::None,
         Argument::None,
@@ -8638,6 +20116,9 @@ fn uses_eciwx(out: &mut Arguments, ins: Ins) {
         Argument::None,
         Argument::None,
         Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
     ];
 }
 fn uses_ecowx(out: &mut Arguments, ins: Ins) {
@@ -8651,11 +20132,17 @@ fn uses_ecowx(out: &mut Arguments, ins: Ins) {
         Argument::GPR(GPR(ins.field_rb() as _)),
         Argument::None,
         Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
     ];
 }
 fn defs_eqv(out: &mut Arguments, ins: Ins) {
     *out = [
         Argument::GPR(GPR(ins.field_ra() as _)),
+        Argument::None,
+        Argument::None,
+        Argument::None,
         Argument::None,
         Argument::None,
         Argument::None,
@@ -8669,11 +20156,17 @@ fn uses_eqv(out: &mut Arguments, ins: Ins) {
         Argument::None,
         Argument::None,
         Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
     ];
 }
 fn defs_extsb(out: &mut Arguments, ins: Ins) {
     *out = [
         Argument::GPR(GPR(ins.field_ra() as _)),
+        Argument::None,
+        Argument::None,
+        Argument::None,
         Argument::None,
         Argument::None,
         Argument::None,
@@ -8687,6 +20180,9 @@ fn uses_extsb(out: &mut Arguments, ins: Ins) {
         Argument::None,
         Argument::None,
         Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
     ];
 }
 fn defs_extsh(out: &mut Arguments, ins: Ins) {
@@ -8696,11 +20192,41 @@ fn defs_extsh(out: &mut Arguments, ins: Ins) {
         Argument::None,
         Argument::None,
         Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
     ];
 }
 fn uses_extsh(out: &mut Arguments, ins: Ins) {
     *out = [
         Argument::GPR(GPR(ins.field_rs() as _)),
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+    ];
+}
+fn defs_extsw(out: &mut Arguments, ins: Ins) {
+    *out = [
+        Argument::GPR(GPR(ins.field_ra() as _)),
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+    ];
+}
+fn uses_extsw(out: &mut Arguments, ins: Ins) {
+    *out = [
+        Argument::GPR(GPR(ins.field_rs() as _)),
+        Argument::None,
+        Argument::None,
+        Argument::None,
         Argument::None,
         Argument::None,
         Argument::None,
@@ -8718,12 +20244,18 @@ fn uses_icbi(out: &mut Arguments, ins: Ins) {
         Argument::None,
         Argument::None,
         Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
     ];
 }
 fn defs_lbzux(out: &mut Arguments, ins: Ins) {
     *out = [
         Argument::GPR(GPR(ins.field_rd() as _)),
         Argument::GPR(GPR(ins.field_ra() as _)),
+        Argument::None,
+        Argument::None,
+        Argument::None,
         Argument::None,
         Argument::None,
         Argument::None,
@@ -8736,11 +20268,17 @@ fn uses_lbzux(out: &mut Arguments, ins: Ins) {
         Argument::None,
         Argument::None,
         Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
     ];
 }
 fn defs_lbzx(out: &mut Arguments, ins: Ins) {
     *out = [
         Argument::GPR(GPR(ins.field_rd() as _)),
+        Argument::None,
+        Argument::None,
+        Argument::None,
         Argument::None,
         Argument::None,
         Argument::None,
@@ -8758,12 +20296,94 @@ fn uses_lbzx(out: &mut Arguments, ins: Ins) {
         Argument::None,
         Argument::None,
         Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+    ];
+}
+fn defs_ldarx(out: &mut Arguments, ins: Ins) {
+    *out = [
+        Argument::GPR(GPR(ins.field_rd() as _)),
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+    ];
+}
+fn uses_ldarx(out: &mut Arguments, ins: Ins) {
+    *out = [
+        Argument::GPR(GPR(ins.field_ra() as _)),
+        Argument::GPR(GPR(ins.field_rb() as _)),
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+    ];
+}
+fn defs_ldux(out: &mut Arguments, ins: Ins) {
+    *out = [
+        Argument::GPR(GPR(ins.field_rd() as _)),
+        Argument::GPR(GPR(ins.field_ra() as _)),
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+    ];
+}
+fn uses_ldux(out: &mut Arguments, ins: Ins) {
+    *out = [
+        Argument::GPR(GPR(ins.field_ra() as _)),
+        Argument::GPR(GPR(ins.field_rb() as _)),
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+    ];
+}
+fn defs_ldx(out: &mut Arguments, ins: Ins) {
+    *out = [
+        Argument::GPR(GPR(ins.field_rd() as _)),
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+    ];
+}
+fn uses_ldx(out: &mut Arguments, ins: Ins) {
+    *out = [
+        if ins.field_ra() != 0 {
+            Argument::GPR(GPR(ins.field_ra() as _))
+        } else {
+            Argument::None
+        },
+        Argument::GPR(GPR(ins.field_rb() as _)),
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
     ];
 }
 fn defs_lfdux(out: &mut Arguments, ins: Ins) {
     *out = [
         Argument::FPR(FPR(ins.field_frd() as _)),
         Argument::GPR(GPR(ins.field_ra() as _)),
+        Argument::None,
+        Argument::None,
+        Argument::None,
         Argument::None,
         Argument::None,
         Argument::None,
@@ -8776,11 +20396,17 @@ fn uses_lfdux(out: &mut Arguments, ins: Ins) {
         Argument::None,
         Argument::None,
         Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
     ];
 }
 fn defs_lfdx(out: &mut Arguments, ins: Ins) {
     *out = [
         Argument::FPR(FPR(ins.field_frd() as _)),
+        Argument::None,
+        Argument::None,
+        Argument::None,
         Argument::None,
         Argument::None,
         Argument::None,
@@ -8798,12 +20424,18 @@ fn uses_lfdx(out: &mut Arguments, ins: Ins) {
         Argument::None,
         Argument::None,
         Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
     ];
 }
 fn defs_lfsux(out: &mut Arguments, ins: Ins) {
     *out = [
         Argument::FPR(FPR(ins.field_frd() as _)),
         Argument::GPR(GPR(ins.field_ra() as _)),
+        Argument::None,
+        Argument::None,
+        Argument::None,
         Argument::None,
         Argument::None,
         Argument::None,
@@ -8816,11 +20448,17 @@ fn uses_lfsux(out: &mut Arguments, ins: Ins) {
         Argument::None,
         Argument::None,
         Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
     ];
 }
 fn defs_lfsx(out: &mut Arguments, ins: Ins) {
     *out = [
         Argument::FPR(FPR(ins.field_frd() as _)),
+        Argument::None,
+        Argument::None,
+        Argument::None,
         Argument::None,
         Argument::None,
         Argument::None,
@@ -8838,12 +20476,18 @@ fn uses_lfsx(out: &mut Arguments, ins: Ins) {
         Argument::None,
         Argument::None,
         Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
     ];
 }
 fn defs_lhaux(out: &mut Arguments, ins: Ins) {
     *out = [
         Argument::GPR(GPR(ins.field_rd() as _)),
         Argument::GPR(GPR(ins.field_ra() as _)),
+        Argument::None,
+        Argument::None,
+        Argument::None,
         Argument::None,
         Argument::None,
         Argument::None,
@@ -8856,11 +20500,17 @@ fn uses_lhaux(out: &mut Arguments, ins: Ins) {
         Argument::None,
         Argument::None,
         Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
     ];
 }
 fn defs_lhax(out: &mut Arguments, ins: Ins) {
     *out = [
         Argument::GPR(GPR(ins.field_rd() as _)),
+        Argument::None,
+        Argument::None,
+        Argument::None,
         Argument::None,
         Argument::None,
         Argument::None,
@@ -8878,11 +20528,17 @@ fn uses_lhax(out: &mut Arguments, ins: Ins) {
         Argument::None,
         Argument::None,
         Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
     ];
 }
 fn defs_lhbrx(out: &mut Arguments, ins: Ins) {
     *out = [
         Argument::GPR(GPR(ins.field_rd() as _)),
+        Argument::None,
+        Argument::None,
+        Argument::None,
         Argument::None,
         Argument::None,
         Argument::None,
@@ -8900,12 +20556,18 @@ fn uses_lhbrx(out: &mut Arguments, ins: Ins) {
         Argument::None,
         Argument::None,
         Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
     ];
 }
 fn defs_lhzux(out: &mut Arguments, ins: Ins) {
     *out = [
         Argument::GPR(GPR(ins.field_rd() as _)),
         Argument::GPR(GPR(ins.field_ra() as _)),
+        Argument::None,
+        Argument::None,
+        Argument::None,
         Argument::None,
         Argument::None,
         Argument::None,
@@ -8918,11 +20580,17 @@ fn uses_lhzux(out: &mut Arguments, ins: Ins) {
         Argument::None,
         Argument::None,
         Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
     ];
 }
 fn defs_lhzx(out: &mut Arguments, ins: Ins) {
     *out = [
         Argument::GPR(GPR(ins.field_rd() as _)),
+        Argument::None,
+        Argument::None,
+        Argument::None,
         Argument::None,
         Argument::None,
         Argument::None,
@@ -8940,11 +20608,17 @@ fn uses_lhzx(out: &mut Arguments, ins: Ins) {
         Argument::None,
         Argument::None,
         Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
     ];
 }
 fn defs_lswi(out: &mut Arguments, ins: Ins) {
     *out = [
         Argument::GPR(GPR(ins.field_rd() as _)),
+        Argument::None,
+        Argument::None,
+        Argument::None,
         Argument::None,
         Argument::None,
         Argument::None,
@@ -8962,11 +20636,17 @@ fn uses_lswi(out: &mut Arguments, ins: Ins) {
         Argument::None,
         Argument::None,
         Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
     ];
 }
 fn defs_lswx(out: &mut Arguments, ins: Ins) {
     *out = [
         Argument::GPR(GPR(ins.field_rd() as _)),
+        Argument::None,
+        Argument::None,
+        Argument::None,
         Argument::None,
         Argument::None,
         Argument::None,
@@ -8984,11 +20664,17 @@ fn uses_lswx(out: &mut Arguments, ins: Ins) {
         Argument::None,
         Argument::None,
         Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
     ];
 }
 fn defs_lwarx(out: &mut Arguments, ins: Ins) {
     *out = [
         Argument::GPR(GPR(ins.field_rd() as _)),
+        Argument::None,
+        Argument::None,
+        Argument::None,
         Argument::None,
         Argument::None,
         Argument::None,
@@ -9006,11 +20692,69 @@ fn uses_lwarx(out: &mut Arguments, ins: Ins) {
         Argument::None,
         Argument::None,
         Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+    ];
+}
+fn defs_lwaux(out: &mut Arguments, ins: Ins) {
+    *out = [
+        Argument::GPR(GPR(ins.field_rd() as _)),
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+    ];
+}
+fn uses_lwaux(out: &mut Arguments, ins: Ins) {
+    *out = [
+        Argument::GPR(GPR(ins.field_ra() as _)),
+        Argument::GPR(GPR(ins.field_rb() as _)),
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+    ];
+}
+fn defs_lwax(out: &mut Arguments, ins: Ins) {
+    *out = [
+        Argument::GPR(GPR(ins.field_rd() as _)),
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+    ];
+}
+fn uses_lwax(out: &mut Arguments, ins: Ins) {
+    *out = [
+        if ins.field_ra() != 0 {
+            Argument::GPR(GPR(ins.field_ra() as _))
+        } else {
+            Argument::None
+        },
+        Argument::GPR(GPR(ins.field_rb() as _)),
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
     ];
 }
 fn defs_lwbrx(out: &mut Arguments, ins: Ins) {
     *out = [
         Argument::GPR(GPR(ins.field_rd() as _)),
+        Argument::None,
+        Argument::None,
+        Argument::None,
         Argument::None,
         Argument::None,
         Argument::None,
@@ -9028,12 +20772,18 @@ fn uses_lwbrx(out: &mut Arguments, ins: Ins) {
         Argument::None,
         Argument::None,
         Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
     ];
 }
 fn defs_lwzux(out: &mut Arguments, ins: Ins) {
     *out = [
         Argument::GPR(GPR(ins.field_rd() as _)),
         Argument::GPR(GPR(ins.field_ra() as _)),
+        Argument::None,
+        Argument::None,
+        Argument::None,
         Argument::None,
         Argument::None,
         Argument::None,
@@ -9046,11 +20796,17 @@ fn uses_lwzux(out: &mut Arguments, ins: Ins) {
         Argument::None,
         Argument::None,
         Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
     ];
 }
 fn defs_lwzx(out: &mut Arguments, ins: Ins) {
     *out = [
         Argument::GPR(GPR(ins.field_rd() as _)),
+        Argument::None,
+        Argument::None,
+        Argument::None,
         Argument::None,
         Argument::None,
         Argument::None,
@@ -9068,11 +20824,17 @@ fn uses_lwzx(out: &mut Arguments, ins: Ins) {
         Argument::None,
         Argument::None,
         Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
     ];
 }
 fn defs_mcrxr(out: &mut Arguments, ins: Ins) {
     *out = [
         Argument::CRField(CRField(ins.field_crfd() as _)),
+        Argument::None,
+        Argument::None,
+        Argument::None,
         Argument::None,
         Argument::None,
         Argument::None,
@@ -9086,11 +20848,17 @@ fn defs_mfcr(out: &mut Arguments, ins: Ins) {
         Argument::None,
         Argument::None,
         Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
     ];
 }
 fn defs_mfmsr(out: &mut Arguments, ins: Ins) {
     *out = [
         Argument::GPR(GPR(ins.field_rd() as _)),
+        Argument::None,
+        Argument::None,
+        Argument::None,
         Argument::None,
         Argument::None,
         Argument::None,
@@ -9104,11 +20872,17 @@ fn defs_mfspr(out: &mut Arguments, ins: Ins) {
         Argument::None,
         Argument::None,
         Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
     ];
 }
 fn defs_mfsr(out: &mut Arguments, ins: Ins) {
     *out = [
         Argument::GPR(GPR(ins.field_rd() as _)),
+        Argument::None,
+        Argument::None,
+        Argument::None,
         Argument::None,
         Argument::None,
         Argument::None,
@@ -9122,11 +20896,17 @@ fn defs_mfsrin(out: &mut Arguments, ins: Ins) {
         Argument::None,
         Argument::None,
         Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
     ];
 }
 fn uses_mfsrin(out: &mut Arguments, ins: Ins) {
     *out = [
         Argument::GPR(GPR(ins.field_rb() as _)),
+        Argument::None,
+        Argument::None,
+        Argument::None,
         Argument::None,
         Argument::None,
         Argument::None,
@@ -9140,11 +20920,17 @@ fn defs_mftb(out: &mut Arguments, ins: Ins) {
         Argument::None,
         Argument::None,
         Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
     ];
 }
 fn uses_mtcrf(out: &mut Arguments, ins: Ins) {
     *out = [
         Argument::GPR(GPR(ins.field_rs() as _)),
+        Argument::None,
+        Argument::None,
+        Argument::None,
         Argument::None,
         Argument::None,
         Argument::None,
@@ -9158,11 +20944,29 @@ fn uses_mtmsr(out: &mut Arguments, ins: Ins) {
         Argument::None,
         Argument::None,
         Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+    ];
+}
+fn uses_mtmsrd(out: &mut Arguments, ins: Ins) {
+    *out = [
+        Argument::GPR(GPR(ins.field_rs() as _)),
+        Argument::OpaqueU(OpaqueU(ins.field_mtmsrd_l() as _)),
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
     ];
 }
 fn uses_mtspr(out: &mut Arguments, ins: Ins) {
     *out = [
         Argument::GPR(GPR(ins.field_rs() as _)),
+        Argument::None,
+        Argument::None,
+        Argument::None,
         Argument::None,
         Argument::None,
         Argument::None,
@@ -9176,6 +20980,33 @@ fn uses_mtsr(out: &mut Arguments, ins: Ins) {
         Argument::None,
         Argument::None,
         Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+    ];
+}
+fn uses_mtsrd(out: &mut Arguments, ins: Ins) {
+    *out = [
+        Argument::GPR(GPR(ins.field_rs() as _)),
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+    ];
+}
+fn uses_mtsrdin(out: &mut Arguments, ins: Ins) {
+    *out = [
+        Argument::GPR(GPR(ins.field_rs() as _)),
+        Argument::GPR(GPR(ins.field_rb() as _)),
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
     ];
 }
 fn uses_mtsrin(out: &mut Arguments, ins: Ins) {
@@ -9185,11 +21016,65 @@ fn uses_mtsrin(out: &mut Arguments, ins: Ins) {
         Argument::None,
         Argument::None,
         Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+    ];
+}
+fn defs_mulhd(out: &mut Arguments, ins: Ins) {
+    *out = [
+        Argument::GPR(GPR(ins.field_rd() as _)),
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+    ];
+}
+fn uses_mulhd(out: &mut Arguments, ins: Ins) {
+    *out = [
+        Argument::GPR(GPR(ins.field_ra() as _)),
+        Argument::GPR(GPR(ins.field_rb() as _)),
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+    ];
+}
+fn defs_mulhdu(out: &mut Arguments, ins: Ins) {
+    *out = [
+        Argument::GPR(GPR(ins.field_rd() as _)),
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+    ];
+}
+fn uses_mulhdu(out: &mut Arguments, ins: Ins) {
+    *out = [
+        Argument::GPR(GPR(ins.field_ra() as _)),
+        Argument::GPR(GPR(ins.field_rb() as _)),
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
     ];
 }
 fn defs_mulhw(out: &mut Arguments, ins: Ins) {
     *out = [
         Argument::GPR(GPR(ins.field_rd() as _)),
+        Argument::None,
+        Argument::None,
+        Argument::None,
         Argument::None,
         Argument::None,
         Argument::None,
@@ -9203,11 +21088,17 @@ fn uses_mulhw(out: &mut Arguments, ins: Ins) {
         Argument::None,
         Argument::None,
         Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
     ];
 }
 fn defs_mulhwu(out: &mut Arguments, ins: Ins) {
     *out = [
         Argument::GPR(GPR(ins.field_rd() as _)),
+        Argument::None,
+        Argument::None,
+        Argument::None,
         Argument::None,
         Argument::None,
         Argument::None,
@@ -9221,11 +21112,41 @@ fn uses_mulhwu(out: &mut Arguments, ins: Ins) {
         Argument::None,
         Argument::None,
         Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+    ];
+}
+fn defs_mulld(out: &mut Arguments, ins: Ins) {
+    *out = [
+        Argument::GPR(GPR(ins.field_rd() as _)),
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+    ];
+}
+fn uses_mulld(out: &mut Arguments, ins: Ins) {
+    *out = [
+        Argument::GPR(GPR(ins.field_ra() as _)),
+        Argument::GPR(GPR(ins.field_rb() as _)),
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
     ];
 }
 fn defs_mullw(out: &mut Arguments, ins: Ins) {
     *out = [
         Argument::GPR(GPR(ins.field_rd() as _)),
+        Argument::None,
+        Argument::None,
+        Argument::None,
         Argument::None,
         Argument::None,
         Argument::None,
@@ -9239,11 +21160,17 @@ fn uses_mullw(out: &mut Arguments, ins: Ins) {
         Argument::None,
         Argument::None,
         Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
     ];
 }
 fn defs_nand(out: &mut Arguments, ins: Ins) {
     *out = [
         Argument::GPR(GPR(ins.field_ra() as _)),
+        Argument::None,
+        Argument::None,
+        Argument::None,
         Argument::None,
         Argument::None,
         Argument::None,
@@ -9257,11 +21184,17 @@ fn uses_nand(out: &mut Arguments, ins: Ins) {
         Argument::None,
         Argument::None,
         Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
     ];
 }
 fn defs_neg(out: &mut Arguments, ins: Ins) {
     *out = [
         Argument::GPR(GPR(ins.field_rd() as _)),
+        Argument::None,
+        Argument::None,
+        Argument::None,
         Argument::None,
         Argument::None,
         Argument::None,
@@ -9275,11 +21208,17 @@ fn uses_neg(out: &mut Arguments, ins: Ins) {
         Argument::None,
         Argument::None,
         Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
     ];
 }
 fn defs_nor(out: &mut Arguments, ins: Ins) {
     *out = [
         Argument::GPR(GPR(ins.field_ra() as _)),
+        Argument::None,
+        Argument::None,
+        Argument::None,
         Argument::None,
         Argument::None,
         Argument::None,
@@ -9293,11 +21232,17 @@ fn uses_nor(out: &mut Arguments, ins: Ins) {
         Argument::None,
         Argument::None,
         Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
     ];
 }
 fn defs_or(out: &mut Arguments, ins: Ins) {
     *out = [
         Argument::GPR(GPR(ins.field_ra() as _)),
+        Argument::None,
+        Argument::None,
+        Argument::None,
         Argument::None,
         Argument::None,
         Argument::None,
@@ -9311,11 +21256,17 @@ fn uses_or(out: &mut Arguments, ins: Ins) {
         Argument::None,
         Argument::None,
         Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
     ];
 }
 fn defs_orc(out: &mut Arguments, ins: Ins) {
     *out = [
         Argument::GPR(GPR(ins.field_ra() as _)),
+        Argument::None,
+        Argument::None,
+        Argument::None,
         Argument::None,
         Argument::None,
         Argument::None,
@@ -9329,11 +21280,53 @@ fn uses_orc(out: &mut Arguments, ins: Ins) {
         Argument::None,
         Argument::None,
         Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+    ];
+}
+fn uses_slbie(out: &mut Arguments, ins: Ins) {
+    *out = [
+        Argument::GPR(GPR(ins.field_rb() as _)),
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+    ];
+}
+fn defs_sld(out: &mut Arguments, ins: Ins) {
+    *out = [
+        Argument::GPR(GPR(ins.field_ra() as _)),
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+    ];
+}
+fn uses_sld(out: &mut Arguments, ins: Ins) {
+    *out = [
+        Argument::GPR(GPR(ins.field_rs() as _)),
+        Argument::GPR(GPR(ins.field_rb() as _)),
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
     ];
 }
 fn defs_slw(out: &mut Arguments, ins: Ins) {
     *out = [
         Argument::GPR(GPR(ins.field_ra() as _)),
+        Argument::None,
+        Argument::None,
+        Argument::None,
         Argument::None,
         Argument::None,
         Argument::None,
@@ -9347,11 +21340,65 @@ fn uses_slw(out: &mut Arguments, ins: Ins) {
         Argument::None,
         Argument::None,
         Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+    ];
+}
+fn defs_srad(out: &mut Arguments, ins: Ins) {
+    *out = [
+        Argument::GPR(GPR(ins.field_ra() as _)),
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+    ];
+}
+fn uses_srad(out: &mut Arguments, ins: Ins) {
+    *out = [
+        Argument::GPR(GPR(ins.field_rs() as _)),
+        Argument::GPR(GPR(ins.field_rb() as _)),
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+    ];
+}
+fn defs_sradi(out: &mut Arguments, ins: Ins) {
+    *out = [
+        Argument::GPR(GPR(ins.field_ra() as _)),
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+    ];
+}
+fn uses_sradi(out: &mut Arguments, ins: Ins) {
+    *out = [
+        Argument::GPR(GPR(ins.field_rs() as _)),
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
     ];
 }
 fn defs_sraw(out: &mut Arguments, ins: Ins) {
     *out = [
         Argument::GPR(GPR(ins.field_ra() as _)),
+        Argument::None,
+        Argument::None,
+        Argument::None,
         Argument::None,
         Argument::None,
         Argument::None,
@@ -9365,11 +21412,17 @@ fn uses_sraw(out: &mut Arguments, ins: Ins) {
         Argument::None,
         Argument::None,
         Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
     ];
 }
 fn defs_srawi(out: &mut Arguments, ins: Ins) {
     *out = [
         Argument::GPR(GPR(ins.field_ra() as _)),
+        Argument::None,
+        Argument::None,
+        Argument::None,
         Argument::None,
         Argument::None,
         Argument::None,
@@ -9383,11 +21436,41 @@ fn uses_srawi(out: &mut Arguments, ins: Ins) {
         Argument::None,
         Argument::None,
         Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+    ];
+}
+fn defs_srd(out: &mut Arguments, ins: Ins) {
+    *out = [
+        Argument::GPR(GPR(ins.field_ra() as _)),
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+    ];
+}
+fn uses_srd(out: &mut Arguments, ins: Ins) {
+    *out = [
+        Argument::GPR(GPR(ins.field_ra() as _)),
+        Argument::GPR(GPR(ins.field_rb() as _)),
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
     ];
 }
 fn defs_srw(out: &mut Arguments, ins: Ins) {
     *out = [
         Argument::GPR(GPR(ins.field_ra() as _)),
+        Argument::None,
+        Argument::None,
+        Argument::None,
         Argument::None,
         Argument::None,
         Argument::None,
@@ -9401,11 +21484,17 @@ fn uses_srw(out: &mut Arguments, ins: Ins) {
         Argument::None,
         Argument::None,
         Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
     ];
 }
 fn defs_stbux(out: &mut Arguments, ins: Ins) {
     *out = [
         Argument::GPR(GPR(ins.field_ra() as _)),
+        Argument::None,
+        Argument::None,
+        Argument::None,
         Argument::None,
         Argument::None,
         Argument::None,
@@ -9417,6 +21506,9 @@ fn uses_stbux(out: &mut Arguments, ins: Ins) {
         Argument::GPR(GPR(ins.field_rs() as _)),
         Argument::GPR(GPR(ins.field_ra() as _)),
         Argument::GPR(GPR(ins.field_rb() as _)),
+        Argument::None,
+        Argument::None,
+        Argument::None,
         Argument::None,
         Argument::None,
     ];
@@ -9432,11 +21524,85 @@ fn uses_stbx(out: &mut Arguments, ins: Ins) {
         Argument::GPR(GPR(ins.field_rb() as _)),
         Argument::None,
         Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+    ];
+}
+fn uses_stdcx_(out: &mut Arguments, ins: Ins) {
+    *out = [
+        Argument::GPR(GPR(ins.field_rs() as _)),
+        if ins.field_ra() != 0 {
+            Argument::GPR(GPR(ins.field_ra() as _))
+        } else {
+            Argument::None
+        },
+        Argument::GPR(GPR(ins.field_rb() as _)),
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+    ];
+}
+fn defs_stdux(out: &mut Arguments, ins: Ins) {
+    *out = [
+        Argument::GPR(GPR(ins.field_ra() as _)),
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+    ];
+}
+fn uses_stdux(out: &mut Arguments, ins: Ins) {
+    *out = [
+        Argument::GPR(GPR(ins.field_rs() as _)),
+        Argument::GPR(GPR(ins.field_ra() as _)),
+        Argument::GPR(GPR(ins.field_rb() as _)),
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+    ];
+}
+fn defs_stdx(out: &mut Arguments, ins: Ins) {
+    *out = [
+        Argument::GPR(GPR(ins.field_ra() as _)),
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+    ];
+}
+fn uses_stdx(out: &mut Arguments, ins: Ins) {
+    *out = [
+        Argument::GPR(GPR(ins.field_rs() as _)),
+        if ins.field_ra() != 0 {
+            Argument::GPR(GPR(ins.field_ra() as _))
+        } else {
+            Argument::None
+        },
+        Argument::GPR(GPR(ins.field_rb() as _)),
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
     ];
 }
 fn defs_stfdux(out: &mut Arguments, ins: Ins) {
     *out = [
         Argument::GPR(GPR(ins.field_ra() as _)),
+        Argument::None,
+        Argument::None,
+        Argument::None,
         Argument::None,
         Argument::None,
         Argument::None,
@@ -9448,6 +21614,9 @@ fn uses_stfdux(out: &mut Arguments, ins: Ins) {
         Argument::FPR(FPR(ins.field_frs() as _)),
         Argument::GPR(GPR(ins.field_ra() as _)),
         Argument::GPR(GPR(ins.field_rb() as _)),
+        Argument::None,
+        Argument::None,
+        Argument::None,
         Argument::None,
         Argument::None,
     ];
@@ -9463,6 +21632,9 @@ fn uses_stfdx(out: &mut Arguments, ins: Ins) {
         Argument::GPR(GPR(ins.field_rb() as _)),
         Argument::None,
         Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
     ];
 }
 fn uses_stfiwx(out: &mut Arguments, ins: Ins) {
@@ -9476,11 +21648,17 @@ fn uses_stfiwx(out: &mut Arguments, ins: Ins) {
         Argument::GPR(GPR(ins.field_rb() as _)),
         Argument::None,
         Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
     ];
 }
 fn defs_stfsux(out: &mut Arguments, ins: Ins) {
     *out = [
         Argument::GPR(GPR(ins.field_ra() as _)),
+        Argument::None,
+        Argument::None,
+        Argument::None,
         Argument::None,
         Argument::None,
         Argument::None,
@@ -9492,6 +21670,9 @@ fn uses_stfsux(out: &mut Arguments, ins: Ins) {
         Argument::FPR(FPR(ins.field_frs() as _)),
         Argument::GPR(GPR(ins.field_ra() as _)),
         Argument::GPR(GPR(ins.field_rb() as _)),
+        Argument::None,
+        Argument::None,
+        Argument::None,
         Argument::None,
         Argument::None,
     ];
@@ -9507,6 +21688,9 @@ fn uses_stfsx(out: &mut Arguments, ins: Ins) {
         Argument::GPR(GPR(ins.field_rb() as _)),
         Argument::None,
         Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
     ];
 }
 fn uses_sthbrx(out: &mut Arguments, ins: Ins) {
@@ -9520,11 +21704,17 @@ fn uses_sthbrx(out: &mut Arguments, ins: Ins) {
         Argument::GPR(GPR(ins.field_rb() as _)),
         Argument::None,
         Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
     ];
 }
 fn defs_sthux(out: &mut Arguments, ins: Ins) {
     *out = [
         Argument::GPR(GPR(ins.field_ra() as _)),
+        Argument::None,
+        Argument::None,
+        Argument::None,
         Argument::None,
         Argument::None,
         Argument::None,
@@ -9536,6 +21726,9 @@ fn uses_sthux(out: &mut Arguments, ins: Ins) {
         Argument::GPR(GPR(ins.field_rs() as _)),
         Argument::GPR(GPR(ins.field_ra() as _)),
         Argument::GPR(GPR(ins.field_rb() as _)),
+        Argument::None,
+        Argument::None,
+        Argument::None,
         Argument::None,
         Argument::None,
     ];
@@ -9551,6 +21744,9 @@ fn uses_sthx(out: &mut Arguments, ins: Ins) {
         Argument::GPR(GPR(ins.field_rb() as _)),
         Argument::None,
         Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
     ];
 }
 fn uses_stswi(out: &mut Arguments, ins: Ins) {
@@ -9561,6 +21757,9 @@ fn uses_stswi(out: &mut Arguments, ins: Ins) {
         } else {
             Argument::None
         },
+        Argument::None,
+        Argument::None,
+        Argument::None,
         Argument::None,
         Argument::None,
         Argument::None,
@@ -9577,6 +21776,9 @@ fn uses_stswx(out: &mut Arguments, ins: Ins) {
         Argument::GPR(GPR(ins.field_rb() as _)),
         Argument::None,
         Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
     ];
 }
 fn uses_stwbrx(out: &mut Arguments, ins: Ins) {
@@ -9588,6 +21790,9 @@ fn uses_stwbrx(out: &mut Arguments, ins: Ins) {
             Argument::None
         },
         Argument::GPR(GPR(ins.field_rb() as _)),
+        Argument::None,
+        Argument::None,
+        Argument::None,
         Argument::None,
         Argument::None,
     ];
@@ -9603,11 +21808,17 @@ fn uses_stwcx_(out: &mut Arguments, ins: Ins) {
         Argument::GPR(GPR(ins.field_rb() as _)),
         Argument::None,
         Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
     ];
 }
 fn defs_stwux(out: &mut Arguments, ins: Ins) {
     *out = [
         Argument::GPR(GPR(ins.field_ra() as _)),
+        Argument::None,
+        Argument::None,
+        Argument::None,
         Argument::None,
         Argument::None,
         Argument::None,
@@ -9619,6 +21830,9 @@ fn uses_stwux(out: &mut Arguments, ins: Ins) {
         Argument::GPR(GPR(ins.field_rs() as _)),
         Argument::GPR(GPR(ins.field_ra() as _)),
         Argument::GPR(GPR(ins.field_rb() as _)),
+        Argument::None,
+        Argument::None,
+        Argument::None,
         Argument::None,
         Argument::None,
     ];
@@ -9634,11 +21848,17 @@ fn uses_stwx(out: &mut Arguments, ins: Ins) {
         Argument::GPR(GPR(ins.field_rb() as _)),
         Argument::None,
         Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
     ];
 }
 fn defs_subf(out: &mut Arguments, ins: Ins) {
     *out = [
         Argument::GPR(GPR(ins.field_rd() as _)),
+        Argument::None,
+        Argument::None,
+        Argument::None,
         Argument::None,
         Argument::None,
         Argument::None,
@@ -9652,11 +21872,17 @@ fn uses_subf(out: &mut Arguments, ins: Ins) {
         Argument::None,
         Argument::None,
         Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
     ];
 }
 fn defs_subfc(out: &mut Arguments, ins: Ins) {
     *out = [
         Argument::GPR(GPR(ins.field_rd() as _)),
+        Argument::None,
+        Argument::None,
+        Argument::None,
         Argument::None,
         Argument::None,
         Argument::None,
@@ -9670,11 +21896,17 @@ fn uses_subfc(out: &mut Arguments, ins: Ins) {
         Argument::None,
         Argument::None,
         Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
     ];
 }
 fn defs_subfe(out: &mut Arguments, ins: Ins) {
     *out = [
         Argument::GPR(GPR(ins.field_rd() as _)),
+        Argument::None,
+        Argument::None,
+        Argument::None,
         Argument::None,
         Argument::None,
         Argument::None,
@@ -9688,11 +21920,17 @@ fn uses_subfe(out: &mut Arguments, ins: Ins) {
         Argument::None,
         Argument::None,
         Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
     ];
 }
 fn defs_subfme(out: &mut Arguments, ins: Ins) {
     *out = [
         Argument::GPR(GPR(ins.field_rd() as _)),
+        Argument::None,
+        Argument::None,
+        Argument::None,
         Argument::None,
         Argument::None,
         Argument::None,
@@ -9706,11 +21944,17 @@ fn uses_subfme(out: &mut Arguments, ins: Ins) {
         Argument::None,
         Argument::None,
         Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
     ];
 }
 fn defs_subfze(out: &mut Arguments, ins: Ins) {
     *out = [
         Argument::GPR(GPR(ins.field_rd() as _)),
+        Argument::None,
+        Argument::None,
+        Argument::None,
         Argument::None,
         Argument::None,
         Argument::None,
@@ -9724,11 +21968,41 @@ fn uses_subfze(out: &mut Arguments, ins: Ins) {
         Argument::None,
         Argument::None,
         Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+    ];
+}
+fn uses_sync(out: &mut Arguments, ins: Ins) {
+    *out = [
+        Argument::OpaqueU(OpaqueU(ins.field_sync_l() as _)),
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+    ];
+}
+fn uses_td(out: &mut Arguments, ins: Ins) {
+    *out = [
+        Argument::GPR(GPR(ins.field_ra() as _)),
+        Argument::GPR(GPR(ins.field_rb() as _)),
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
     ];
 }
 fn uses_tlbie(out: &mut Arguments, ins: Ins) {
     *out = [
         Argument::GPR(GPR(ins.field_rb() as _)),
+        Argument::None,
+        Argument::None,
+        Argument::None,
         Argument::None,
         Argument::None,
         Argument::None,
@@ -9742,11 +22016,17 @@ fn uses_tw(out: &mut Arguments, ins: Ins) {
         Argument::None,
         Argument::None,
         Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
     ];
 }
 fn defs_xor(out: &mut Arguments, ins: Ins) {
     *out = [
         Argument::GPR(GPR(ins.field_ra() as _)),
+        Argument::None,
+        Argument::None,
+        Argument::None,
         Argument::None,
         Argument::None,
         Argument::None,
@@ -9760,11 +22040,329 @@ fn uses_xor(out: &mut Arguments, ins: Ins) {
         Argument::None,
         Argument::None,
         Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+    ];
+}
+fn uses_dss(out: &mut Arguments, ins: Ins) {
+    *out = [
+        Argument::OpaqueU(OpaqueU(ins.field_strm() as _)),
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+    ];
+}
+fn uses_dst(out: &mut Arguments, ins: Ins) {
+    *out = [
+        Argument::GPR(GPR(ins.field_ra() as _)),
+        Argument::GPR(GPR(ins.field_rb() as _)),
+        Argument::OpaqueU(OpaqueU(ins.field_strm() as _)),
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+    ];
+}
+fn uses_dstst(out: &mut Arguments, ins: Ins) {
+    *out = [
+        Argument::GPR(GPR(ins.field_ra() as _)),
+        Argument::GPR(GPR(ins.field_rb() as _)),
+        Argument::OpaqueU(OpaqueU(ins.field_strm() as _)),
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+    ];
+}
+fn defs_lvebx(out: &mut Arguments, ins: Ins) {
+    *out = [
+        Argument::GPR(GPR(ins.field_vd() as _)),
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+    ];
+}
+fn uses_lvebx(out: &mut Arguments, ins: Ins) {
+    *out = [
+        if ins.field_ra() != 0 {
+            Argument::GPR(GPR(ins.field_ra() as _))
+        } else {
+            Argument::None
+        },
+        Argument::GPR(GPR(ins.field_rb() as _)),
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+    ];
+}
+fn defs_lvehx(out: &mut Arguments, ins: Ins) {
+    *out = [
+        Argument::GPR(GPR(ins.field_vd() as _)),
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+    ];
+}
+fn uses_lvehx(out: &mut Arguments, ins: Ins) {
+    *out = [
+        if ins.field_ra() != 0 {
+            Argument::GPR(GPR(ins.field_ra() as _))
+        } else {
+            Argument::None
+        },
+        Argument::GPR(GPR(ins.field_rb() as _)),
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+    ];
+}
+fn defs_lvewx(out: &mut Arguments, ins: Ins) {
+    *out = [
+        Argument::GPR(GPR(ins.field_vd() as _)),
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+    ];
+}
+fn uses_lvewx(out: &mut Arguments, ins: Ins) {
+    *out = [
+        if ins.field_ra() != 0 {
+            Argument::GPR(GPR(ins.field_ra() as _))
+        } else {
+            Argument::None
+        },
+        Argument::GPR(GPR(ins.field_rb() as _)),
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+    ];
+}
+fn defs_lvsl(out: &mut Arguments, ins: Ins) {
+    *out = [
+        Argument::GPR(GPR(ins.field_vd() as _)),
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+    ];
+}
+fn uses_lvsl(out: &mut Arguments, ins: Ins) {
+    *out = [
+        if ins.field_ra() != 0 {
+            Argument::GPR(GPR(ins.field_ra() as _))
+        } else {
+            Argument::None
+        },
+        Argument::GPR(GPR(ins.field_rb() as _)),
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+    ];
+}
+fn defs_lvsr(out: &mut Arguments, ins: Ins) {
+    *out = [
+        Argument::GPR(GPR(ins.field_vd() as _)),
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+    ];
+}
+fn uses_lvsr(out: &mut Arguments, ins: Ins) {
+    *out = [
+        if ins.field_ra() != 0 {
+            Argument::GPR(GPR(ins.field_ra() as _))
+        } else {
+            Argument::None
+        },
+        Argument::GPR(GPR(ins.field_rb() as _)),
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+    ];
+}
+fn defs_lvx(out: &mut Arguments, ins: Ins) {
+    *out = [
+        Argument::GPR(GPR(ins.field_vd() as _)),
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+    ];
+}
+fn uses_lvx(out: &mut Arguments, ins: Ins) {
+    *out = [
+        if ins.field_ra() != 0 {
+            Argument::GPR(GPR(ins.field_ra() as _))
+        } else {
+            Argument::None
+        },
+        Argument::GPR(GPR(ins.field_rb() as _)),
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+    ];
+}
+fn defs_lvxl(out: &mut Arguments, ins: Ins) {
+    *out = [
+        Argument::GPR(GPR(ins.field_vd() as _)),
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+    ];
+}
+fn uses_lvxl(out: &mut Arguments, ins: Ins) {
+    *out = [
+        if ins.field_ra() != 0 {
+            Argument::GPR(GPR(ins.field_ra() as _))
+        } else {
+            Argument::None
+        },
+        Argument::GPR(GPR(ins.field_rb() as _)),
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+    ];
+}
+fn uses_stvebx(out: &mut Arguments, ins: Ins) {
+    *out = [
+        if ins.field_ra() != 0 {
+            Argument::GPR(GPR(ins.field_ra() as _))
+        } else {
+            Argument::None
+        },
+        Argument::GPR(GPR(ins.field_rb() as _)),
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+    ];
+}
+fn uses_stvehx(out: &mut Arguments, ins: Ins) {
+    *out = [
+        if ins.field_ra() != 0 {
+            Argument::GPR(GPR(ins.field_ra() as _))
+        } else {
+            Argument::None
+        },
+        Argument::GPR(GPR(ins.field_rb() as _)),
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+    ];
+}
+fn uses_stvewx(out: &mut Arguments, ins: Ins) {
+    *out = [
+        if ins.field_ra() != 0 {
+            Argument::GPR(GPR(ins.field_ra() as _))
+        } else {
+            Argument::None
+        },
+        Argument::GPR(GPR(ins.field_rb() as _)),
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+    ];
+}
+fn uses_stvx(out: &mut Arguments, ins: Ins) {
+    *out = [
+        if ins.field_ra() != 0 {
+            Argument::GPR(GPR(ins.field_ra() as _))
+        } else {
+            Argument::None
+        },
+        Argument::GPR(GPR(ins.field_rb() as _)),
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+    ];
+}
+fn uses_stvxl(out: &mut Arguments, ins: Ins) {
+    *out = [
+        if ins.field_ra() != 0 {
+            Argument::GPR(GPR(ins.field_ra() as _))
+        } else {
+            Argument::None
+        },
+        Argument::GPR(GPR(ins.field_rb() as _)),
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
     ];
 }
 fn defs_lwz(out: &mut Arguments, ins: Ins) {
     *out = [
         Argument::GPR(GPR(ins.field_rd() as _)),
+        Argument::None,
+        Argument::None,
+        Argument::None,
         Argument::None,
         Argument::None,
         Argument::None,
@@ -9782,12 +22380,18 @@ fn uses_lwz(out: &mut Arguments, ins: Ins) {
         Argument::None,
         Argument::None,
         Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
     ];
 }
 fn defs_lwzu(out: &mut Arguments, ins: Ins) {
     *out = [
         Argument::GPR(GPR(ins.field_rd() as _)),
         Argument::GPR(GPR(ins.field_ra() as _)),
+        Argument::None,
+        Argument::None,
+        Argument::None,
         Argument::None,
         Argument::None,
         Argument::None,
@@ -9800,11 +22404,17 @@ fn uses_lwzu(out: &mut Arguments, ins: Ins) {
         Argument::None,
         Argument::None,
         Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
     ];
 }
 fn defs_lbz(out: &mut Arguments, ins: Ins) {
     *out = [
         Argument::GPR(GPR(ins.field_rd() as _)),
+        Argument::None,
+        Argument::None,
+        Argument::None,
         Argument::None,
         Argument::None,
         Argument::None,
@@ -9822,6 +22432,9 @@ fn uses_lbz(out: &mut Arguments, ins: Ins) {
         Argument::None,
         Argument::None,
         Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
     ];
 }
 fn defs_lbzu(out: &mut Arguments, ins: Ins) {
@@ -9831,12 +22444,18 @@ fn defs_lbzu(out: &mut Arguments, ins: Ins) {
         Argument::None,
         Argument::None,
         Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
     ];
 }
 fn uses_lbzu(out: &mut Arguments, ins: Ins) {
     *out = [
         Argument::Offset(Offset(ins.field_offset() as _)),
         Argument::GPR(GPR(ins.field_ra() as _)),
+        Argument::None,
+        Argument::None,
+        Argument::None,
         Argument::None,
         Argument::None,
         Argument::None,
@@ -9853,11 +22472,17 @@ fn uses_stw(out: &mut Arguments, ins: Ins) {
         Argument::None,
         Argument::None,
         Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
     ];
 }
 fn defs_stwu(out: &mut Arguments, ins: Ins) {
     *out = [
         Argument::GPR(GPR(ins.field_ra() as _)),
+        Argument::None,
+        Argument::None,
+        Argument::None,
         Argument::None,
         Argument::None,
         Argument::None,
@@ -9868,6 +22493,9 @@ fn uses_stwu(out: &mut Arguments, ins: Ins) {
     *out = [
         Argument::GPR(GPR(ins.field_rs() as _)),
         Argument::GPR(GPR(ins.field_ra() as _)),
+        Argument::None,
+        Argument::None,
+        Argument::None,
         Argument::None,
         Argument::None,
         Argument::None,
@@ -9884,11 +22512,17 @@ fn uses_stb(out: &mut Arguments, ins: Ins) {
         Argument::None,
         Argument::None,
         Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
     ];
 }
 fn defs_stbu(out: &mut Arguments, ins: Ins) {
     *out = [
         Argument::GPR(GPR(ins.field_ra() as _)),
+        Argument::None,
+        Argument::None,
+        Argument::None,
         Argument::None,
         Argument::None,
         Argument::None,
@@ -9902,11 +22536,17 @@ fn uses_stbu(out: &mut Arguments, ins: Ins) {
         Argument::None,
         Argument::None,
         Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
     ];
 }
 fn defs_lhz(out: &mut Arguments, ins: Ins) {
     *out = [
         Argument::GPR(GPR(ins.field_rd() as _)),
+        Argument::None,
+        Argument::None,
+        Argument::None,
         Argument::None,
         Argument::None,
         Argument::None,
@@ -9924,12 +22564,18 @@ fn uses_lhz(out: &mut Arguments, ins: Ins) {
         Argument::None,
         Argument::None,
         Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
     ];
 }
 fn defs_lhzu(out: &mut Arguments, ins: Ins) {
     *out = [
         Argument::GPR(GPR(ins.field_rd() as _)),
         Argument::GPR(GPR(ins.field_ra() as _)),
+        Argument::None,
+        Argument::None,
+        Argument::None,
         Argument::None,
         Argument::None,
         Argument::None,
@@ -9942,11 +22588,17 @@ fn uses_lhzu(out: &mut Arguments, ins: Ins) {
         Argument::None,
         Argument::None,
         Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
     ];
 }
 fn defs_lha(out: &mut Arguments, ins: Ins) {
     *out = [
         Argument::GPR(GPR(ins.field_rd() as _)),
+        Argument::None,
+        Argument::None,
+        Argument::None,
         Argument::None,
         Argument::None,
         Argument::None,
@@ -9964,6 +22616,9 @@ fn uses_lha(out: &mut Arguments, ins: Ins) {
         Argument::None,
         Argument::None,
         Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
     ];
 }
 fn defs_lhau(out: &mut Arguments, ins: Ins) {
@@ -9973,12 +22628,18 @@ fn defs_lhau(out: &mut Arguments, ins: Ins) {
         Argument::None,
         Argument::None,
         Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
     ];
 }
 fn uses_lhau(out: &mut Arguments, ins: Ins) {
     *out = [
         Argument::Offset(Offset(ins.field_offset() as _)),
         Argument::GPR(GPR(ins.field_ra() as _)),
+        Argument::None,
+        Argument::None,
+        Argument::None,
         Argument::None,
         Argument::None,
         Argument::None,
@@ -9995,11 +22656,17 @@ fn uses_sth(out: &mut Arguments, ins: Ins) {
         Argument::None,
         Argument::None,
         Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
     ];
 }
 fn defs_sthu(out: &mut Arguments, ins: Ins) {
     *out = [
         Argument::GPR(GPR(ins.field_ra() as _)),
+        Argument::None,
+        Argument::None,
+        Argument::None,
         Argument::None,
         Argument::None,
         Argument::None,
@@ -10013,11 +22680,17 @@ fn uses_sthu(out: &mut Arguments, ins: Ins) {
         Argument::None,
         Argument::None,
         Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
     ];
 }
 fn defs_lmw(out: &mut Arguments, ins: Ins) {
     *out = [
         Argument::GPR(GPR(ins.field_rd() as _)),
+        Argument::None,
+        Argument::None,
+        Argument::None,
         Argument::None,
         Argument::None,
         Argument::None,
@@ -10035,6 +22708,9 @@ fn uses_lmw(out: &mut Arguments, ins: Ins) {
         Argument::None,
         Argument::None,
         Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
     ];
 }
 fn uses_stmw(out: &mut Arguments, ins: Ins) {
@@ -10048,11 +22724,17 @@ fn uses_stmw(out: &mut Arguments, ins: Ins) {
         Argument::None,
         Argument::None,
         Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
     ];
 }
 fn defs_lfs(out: &mut Arguments, ins: Ins) {
     *out = [
         Argument::FPR(FPR(ins.field_frd() as _)),
+        Argument::None,
+        Argument::None,
+        Argument::None,
         Argument::None,
         Argument::None,
         Argument::None,
@@ -10070,12 +22752,18 @@ fn uses_lfs(out: &mut Arguments, ins: Ins) {
         Argument::None,
         Argument::None,
         Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
     ];
 }
 fn defs_lfsu(out: &mut Arguments, ins: Ins) {
     *out = [
         Argument::FPR(FPR(ins.field_frd() as _)),
         Argument::GPR(GPR(ins.field_ra() as _)),
+        Argument::None,
+        Argument::None,
+        Argument::None,
         Argument::None,
         Argument::None,
         Argument::None,
@@ -10088,11 +22776,17 @@ fn uses_lfsu(out: &mut Arguments, ins: Ins) {
         Argument::None,
         Argument::None,
         Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
     ];
 }
 fn defs_lfd(out: &mut Arguments, ins: Ins) {
     *out = [
         Argument::FPR(FPR(ins.field_frd() as _)),
+        Argument::None,
+        Argument::None,
+        Argument::None,
         Argument::None,
         Argument::None,
         Argument::None,
@@ -10110,6 +22804,9 @@ fn uses_lfd(out: &mut Arguments, ins: Ins) {
         Argument::None,
         Argument::None,
         Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
     ];
 }
 fn defs_lfdu(out: &mut Arguments, ins: Ins) {
@@ -10119,12 +22816,18 @@ fn defs_lfdu(out: &mut Arguments, ins: Ins) {
         Argument::None,
         Argument::None,
         Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
     ];
 }
 fn uses_lfdu(out: &mut Arguments, ins: Ins) {
     *out = [
         Argument::Offset(Offset(ins.field_offset() as _)),
         Argument::GPR(GPR(ins.field_ra() as _)),
+        Argument::None,
+        Argument::None,
+        Argument::None,
         Argument::None,
         Argument::None,
         Argument::None,
@@ -10141,11 +22844,17 @@ fn uses_stfs(out: &mut Arguments, ins: Ins) {
         Argument::None,
         Argument::None,
         Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
     ];
 }
 fn defs_stfsu(out: &mut Arguments, ins: Ins) {
     *out = [
         Argument::GPR(GPR(ins.field_ra() as _)),
+        Argument::None,
+        Argument::None,
+        Argument::None,
         Argument::None,
         Argument::None,
         Argument::None,
@@ -10156,6 +22865,9 @@ fn uses_stfsu(out: &mut Arguments, ins: Ins) {
     *out = [
         Argument::FPR(FPR(ins.field_frs() as _)),
         Argument::GPR(GPR(ins.field_ra() as _)),
+        Argument::None,
+        Argument::None,
+        Argument::None,
         Argument::None,
         Argument::None,
         Argument::None,
@@ -10172,11 +22884,17 @@ fn uses_stfd(out: &mut Arguments, ins: Ins) {
         Argument::None,
         Argument::None,
         Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
     ];
 }
 fn defs_stfdu(out: &mut Arguments, ins: Ins) {
     *out = [
         Argument::GPR(GPR(ins.field_ra() as _)),
+        Argument::None,
+        Argument::None,
+        Argument::None,
         Argument::None,
         Argument::None,
         Argument::None,
@@ -10190,19 +22908,26 @@ fn uses_stfdu(out: &mut Arguments, ins: Ins) {
         Argument::None,
         Argument::None,
         Argument::None,
-    ];
-}
-fn defs_psq_l(out: &mut Arguments, ins: Ins) {
-    *out = [
-        Argument::FPR(FPR(ins.field_frd() as _)),
-        Argument::None,
         Argument::None,
         Argument::None,
         Argument::None,
     ];
 }
-fn uses_psq_l(out: &mut Arguments, ins: Ins) {
+fn defs_ld(out: &mut Arguments, ins: Ins) {
     *out = [
+        Argument::GPR(GPR(ins.field_rd() as _)),
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+    ];
+}
+fn uses_ld(out: &mut Arguments, ins: Ins) {
+    *out = [
+        Argument::Offset(Offset(ins.field_offset64() as _)),
         if ins.field_ra() != 0 {
             Argument::GPR(GPR(ins.field_ra() as _))
         } else {
@@ -10212,20 +22937,56 @@ fn uses_psq_l(out: &mut Arguments, ins: Ins) {
         Argument::None,
         Argument::None,
         Argument::None,
-    ];
-}
-fn defs_psq_lu(out: &mut Arguments, ins: Ins) {
-    *out = [
-        Argument::FPR(FPR(ins.field_frd() as _)),
-        Argument::GPR(GPR(ins.field_ra() as _)),
-        Argument::None,
         Argument::None,
         Argument::None,
     ];
 }
-fn uses_psq_lu(out: &mut Arguments, ins: Ins) {
+fn defs_ldu(out: &mut Arguments, ins: Ins) {
     *out = [
+        Argument::GPR(GPR(ins.field_rd() as _)),
         Argument::GPR(GPR(ins.field_ra() as _)),
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+    ];
+}
+fn uses_ldu(out: &mut Arguments, ins: Ins) {
+    *out = [
+        Argument::Offset(Offset(ins.field_offset64() as _)),
+        Argument::GPR(GPR(ins.field_ra() as _)),
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+    ];
+}
+fn defs_lwa(out: &mut Arguments, ins: Ins) {
+    *out = [
+        Argument::GPR(GPR(ins.field_rd() as _)),
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+    ];
+}
+fn uses_lwa(out: &mut Arguments, ins: Ins) {
+    *out = [
+        Argument::Offset(Offset(ins.field_offset64() as _)),
+        if ins.field_ra() != 0 {
+            Argument::GPR(GPR(ins.field_ra() as _))
+        } else {
+            Argument::None
+        },
+        Argument::None,
+        Argument::None,
         Argument::None,
         Argument::None,
         Argument::None,
@@ -10239,6 +23000,9 @@ fn defs_fadds(out: &mut Arguments, ins: Ins) {
         Argument::None,
         Argument::None,
         Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
     ];
 }
 fn uses_fadds(out: &mut Arguments, ins: Ins) {
@@ -10248,11 +23012,17 @@ fn uses_fadds(out: &mut Arguments, ins: Ins) {
         Argument::None,
         Argument::None,
         Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
     ];
 }
 fn defs_fdivs(out: &mut Arguments, ins: Ins) {
     *out = [
         Argument::FPR(FPR(ins.field_frd() as _)),
+        Argument::None,
+        Argument::None,
+        Argument::None,
         Argument::None,
         Argument::None,
         Argument::None,
@@ -10266,11 +23036,17 @@ fn uses_fdivs(out: &mut Arguments, ins: Ins) {
         Argument::None,
         Argument::None,
         Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
     ];
 }
 fn defs_fmadds(out: &mut Arguments, ins: Ins) {
     *out = [
         Argument::FPR(FPR(ins.field_frd() as _)),
+        Argument::None,
+        Argument::None,
+        Argument::None,
         Argument::None,
         Argument::None,
         Argument::None,
@@ -10284,11 +23060,17 @@ fn uses_fmadds(out: &mut Arguments, ins: Ins) {
         Argument::FPR(FPR(ins.field_frb() as _)),
         Argument::None,
         Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
     ];
 }
 fn defs_fmsubs(out: &mut Arguments, ins: Ins) {
     *out = [
         Argument::FPR(FPR(ins.field_frd() as _)),
+        Argument::None,
+        Argument::None,
+        Argument::None,
         Argument::None,
         Argument::None,
         Argument::None,
@@ -10302,11 +23084,17 @@ fn uses_fmsubs(out: &mut Arguments, ins: Ins) {
         Argument::FPR(FPR(ins.field_frb() as _)),
         Argument::None,
         Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
     ];
 }
 fn defs_fmuls(out: &mut Arguments, ins: Ins) {
     *out = [
         Argument::FPR(FPR(ins.field_frd() as _)),
+        Argument::None,
+        Argument::None,
+        Argument::None,
         Argument::None,
         Argument::None,
         Argument::None,
@@ -10320,11 +23108,17 @@ fn uses_fmuls(out: &mut Arguments, ins: Ins) {
         Argument::None,
         Argument::None,
         Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
     ];
 }
 fn defs_fnmadds(out: &mut Arguments, ins: Ins) {
     *out = [
         Argument::FPR(FPR(ins.field_frd() as _)),
+        Argument::None,
+        Argument::None,
+        Argument::None,
         Argument::None,
         Argument::None,
         Argument::None,
@@ -10338,11 +23132,17 @@ fn uses_fnmadds(out: &mut Arguments, ins: Ins) {
         Argument::FPR(FPR(ins.field_frb() as _)),
         Argument::None,
         Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
     ];
 }
 fn defs_fnmsubs(out: &mut Arguments, ins: Ins) {
     *out = [
         Argument::FPR(FPR(ins.field_frd() as _)),
+        Argument::None,
+        Argument::None,
+        Argument::None,
         Argument::None,
         Argument::None,
         Argument::None,
@@ -10356,11 +23156,17 @@ fn uses_fnmsubs(out: &mut Arguments, ins: Ins) {
         Argument::FPR(FPR(ins.field_frb() as _)),
         Argument::None,
         Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
     ];
 }
 fn defs_fres(out: &mut Arguments, ins: Ins) {
     *out = [
         Argument::FPR(FPR(ins.field_frd() as _)),
+        Argument::None,
+        Argument::None,
+        Argument::None,
         Argument::None,
         Argument::None,
         Argument::None,
@@ -10374,11 +23180,17 @@ fn uses_fres(out: &mut Arguments, ins: Ins) {
         Argument::None,
         Argument::None,
         Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
     ];
 }
 fn defs_fsubs(out: &mut Arguments, ins: Ins) {
     *out = [
         Argument::FPR(FPR(ins.field_frd() as _)),
+        Argument::None,
+        Argument::None,
+        Argument::None,
         Argument::None,
         Argument::None,
         Argument::None,
@@ -10392,11 +23204,14 @@ fn uses_fsubs(out: &mut Arguments, ins: Ins) {
         Argument::None,
         Argument::None,
         Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
     ];
 }
-fn uses_psq_st(out: &mut Arguments, ins: Ins) {
+fn uses_std(out: &mut Arguments, ins: Ins) {
     *out = [
-        Argument::FPR(FPR(ins.field_frs() as _)),
+        Argument::GPR(GPR(ins.field_rs() as _)),
         if ins.field_ra() != 0 {
             Argument::GPR(GPR(ins.field_ra() as _))
         } else {
@@ -10405,21 +23220,30 @@ fn uses_psq_st(out: &mut Arguments, ins: Ins) {
         Argument::None,
         Argument::None,
         Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
     ];
 }
-fn defs_psq_stu(out: &mut Arguments, ins: Ins) {
+fn defs_stdu(out: &mut Arguments, ins: Ins) {
     *out = [
         Argument::GPR(GPR(ins.field_ra() as _)),
         Argument::None,
         Argument::None,
         Argument::None,
         Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
     ];
 }
-fn uses_psq_stu(out: &mut Arguments, ins: Ins) {
+fn uses_stdu(out: &mut Arguments, ins: Ins) {
     *out = [
-        Argument::FPR(FPR(ins.field_frs() as _)),
+        Argument::GPR(GPR(ins.field_rs() as _)),
         Argument::GPR(GPR(ins.field_ra() as _)),
+        Argument::None,
+        Argument::None,
+        Argument::None,
         Argument::None,
         Argument::None,
         Argument::None,
@@ -10428,6 +23252,9 @@ fn uses_psq_stu(out: &mut Arguments, ins: Ins) {
 fn defs_fabs(out: &mut Arguments, ins: Ins) {
     *out = [
         Argument::FPR(FPR(ins.field_frd() as _)),
+        Argument::None,
+        Argument::None,
+        Argument::None,
         Argument::None,
         Argument::None,
         Argument::None,
@@ -10441,11 +23268,17 @@ fn uses_fabs(out: &mut Arguments, ins: Ins) {
         Argument::None,
         Argument::None,
         Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
     ];
 }
 fn defs_fadd(out: &mut Arguments, ins: Ins) {
     *out = [
         Argument::FPR(FPR(ins.field_frd() as _)),
+        Argument::None,
+        Argument::None,
+        Argument::None,
         Argument::None,
         Argument::None,
         Argument::None,
@@ -10459,11 +23292,41 @@ fn uses_fadd(out: &mut Arguments, ins: Ins) {
         Argument::None,
         Argument::None,
         Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+    ];
+}
+fn defs_fcfid(out: &mut Arguments, ins: Ins) {
+    *out = [
+        Argument::FPR(FPR(ins.field_frd() as _)),
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+    ];
+}
+fn uses_fcfid(out: &mut Arguments, ins: Ins) {
+    *out = [
+        Argument::FPR(FPR(ins.field_frb() as _)),
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
     ];
 }
 fn defs_fcmpo(out: &mut Arguments, ins: Ins) {
     *out = [
         Argument::CRField(CRField(ins.field_crfd() as _)),
+        Argument::None,
+        Argument::None,
+        Argument::None,
         Argument::None,
         Argument::None,
         Argument::None,
@@ -10477,11 +23340,17 @@ fn uses_fcmpo(out: &mut Arguments, ins: Ins) {
         Argument::None,
         Argument::None,
         Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
     ];
 }
 fn defs_fcmpu(out: &mut Arguments, ins: Ins) {
     *out = [
         Argument::CRField(CRField(ins.field_crfd() as _)),
+        Argument::None,
+        Argument::None,
+        Argument::None,
         Argument::None,
         Argument::None,
         Argument::None,
@@ -10495,11 +23364,65 @@ fn uses_fcmpu(out: &mut Arguments, ins: Ins) {
         Argument::None,
         Argument::None,
         Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+    ];
+}
+fn defs_fctid(out: &mut Arguments, ins: Ins) {
+    *out = [
+        Argument::FPR(FPR(ins.field_frd() as _)),
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+    ];
+}
+fn uses_fctid(out: &mut Arguments, ins: Ins) {
+    *out = [
+        Argument::FPR(FPR(ins.field_frb() as _)),
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+    ];
+}
+fn defs_fctidz(out: &mut Arguments, ins: Ins) {
+    *out = [
+        Argument::FPR(FPR(ins.field_frd() as _)),
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+    ];
+}
+fn uses_fctidz(out: &mut Arguments, ins: Ins) {
+    *out = [
+        Argument::FPR(FPR(ins.field_frb() as _)),
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
     ];
 }
 fn defs_fctiw(out: &mut Arguments, ins: Ins) {
     *out = [
         Argument::FPR(FPR(ins.field_frd() as _)),
+        Argument::None,
+        Argument::None,
+        Argument::None,
         Argument::None,
         Argument::None,
         Argument::None,
@@ -10513,11 +23436,17 @@ fn uses_fctiw(out: &mut Arguments, ins: Ins) {
         Argument::None,
         Argument::None,
         Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
     ];
 }
 fn defs_fctiwz(out: &mut Arguments, ins: Ins) {
     *out = [
         Argument::FPR(FPR(ins.field_frd() as _)),
+        Argument::None,
+        Argument::None,
+        Argument::None,
         Argument::None,
         Argument::None,
         Argument::None,
@@ -10531,11 +23460,17 @@ fn uses_fctiwz(out: &mut Arguments, ins: Ins) {
         Argument::None,
         Argument::None,
         Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
     ];
 }
 fn defs_fdiv(out: &mut Arguments, ins: Ins) {
     *out = [
         Argument::FPR(FPR(ins.field_frd() as _)),
+        Argument::None,
+        Argument::None,
+        Argument::None,
         Argument::None,
         Argument::None,
         Argument::None,
@@ -10549,11 +23484,17 @@ fn uses_fdiv(out: &mut Arguments, ins: Ins) {
         Argument::None,
         Argument::None,
         Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
     ];
 }
 fn defs_fmadd(out: &mut Arguments, ins: Ins) {
     *out = [
         Argument::FPR(FPR(ins.field_frd() as _)),
+        Argument::None,
+        Argument::None,
+        Argument::None,
         Argument::None,
         Argument::None,
         Argument::None,
@@ -10567,11 +23508,17 @@ fn uses_fmadd(out: &mut Arguments, ins: Ins) {
         Argument::FPR(FPR(ins.field_frb() as _)),
         Argument::None,
         Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
     ];
 }
 fn defs_fmr(out: &mut Arguments, ins: Ins) {
     *out = [
         Argument::FPR(FPR(ins.field_frd() as _)),
+        Argument::None,
+        Argument::None,
+        Argument::None,
         Argument::None,
         Argument::None,
         Argument::None,
@@ -10585,11 +23532,17 @@ fn uses_fmr(out: &mut Arguments, ins: Ins) {
         Argument::None,
         Argument::None,
         Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
     ];
 }
 fn defs_fmsub(out: &mut Arguments, ins: Ins) {
     *out = [
         Argument::FPR(FPR(ins.field_frd() as _)),
+        Argument::None,
+        Argument::None,
+        Argument::None,
         Argument::None,
         Argument::None,
         Argument::None,
@@ -10603,11 +23556,17 @@ fn uses_fmsub(out: &mut Arguments, ins: Ins) {
         Argument::FPR(FPR(ins.field_frb() as _)),
         Argument::None,
         Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
     ];
 }
 fn defs_fmul(out: &mut Arguments, ins: Ins) {
     *out = [
         Argument::FPR(FPR(ins.field_frd() as _)),
+        Argument::None,
+        Argument::None,
+        Argument::None,
         Argument::None,
         Argument::None,
         Argument::None,
@@ -10621,11 +23580,17 @@ fn uses_fmul(out: &mut Arguments, ins: Ins) {
         Argument::None,
         Argument::None,
         Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
     ];
 }
 fn defs_fnabs(out: &mut Arguments, ins: Ins) {
     *out = [
         Argument::FPR(FPR(ins.field_frd() as _)),
+        Argument::None,
+        Argument::None,
+        Argument::None,
         Argument::None,
         Argument::None,
         Argument::None,
@@ -10639,11 +23604,17 @@ fn uses_fnabs(out: &mut Arguments, ins: Ins) {
         Argument::None,
         Argument::None,
         Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
     ];
 }
 fn defs_fneg(out: &mut Arguments, ins: Ins) {
     *out = [
         Argument::FPR(FPR(ins.field_frd() as _)),
+        Argument::None,
+        Argument::None,
+        Argument::None,
         Argument::None,
         Argument::None,
         Argument::None,
@@ -10657,11 +23628,17 @@ fn uses_fneg(out: &mut Arguments, ins: Ins) {
         Argument::None,
         Argument::None,
         Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
     ];
 }
 fn defs_fnmadd(out: &mut Arguments, ins: Ins) {
     *out = [
         Argument::FPR(FPR(ins.field_frd() as _)),
+        Argument::None,
+        Argument::None,
+        Argument::None,
         Argument::None,
         Argument::None,
         Argument::None,
@@ -10675,11 +23652,17 @@ fn uses_fnmadd(out: &mut Arguments, ins: Ins) {
         Argument::FPR(FPR(ins.field_frb() as _)),
         Argument::None,
         Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
     ];
 }
 fn defs_fnmsub(out: &mut Arguments, ins: Ins) {
     *out = [
         Argument::FPR(FPR(ins.field_frd() as _)),
+        Argument::None,
+        Argument::None,
+        Argument::None,
         Argument::None,
         Argument::None,
         Argument::None,
@@ -10693,11 +23676,17 @@ fn uses_fnmsub(out: &mut Arguments, ins: Ins) {
         Argument::FPR(FPR(ins.field_frb() as _)),
         Argument::None,
         Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
     ];
 }
 fn defs_frsp(out: &mut Arguments, ins: Ins) {
     *out = [
         Argument::FPR(FPR(ins.field_frd() as _)),
+        Argument::None,
+        Argument::None,
+        Argument::None,
         Argument::None,
         Argument::None,
         Argument::None,
@@ -10711,11 +23700,17 @@ fn uses_frsp(out: &mut Arguments, ins: Ins) {
         Argument::None,
         Argument::None,
         Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
     ];
 }
 fn defs_frsqrte(out: &mut Arguments, ins: Ins) {
     *out = [
         Argument::FPR(FPR(ins.field_frd() as _)),
+        Argument::None,
+        Argument::None,
+        Argument::None,
         Argument::None,
         Argument::None,
         Argument::None,
@@ -10729,11 +23724,17 @@ fn uses_frsqrte(out: &mut Arguments, ins: Ins) {
         Argument::None,
         Argument::None,
         Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
     ];
 }
 fn defs_fsel(out: &mut Arguments, ins: Ins) {
     *out = [
         Argument::FPR(FPR(ins.field_frd() as _)),
+        Argument::None,
+        Argument::None,
+        Argument::None,
         Argument::None,
         Argument::None,
         Argument::None,
@@ -10747,11 +23748,17 @@ fn uses_fsel(out: &mut Arguments, ins: Ins) {
         Argument::FPR(FPR(ins.field_frb() as _)),
         Argument::None,
         Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
     ];
 }
 fn defs_fsub(out: &mut Arguments, ins: Ins) {
     *out = [
         Argument::FPR(FPR(ins.field_frd() as _)),
+        Argument::None,
+        Argument::None,
+        Argument::None,
         Argument::None,
         Argument::None,
         Argument::None,
@@ -10765,11 +23772,17 @@ fn uses_fsub(out: &mut Arguments, ins: Ins) {
         Argument::None,
         Argument::None,
         Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
     ];
 }
 fn defs_mcrfs(out: &mut Arguments, ins: Ins) {
     *out = [
         Argument::CRField(CRField(ins.field_crfd() as _)),
+        Argument::None,
+        Argument::None,
+        Argument::None,
         Argument::None,
         Argument::None,
         Argument::None,
@@ -10783,11 +23796,17 @@ fn uses_mcrfs(out: &mut Arguments, ins: Ins) {
         Argument::None,
         Argument::None,
         Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
     ];
 }
 fn defs_mffs(out: &mut Arguments, ins: Ins) {
     *out = [
         Argument::FPR(FPR(ins.field_frd() as _)),
+        Argument::None,
+        Argument::None,
+        Argument::None,
         Argument::None,
         Argument::None,
         Argument::None,
@@ -10801,11 +23820,17 @@ fn defs_mtfsb0(out: &mut Arguments, ins: Ins) {
         Argument::None,
         Argument::None,
         Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
     ];
 }
 fn defs_mtfsb1(out: &mut Arguments, ins: Ins) {
     *out = [
         Argument::CRBit(CRBit(ins.field_crbd() as _)),
+        Argument::None,
+        Argument::None,
+        Argument::None,
         Argument::None,
         Argument::None,
         Argument::None,
@@ -10819,6 +23844,9 @@ fn uses_mtfsf(out: &mut Arguments, ins: Ins) {
         Argument::None,
         Argument::None,
         Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
     ];
 }
 fn defs_mtfsfi(out: &mut Arguments, ins: Ins) {
@@ -10828,47 +23856,237 @@ fn defs_mtfsfi(out: &mut Arguments, ins: Ins) {
         Argument::None,
         Argument::None,
         Argument::None,
+        Argument::None,
+        Argument::None,
+        Argument::None,
     ];
 }
 fn defs_uses_empty(out: &mut Arguments, _ins: Ins) {
     *out = EMPTY_ARGS;
 }
-static DEFS_FUNCTIONS: [DefsUsesFunction; 256] = [
+static DEFS_FUNCTIONS: [DefsUsesFunction; 512] = [
     defs_uses_empty,
     defs_uses_empty,
-    defs_psq_lux,
-    defs_psq_lx,
-    defs_psq_stux,
     defs_uses_empty,
-    defs_ps_abs,
-    defs_ps_add,
-    defs_ps_cmpo0,
-    defs_ps_cmpo1,
-    defs_ps_cmpu0,
-    defs_ps_cmpu1,
-    defs_ps_div,
-    defs_ps_madd,
-    defs_ps_madds0,
-    defs_ps_madds1,
-    defs_ps_merge00,
-    defs_ps_merge01,
-    defs_ps_merge10,
-    defs_ps_merge11,
-    defs_ps_mr,
-    defs_ps_msub,
-    defs_ps_mul,
-    defs_ps_muls0,
-    defs_ps_muls1,
-    defs_ps_nabs,
-    defs_ps_neg,
-    defs_ps_nmadd,
-    defs_ps_nmsub,
-    defs_ps_res,
-    defs_ps_rsqrte,
-    defs_ps_sel,
-    defs_ps_sub,
-    defs_ps_sum0,
-    defs_ps_sum1,
+    defs_mfvscr,
+    defs_uses_empty,
+    defs_vaddcuw,
+    defs_vaddfp,
+    defs_vaddsbs,
+    defs_vaddshs,
+    defs_vaddsws,
+    defs_vaddubm,
+    defs_vaddubs,
+    defs_vadduhm,
+    defs_vadduhs,
+    defs_vadduwm,
+    defs_vadduws,
+    defs_vand,
+    defs_vandc,
+    defs_vavgsb,
+    defs_vavgsh,
+    defs_vavgsw,
+    defs_vavgub,
+    defs_vavguh,
+    defs_vavguw,
+    defs_vcfsx,
+    defs_vcfux,
+    defs_vcmpbfp,
+    defs_vcmpeqfp,
+    defs_vcmpequb,
+    defs_vcmpequh,
+    defs_vcmpequw,
+    defs_vcmpgefp,
+    defs_vcmpgtfp,
+    defs_vcmpgtsb,
+    defs_vcmpgtsh,
+    defs_vcmpgtsw,
+    defs_vcmpgtub,
+    defs_vcmpgtuh,
+    defs_vcmpgtuw,
+    defs_vctsxs,
+    defs_vctuxs,
+    defs_vexptefp,
+    defs_vlogefp,
+    defs_vmaddfp,
+    defs_vmaxfp,
+    defs_vmaxsb,
+    defs_vmaxsh,
+    defs_vmaxsw,
+    defs_vmaxub,
+    defs_vmaxuh,
+    defs_vmaxuw,
+    defs_vmhaddshs,
+    defs_vmhraddshs,
+    defs_vminfp,
+    defs_vminsb,
+    defs_vminsh,
+    defs_vminsw,
+    defs_vminub,
+    defs_vminuh,
+    defs_vminuw,
+    defs_vmladduhm,
+    defs_vmrghb,
+    defs_vmrghh,
+    defs_vmrghw,
+    defs_vmrglb,
+    defs_vmrglh,
+    defs_vmrglw,
+    defs_vmsummbm,
+    defs_vmsumshm,
+    defs_vmsumshs,
+    defs_vmsumubm,
+    defs_vmsumuhm,
+    defs_vmsumuhs,
+    defs_vmulesb,
+    defs_vmulesh,
+    defs_vmuleub,
+    defs_vmuleuh,
+    defs_vmulosb,
+    defs_vmulosh,
+    defs_vmuloub,
+    defs_vmulouh,
+    defs_vnmsubfp,
+    defs_vnor,
+    defs_vor,
+    defs_vperm,
+    defs_vpkpx,
+    defs_vpkshss,
+    defs_vpkshus,
+    defs_vpkswss,
+    defs_vpkswus,
+    defs_vpkuhum,
+    defs_vpkuhus,
+    defs_vpkuwum,
+    defs_vpkuwus,
+    defs_vrefp,
+    defs_vrfim,
+    defs_vrfin,
+    defs_vrfip,
+    defs_vrfiz,
+    defs_vrlb,
+    defs_vrlh,
+    defs_vrlw,
+    defs_vrsqrtefp,
+    defs_vsel,
+    defs_vsl,
+    defs_vslb,
+    defs_vsldoi,
+    defs_vslh,
+    defs_vslo,
+    defs_vslw,
+    defs_vspltb,
+    defs_vsplth,
+    defs_vspltisb,
+    defs_vspltish,
+    defs_vspltisw,
+    defs_vspltw,
+    defs_vsr,
+    defs_vsrab,
+    defs_vsrah,
+    defs_vsraw,
+    defs_vsrb,
+    defs_vsrh,
+    defs_vsro,
+    defs_vsrw,
+    defs_vsubcuw,
+    defs_vsubfp,
+    defs_vsubsbs,
+    defs_vsubshs,
+    defs_vsubsws,
+    defs_vsububm,
+    defs_vsububs,
+    defs_vsubuhm,
+    defs_vsubuhs,
+    defs_vsubuwm,
+    defs_vsubuws,
+    defs_vsumsws,
+    defs_vsum2sws,
+    defs_vsum4sbs,
+    defs_vsum4shs,
+    defs_vsum4ubs,
+    defs_vupkhpx,
+    defs_vupkhsb,
+    defs_vupkhsh,
+    defs_vupklpx,
+    defs_vupklsb,
+    defs_vupklsh,
+    defs_vxor,
+    defs_lvewx128,
+    defs_lvlx128,
+    defs_lvrx128,
+    defs_lvlxl128,
+    defs_lvrxl128,
+    defs_lvsl128,
+    defs_lvsr128,
+    defs_lvx128,
+    defs_lvxl128,
+    defs_stvewx128,
+    defs_stvlx128,
+    defs_stvlxl128,
+    defs_stvrx128,
+    defs_stvrxl128,
+    defs_stvx128,
+    defs_stvxl128,
+    defs_vsldoi128,
+    defs_vaddfp128,
+    defs_vand128,
+    defs_vandc128,
+    defs_vmaddcfp128,
+    defs_vmaddfp128,
+    defs_vmsum3fp128,
+    defs_vmsum4fp128,
+    defs_vmulfp128,
+    defs_vnmsubfp128,
+    defs_vnor128,
+    defs_vor128,
+    defs_vperm128,
+    defs_vpkshss128,
+    defs_vpkshus128,
+    defs_vpkswss128,
+    defs_vpkswus128,
+    defs_vpkuhum128,
+    defs_vpkuhus128,
+    defs_vpkuwum128,
+    defs_vpkuwus128,
+    defs_vrlw128,
+    defs_vsel128,
+    defs_vslo128,
+    defs_vsubfp128,
+    defs_vxor128,
+    defs_vcfpsxws128,
+    defs_vcfpuxws128,
+    defs_vcmpbfp128,
+    defs_vcmpeqfp128,
+    defs_vcmpequw128,
+    defs_vcmpgefp128,
+    defs_vcmpgtfp128,
+    defs_vcsxwfp128,
+    defs_vcuxwfp128,
+    defs_vexptefp128,
+    defs_vlogefp128,
+    defs_vmaxfp128,
+    defs_vminfp128,
+    defs_vmrghw128,
+    defs_vmrglw128,
+    defs_vpermwi128,
+    defs_vpkd3d128,
+    defs_vrefp128,
+    defs_vrfim128,
+    defs_vrfin128,
+    defs_vrfip128,
+    defs_vrfiz128,
+    defs_vrlimi128,
+    defs_vrsqrtefp128,
+    defs_vslw128,
+    defs_vspltisw128,
+    defs_vspltw128,
+    defs_vsraw128,
+    defs_vsro128,
+    defs_vsrw128,
+    defs_vupkd3d128,
+    defs_vupkhsb128,
+    defs_vupklsb128,
     defs_mulli,
     defs_subfic,
     defs_cmpli,
@@ -10893,6 +24111,7 @@ static DEFS_FUNCTIONS: [DefsUsesFunction; 256] = [
     defs_uses_empty,
     defs_mcrf,
     defs_uses_empty,
+    defs_uses_empty,
     defs_rlwimi,
     defs_rlwinm,
     defs_rlwnm,
@@ -10902,6 +24121,12 @@ static DEFS_FUNCTIONS: [DefsUsesFunction; 256] = [
     defs_xoris,
     defs_andi_,
     defs_andis_,
+    defs_rldcl,
+    defs_rldcr,
+    defs_rldic,
+    defs_rldicl,
+    defs_rldicr,
+    defs_rldimi,
     defs_add,
     defs_addc,
     defs_adde,
@@ -10911,6 +24136,7 @@ static DEFS_FUNCTIONS: [DefsUsesFunction; 256] = [
     defs_andc,
     defs_cmp,
     defs_cmpl,
+    defs_cntlzd,
     defs_cntlzw,
     defs_uses_empty,
     defs_uses_empty,
@@ -10918,6 +24144,8 @@ static DEFS_FUNCTIONS: [DefsUsesFunction; 256] = [
     defs_uses_empty,
     defs_uses_empty,
     defs_uses_empty,
+    defs_divd,
+    defs_divdu,
     defs_divw,
     defs_divwu,
     defs_eciwx,
@@ -10926,9 +24154,13 @@ static DEFS_FUNCTIONS: [DefsUsesFunction; 256] = [
     defs_eqv,
     defs_extsb,
     defs_extsh,
+    defs_extsw,
     defs_uses_empty,
     defs_lbzux,
     defs_lbzx,
+    defs_ldarx,
+    defs_ldux,
+    defs_ldx,
     defs_lfdux,
     defs_lfdx,
     defs_lfsux,
@@ -10941,6 +24173,8 @@ static DEFS_FUNCTIONS: [DefsUsesFunction; 256] = [
     defs_lswi,
     defs_lswx,
     defs_lwarx,
+    defs_lwaux,
+    defs_lwax,
     defs_lwbrx,
     defs_lwzux,
     defs_lwzx,
@@ -10956,20 +24190,35 @@ static DEFS_FUNCTIONS: [DefsUsesFunction; 256] = [
     defs_uses_empty,
     defs_uses_empty,
     defs_uses_empty,
+    defs_uses_empty,
+    defs_uses_empty,
+    defs_uses_empty,
+    defs_mulhd,
+    defs_mulhdu,
     defs_mulhw,
     defs_mulhwu,
+    defs_mulld,
     defs_mullw,
     defs_nand,
     defs_neg,
     defs_nor,
     defs_or,
     defs_orc,
+    defs_uses_empty,
+    defs_uses_empty,
+    defs_sld,
     defs_slw,
+    defs_srad,
+    defs_sradi,
     defs_sraw,
     defs_srawi,
+    defs_srd,
     defs_srw,
     defs_stbux,
     defs_uses_empty,
+    defs_uses_empty,
+    defs_stdux,
+    defs_stdx,
     defs_stfdux,
     defs_uses_empty,
     defs_uses_empty,
@@ -10993,7 +24242,23 @@ static DEFS_FUNCTIONS: [DefsUsesFunction; 256] = [
     defs_uses_empty,
     defs_uses_empty,
     defs_uses_empty,
+    defs_uses_empty,
     defs_xor,
+    defs_uses_empty,
+    defs_uses_empty,
+    defs_uses_empty,
+    defs_lvebx,
+    defs_lvehx,
+    defs_lvewx,
+    defs_lvsl,
+    defs_lvsr,
+    defs_lvx,
+    defs_lvxl,
+    defs_uses_empty,
+    defs_uses_empty,
+    defs_uses_empty,
+    defs_uses_empty,
+    defs_uses_empty,
     defs_lwz,
     defs_lwzu,
     defs_lbz,
@@ -11018,8 +24283,9 @@ static DEFS_FUNCTIONS: [DefsUsesFunction; 256] = [
     defs_stfsu,
     defs_uses_empty,
     defs_stfdu,
-    defs_psq_l,
-    defs_psq_lu,
+    defs_ld,
+    defs_ldu,
+    defs_lwa,
     defs_fadds,
     defs_fdivs,
     defs_fmadds,
@@ -11030,11 +24296,14 @@ static DEFS_FUNCTIONS: [DefsUsesFunction; 256] = [
     defs_fres,
     defs_fsubs,
     defs_uses_empty,
-    defs_psq_stu,
+    defs_stdu,
     defs_fabs,
     defs_fadd,
+    defs_fcfid,
     defs_fcmpo,
     defs_fcmpu,
+    defs_fctid,
+    defs_fctidz,
     defs_fctiw,
     defs_fctiwz,
     defs_fdiv,
@@ -11090,47 +24359,252 @@ static DEFS_FUNCTIONS: [DefsUsesFunction; 256] = [
     defs_uses_empty,
     defs_uses_empty,
     defs_uses_empty,
+    defs_uses_empty,
+    defs_uses_empty,
+    defs_uses_empty,
+    defs_uses_empty,
+    defs_uses_empty,
+    defs_uses_empty,
+    defs_uses_empty,
+    defs_uses_empty,
+    defs_uses_empty,
+    defs_uses_empty,
+    defs_uses_empty,
+    defs_uses_empty,
+    defs_uses_empty,
+    defs_uses_empty,
+    defs_uses_empty,
+    defs_uses_empty,
+    defs_uses_empty,
+    defs_uses_empty,
 ];
 #[inline]
 pub fn parse_defs(out: &mut Arguments, ins: Ins) {
     DEFS_FUNCTIONS[ins.op as usize](out, ins)
 }
-static USES_FUNCTIONS: [DefsUsesFunction; 256] = [
+static USES_FUNCTIONS: [DefsUsesFunction; 512] = [
+    uses_tdi,
     uses_twi,
     uses_dcbz_l,
-    uses_psq_lux,
-    uses_psq_lx,
-    uses_psq_stux,
-    uses_psq_stx,
-    uses_ps_abs,
-    uses_ps_add,
-    uses_ps_cmpo0,
-    uses_ps_cmpo1,
-    uses_ps_cmpu0,
-    uses_ps_cmpu1,
-    uses_ps_div,
-    uses_ps_madd,
-    uses_ps_madds0,
-    uses_ps_madds1,
-    uses_ps_merge00,
-    uses_ps_merge01,
-    uses_ps_merge10,
-    uses_ps_merge11,
-    uses_ps_mr,
-    uses_ps_msub,
-    uses_ps_mul,
-    uses_ps_muls0,
-    uses_ps_muls1,
-    uses_ps_nabs,
-    uses_ps_neg,
-    uses_ps_nmadd,
-    uses_ps_nmsub,
-    uses_ps_res,
-    uses_ps_rsqrte,
-    uses_ps_sel,
-    uses_ps_sub,
-    uses_ps_sum0,
-    uses_ps_sum1,
+    defs_uses_empty,
+    uses_mtvscr,
+    uses_vaddcuw,
+    uses_vaddfp,
+    uses_vaddsbs,
+    uses_vaddshs,
+    uses_vaddsws,
+    uses_vaddubm,
+    uses_vaddubs,
+    uses_vadduhm,
+    uses_vadduhs,
+    uses_vadduwm,
+    uses_vadduws,
+    uses_vand,
+    uses_vandc,
+    uses_vavgsb,
+    uses_vavgsh,
+    uses_vavgsw,
+    uses_vavgub,
+    uses_vavguh,
+    uses_vavguw,
+    uses_vcfsx,
+    uses_vcfux,
+    uses_vcmpbfp,
+    uses_vcmpeqfp,
+    uses_vcmpequb,
+    uses_vcmpequh,
+    uses_vcmpequw,
+    uses_vcmpgefp,
+    uses_vcmpgtfp,
+    uses_vcmpgtsb,
+    uses_vcmpgtsh,
+    uses_vcmpgtsw,
+    uses_vcmpgtub,
+    uses_vcmpgtuh,
+    uses_vcmpgtuw,
+    uses_vctsxs,
+    uses_vctuxs,
+    uses_vexptefp,
+    uses_vlogefp,
+    uses_vmaddfp,
+    uses_vmaxfp,
+    uses_vmaxsb,
+    uses_vmaxsh,
+    uses_vmaxsw,
+    uses_vmaxub,
+    uses_vmaxuh,
+    uses_vmaxuw,
+    uses_vmhaddshs,
+    uses_vmhraddshs,
+    uses_vminfp,
+    uses_vminsb,
+    uses_vminsh,
+    uses_vminsw,
+    uses_vminub,
+    uses_vminuh,
+    uses_vminuw,
+    uses_vmladduhm,
+    uses_vmrghb,
+    uses_vmrghh,
+    uses_vmrghw,
+    uses_vmrglb,
+    uses_vmrglh,
+    uses_vmrglw,
+    uses_vmsummbm,
+    uses_vmsumshm,
+    uses_vmsumshs,
+    uses_vmsumubm,
+    uses_vmsumuhm,
+    uses_vmsumuhs,
+    uses_vmulesb,
+    uses_vmulesh,
+    uses_vmuleub,
+    uses_vmuleuh,
+    uses_vmulosb,
+    uses_vmulosh,
+    uses_vmuloub,
+    uses_vmulouh,
+    uses_vnmsubfp,
+    uses_vnor,
+    uses_vor,
+    uses_vperm,
+    uses_vpkpx,
+    uses_vpkshss,
+    uses_vpkshus,
+    uses_vpkswss,
+    uses_vpkswus,
+    uses_vpkuhum,
+    uses_vpkuhus,
+    uses_vpkuwum,
+    uses_vpkuwus,
+    uses_vrefp,
+    uses_vrfim,
+    uses_vrfin,
+    uses_vrfip,
+    uses_vrfiz,
+    uses_vrlb,
+    uses_vrlh,
+    uses_vrlw,
+    uses_vrsqrtefp,
+    uses_vsel,
+    uses_vsl,
+    uses_vslb,
+    uses_vsldoi,
+    uses_vslh,
+    uses_vslo,
+    uses_vslw,
+    uses_vspltb,
+    uses_vsplth,
+    uses_vspltisb,
+    uses_vspltish,
+    uses_vspltisw,
+    uses_vspltw,
+    uses_vsr,
+    uses_vsrab,
+    uses_vsrah,
+    uses_vsraw,
+    uses_vsrb,
+    uses_vsrh,
+    uses_vsro,
+    uses_vsrw,
+    uses_vsubcuw,
+    uses_vsubfp,
+    uses_vsubsbs,
+    uses_vsubshs,
+    uses_vsubsws,
+    uses_vsububm,
+    uses_vsububs,
+    uses_vsubuhm,
+    uses_vsubuhs,
+    uses_vsubuwm,
+    uses_vsubuws,
+    uses_vsumsws,
+    uses_vsum2sws,
+    uses_vsum4sbs,
+    uses_vsum4shs,
+    uses_vsum4ubs,
+    uses_vupkhpx,
+    uses_vupkhsb,
+    uses_vupkhsh,
+    uses_vupklpx,
+    uses_vupklsb,
+    uses_vupklsh,
+    uses_vxor,
+    uses_lvewx128,
+    uses_lvlx128,
+    uses_lvrx128,
+    uses_lvlxl128,
+    uses_lvrxl128,
+    uses_lvsl128,
+    uses_lvsr128,
+    uses_lvx128,
+    uses_lvxl128,
+    uses_stvewx128,
+    uses_stvlx128,
+    uses_stvlxl128,
+    uses_stvrx128,
+    uses_stvrxl128,
+    uses_stvx128,
+    uses_stvxl128,
+    uses_vsldoi128,
+    uses_vaddfp128,
+    uses_vand128,
+    uses_vandc128,
+    uses_vmaddcfp128,
+    uses_vmaddfp128,
+    uses_vmsum3fp128,
+    uses_vmsum4fp128,
+    uses_vmulfp128,
+    uses_vnmsubfp128,
+    uses_vnor128,
+    uses_vor128,
+    uses_vperm128,
+    uses_vpkshss128,
+    uses_vpkshus128,
+    uses_vpkswss128,
+    uses_vpkswus128,
+    uses_vpkuhum128,
+    uses_vpkuhus128,
+    uses_vpkuwum128,
+    uses_vpkuwus128,
+    uses_vrlw128,
+    uses_vsel128,
+    uses_vslo128,
+    uses_vsubfp128,
+    uses_vxor128,
+    uses_vcfpsxws128,
+    uses_vcfpuxws128,
+    uses_vcmpbfp128,
+    uses_vcmpeqfp128,
+    uses_vcmpequw128,
+    uses_vcmpgefp128,
+    uses_vcmpgtfp128,
+    uses_vcsxwfp128,
+    uses_vcuxwfp128,
+    uses_vexptefp128,
+    uses_vlogefp128,
+    uses_vmaxfp128,
+    uses_vminfp128,
+    uses_vmrghw128,
+    uses_vmrglw128,
+    uses_vpermwi128,
+    uses_vpkd3d128,
+    uses_vrefp128,
+    uses_vrfim128,
+    uses_vrfin128,
+    uses_vrfip128,
+    uses_vrfiz128,
+    uses_vrlimi128,
+    uses_vrsqrtefp128,
+    uses_vslw128,
+    uses_vspltisw128,
+    uses_vspltw128,
+    uses_vsraw128,
+    uses_vsro128,
+    uses_vsrw128,
+    uses_vupkd3d128,
+    uses_vupkhsb128,
+    uses_vupklsb128,
     uses_mulli,
     uses_subfic,
     uses_cmpli,
@@ -11155,6 +24629,7 @@ static USES_FUNCTIONS: [DefsUsesFunction; 256] = [
     defs_uses_empty,
     uses_mcrf,
     defs_uses_empty,
+    defs_uses_empty,
     uses_rlwimi,
     uses_rlwinm,
     uses_rlwnm,
@@ -11164,6 +24639,12 @@ static USES_FUNCTIONS: [DefsUsesFunction; 256] = [
     uses_xoris,
     uses_andi_,
     uses_andis_,
+    uses_rldcl,
+    uses_rldcr,
+    uses_rldic,
+    uses_rldicl,
+    uses_rldicr,
+    uses_rldimi,
     uses_add,
     uses_addc,
     uses_adde,
@@ -11173,6 +24654,7 @@ static USES_FUNCTIONS: [DefsUsesFunction; 256] = [
     uses_andc,
     uses_cmp,
     uses_cmpl,
+    uses_cntlzd,
     uses_cntlzw,
     uses_dcbf,
     uses_dcbi,
@@ -11180,6 +24662,8 @@ static USES_FUNCTIONS: [DefsUsesFunction; 256] = [
     uses_dcbt,
     uses_dcbtst,
     uses_dcbz,
+    uses_divd,
+    uses_divdu,
     uses_divw,
     uses_divwu,
     uses_eciwx,
@@ -11188,9 +24672,13 @@ static USES_FUNCTIONS: [DefsUsesFunction; 256] = [
     uses_eqv,
     uses_extsb,
     uses_extsh,
+    uses_extsw,
     uses_icbi,
     uses_lbzux,
     uses_lbzx,
+    uses_ldarx,
+    uses_ldux,
+    uses_ldx,
     uses_lfdux,
     uses_lfdx,
     uses_lfsux,
@@ -11203,6 +24691,8 @@ static USES_FUNCTIONS: [DefsUsesFunction; 256] = [
     uses_lswi,
     uses_lswx,
     uses_lwarx,
+    uses_lwaux,
+    uses_lwax,
     uses_lwbrx,
     uses_lwzux,
     uses_lwzx,
@@ -11215,23 +24705,38 @@ static USES_FUNCTIONS: [DefsUsesFunction; 256] = [
     defs_uses_empty,
     uses_mtcrf,
     uses_mtmsr,
+    uses_mtmsrd,
     uses_mtspr,
     uses_mtsr,
+    uses_mtsrd,
+    uses_mtsrdin,
     uses_mtsrin,
+    uses_mulhd,
+    uses_mulhdu,
     uses_mulhw,
     uses_mulhwu,
+    uses_mulld,
     uses_mullw,
     uses_nand,
     uses_neg,
     uses_nor,
     uses_or,
     uses_orc,
+    defs_uses_empty,
+    uses_slbie,
+    uses_sld,
     uses_slw,
+    uses_srad,
+    uses_sradi,
     uses_sraw,
     uses_srawi,
+    uses_srd,
     uses_srw,
     uses_stbux,
     uses_stbx,
+    uses_stdcx_,
+    uses_stdux,
+    uses_stdx,
     uses_stfdux,
     uses_stfdx,
     uses_stfiwx,
@@ -11251,11 +24756,27 @@ static USES_FUNCTIONS: [DefsUsesFunction; 256] = [
     uses_subfe,
     uses_subfme,
     uses_subfze,
-    defs_uses_empty,
+    uses_sync,
+    uses_td,
     uses_tlbie,
     defs_uses_empty,
     uses_tw,
     uses_xor,
+    uses_dss,
+    uses_dst,
+    uses_dstst,
+    uses_lvebx,
+    uses_lvehx,
+    uses_lvewx,
+    uses_lvsl,
+    uses_lvsr,
+    uses_lvx,
+    uses_lvxl,
+    uses_stvebx,
+    uses_stvehx,
+    uses_stvewx,
+    uses_stvx,
+    uses_stvxl,
     uses_lwz,
     uses_lwzu,
     uses_lbz,
@@ -11280,8 +24801,9 @@ static USES_FUNCTIONS: [DefsUsesFunction; 256] = [
     uses_stfsu,
     uses_stfd,
     uses_stfdu,
-    uses_psq_l,
-    uses_psq_lu,
+    uses_ld,
+    uses_ldu,
+    uses_lwa,
     uses_fadds,
     uses_fdivs,
     uses_fmadds,
@@ -11291,12 +24813,15 @@ static USES_FUNCTIONS: [DefsUsesFunction; 256] = [
     uses_fnmsubs,
     uses_fres,
     uses_fsubs,
-    uses_psq_st,
-    uses_psq_stu,
+    uses_std,
+    uses_stdu,
     uses_fabs,
     uses_fadd,
+    uses_fcfid,
     uses_fcmpo,
     uses_fcmpu,
+    uses_fctid,
+    uses_fctidz,
     uses_fctiw,
     uses_fctiwz,
     uses_fdiv,
@@ -11317,6 +24842,24 @@ static USES_FUNCTIONS: [DefsUsesFunction; 256] = [
     defs_uses_empty,
     defs_uses_empty,
     uses_mtfsf,
+    defs_uses_empty,
+    defs_uses_empty,
+    defs_uses_empty,
+    defs_uses_empty,
+    defs_uses_empty,
+    defs_uses_empty,
+    defs_uses_empty,
+    defs_uses_empty,
+    defs_uses_empty,
+    defs_uses_empty,
+    defs_uses_empty,
+    defs_uses_empty,
+    defs_uses_empty,
+    defs_uses_empty,
+    defs_uses_empty,
+    defs_uses_empty,
+    defs_uses_empty,
+    defs_uses_empty,
     defs_uses_empty,
     defs_uses_empty,
     defs_uses_empty,
