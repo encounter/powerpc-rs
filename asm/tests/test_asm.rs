@@ -180,3 +180,38 @@ fn test_ins_xor() {
     assert_asm!("xor", U(5), U(0), U(5), 0x7C052A78); // xor r5, r0, r5
     assert_asm!("xor.", U(7), U(9), U(10), 0x7D275279); // xor. r7, r9, r10
 }
+
+#[test]
+fn test_sync() {
+    assert_asm!("sync", 0x7C0004AC); // sync
+    assert_asm!("sync", U(0), 0x7C0004AC); // sync 0
+    assert_asm!("lwsync", 0x7C2004AC); // lwsync
+    assert_asm!("sync", U(1), 0x7C2004AC); // sync 1
+    assert_asm!("ptesync", 0x7C4004AC); // ptesync
+    assert_asm!("sync", U(2), 0x7C4004AC); // sync 2
+}
+
+#[test]
+fn test_rldcl() {
+    assert_asm!("rldcl", U(3), U(0), U(6), U(27), 0x780336D0); // rldcl r3, r0, r6, 27
+    assert_asm!("rotld", U(3), U(0), U(6), 0x78033010); // rotld r3, r0, r6
+}
+
+#[test]
+fn test_rldic() {
+    assert_asm!("rldic", U(5), U(6), U(3), U(36), 0x78C51928); // rldic r5, r6, 3, 36
+}
+
+#[test]
+fn test_rldicl() {
+    assert_asm!("rldicl", U(5), U(6), U(0), U(32), 0x78C50020); // rldicl r5, r6, 0, 32
+    assert_asm!("rldicl", U(11), U(29), U(0), U(62), 0x7BAB07A0); // rldicl r11, r29, 0, 62
+}
+
+#[test]
+fn test_dss() {
+    assert_asm!("dss", U(1), U(0), 0x7C20066C); // dss 1, 0
+    assert_asm!("dss", U(1), 0x7C20066C); // dss 1
+    assert_asm!("dss", U(0), U(1), 0x7E00066C); // dss 0, 1
+    assert_asm!("dssall", 0x7E00066C); // dssall
+}

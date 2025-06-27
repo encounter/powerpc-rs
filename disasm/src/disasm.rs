@@ -17,7 +17,7 @@ pub struct Ins {
 impl Ins {
     /// Create a new instruction from its raw code.
     pub fn new(code: u32) -> Self {
-        Self { code, op: Opcode::_detect(code) }
+        Self { code, op: Opcode::detect(code) }
     }
 
     /// Parse the instruction into a simplified mnemonic, if any match.
@@ -293,6 +293,8 @@ impl From<u8> for OpaqueU {
         OpaqueU(x as u16)
     }
 }
+// Vector register.
+field_arg!(VR, u8, "vr{}");
 
 #[derive(Debug, Default, Copy, Clone, Eq, Hash, PartialEq)]
 pub enum Argument {
@@ -310,6 +312,7 @@ pub enum Argument {
     Offset(Offset),
     BranchDest(BranchDest),
     OpaqueU(OpaqueU),
+    VR(VR),
 }
 
 impl Display for Argument {
@@ -328,6 +331,7 @@ impl Display for Argument {
             Argument::Offset(x) => x.fmt(f),
             Argument::BranchDest(x) => x.fmt(f),
             Argument::OpaqueU(x) => x.fmt(f),
+            Argument::VR(x) => x.fmt(f),
         }
     }
 }

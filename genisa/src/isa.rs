@@ -5,6 +5,7 @@ use anyhow::{Context, Result};
 use num_traits::PrimInt;
 use proc_macro2::{Ident, Span, TokenStream};
 use quote::{format_ident, ToTokens};
+use serde::de::IntoDeserializer;
 use serde::{Deserialize, Deserializer, Serialize};
 
 pub fn load_isa(path: &Path) -> Result<Isa> {
@@ -44,9 +45,8 @@ pub struct Field {
     pub name: String,
     pub desc: String,
     #[serde(skip_serializing_if = "Option::is_none")]
-    pub bits: Option<BitRange>,
+    pub bits: Option<SplitBitRange>,
     pub signed: bool,
-    pub split: bool,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub arg: Option<String>,
     pub shift_left: u8,
@@ -55,16 +55,12 @@ pub struct Field {
 impl Field {
     /// Calculate the field mask from its bit range
     pub fn mask(&self) -> u32 {
-        self.bits.map(|b| b.mask()).unwrap_or(0)
+        self.bits.as_ref().map(|b| b.mask()).unwrap_or(0)
     }
 
     /// Shift and mask a value according to the field
-    pub fn shift_value(&self, mut value: u32) -> u32 {
-        if self.split {
-            // Swap 5-bit halves (SPR, TBR)
-            value = ((value & 0b11111_00000u32) >> 5) | ((value & 0b00000_11111u32) << 5);
-        }
-        self.bits.map(|b| b.shift_value(value >> self.shift_left)).unwrap_or(0)
+    pub fn shift_value(&self, value: u32) -> u32 {
+        self.bits.as_ref().map(|b| b.shift_value(value >> self.shift_left)).unwrap_or(0)
     }
 
     pub fn ident(&self) -> Ident {
@@ -282,12 +278,12 @@ impl<'de> Deserialize<'de> for BitRange {
     {
         let range_str: String = Deserialize::deserialize(deserializer)?;
         if let Some((start_str, end_str)) = range_str.split_once("..") {
-            let start = start_str.parse::<u8>().map_err(serde::de::Error::custom)?;
-            let end = end_str.parse::<u8>().map_err(serde::de::Error::custom)?;
+            let start = start_str.trim().parse::<u8>().map_err(serde::de::Error::custom)?;
+            let end = end_str.trim().parse::<u8>().map_err(serde::de::Error::custom)?;
             Ok(Self::new(start, end))
         } else {
-            let bit_idx = range_str.parse::<u8>().map_err(serde::de::Error::custom)?;
-            Ok(Self::new(bit_idx, bit_idx))
+            let bit_idx = range_str.trim().parse::<u8>().map_err(serde::de::Error::custom)?;
+            Ok(Self::new(bit_idx, bit_idx + 1))
         }
     }
 }
@@ -297,11 +293,91 @@ impl Serialize for BitRange {
     where
         S: serde::Serializer,
     {
-        if self.start() == self.end() {
-            self.start().serialize(serializer)
+        if self.start() + 1 == self.end() {
+            self.start().to_string().serialize(serializer)
         } else {
             format!("{}..{}", self.start(), self.end()).serialize(serializer)
         }
+    }
+}
+
+/// A collection of bit ranges, used to represent a (possibly non-contiguous) set of bits
+#[derive(Clone, Debug, Default)]
+pub struct SplitBitRange(pub Vec<BitRange>);
+
+impl SplitBitRange {
+    #[inline]
+    pub fn end(&self) -> u8 {
+        self.0.iter().map(|r| r.end()).max().unwrap_or(0)
+    }
+
+    /// Calculate the mask from the range
+    #[inline]
+    pub fn mask(&self) -> u32 {
+        self.0.iter().map(|r| r.mask()).fold(0, |acc, m| acc | m)
+    }
+
+    /// Number of bits to shift
+    #[inline]
+    pub fn shift(&self) -> u8 {
+        32 - self.end()
+    }
+
+    /// Number of bits in the range
+    #[inline]
+    pub fn len(&self) -> u8 {
+        self.0.iter().map(|r| r.len()).sum()
+    }
+
+    /// Shift and mask a value according to the range
+    #[inline]
+    pub fn shift_value(&self, mut value: u32) -> u32 {
+        let mut result = 0;
+        for range in self.0.iter().rev() {
+            result |= range.shift_value(value);
+            value >>= range.len();
+        }
+        result
+    }
+
+    /// Calculate the maximum value that can be represented by the range
+    #[inline]
+    pub fn max_value(&self) -> u32 {
+        (1 << self.len()) - 1
+    }
+}
+
+impl<'de> Deserialize<'de> for SplitBitRange {
+    fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
+    where
+        D: Deserializer<'de>,
+    {
+        let ranges_str: String = Deserialize::deserialize(deserializer)?;
+        let mut ranges = Vec::new();
+        for range_str in ranges_str.split(',') {
+            ranges.push(BitRange::deserialize(range_str.trim().into_deserializer())?);
+        }
+        Ok(Self(ranges))
+    }
+}
+
+impl Serialize for SplitBitRange {
+    fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
+    where
+        S: serde::Serializer,
+    {
+        let mut ranges_str = String::new();
+        for (i, range) in self.0.iter().enumerate() {
+            if i > 0 {
+                ranges_str.push(',');
+            }
+            if range.start() + 1 == range.end() {
+                ranges_str.push_str(&range.start().to_string());
+            } else {
+                ranges_str.push_str(&format!("{}..{}", range.start(), range.end()));
+            }
+        }
+        serializer.serialize_str(&ranges_str)
     }
 }
 
@@ -412,5 +488,32 @@ where
     fn to_tokens(&self, tokens: &mut TokenStream) {
         let s = format!("{:#x}", self);
         tokens.extend(TokenStream::from_str(&s).unwrap());
+    }
+}
+
+#[cfg(test)]
+mod test {
+    use super::*;
+
+    #[test]
+    fn test_split_bit_range() {
+        let range = SplitBitRange(vec![BitRange::new(26, 27), BitRange::new(21, 26)]);
+        assert_eq!(range.mask(), 0b0000_0000_0000_0000_0000_0111_1110_0000);
+        assert_eq!(range.shift(), 5);
+        assert_eq!(range.len(), 6);
+        assert_eq!(range.max_value(), 0x3F);
+        assert_eq!(range.shift_value(u32::MAX), 0b0000_0000_0000_0000_0000_0111_1110_0000);
+        assert_eq!(range.shift_value(0x1F), 0b0000_0000_0000_0000_0000_0111_1100_0000);
+    }
+
+    #[test]
+    fn test_split_bit_range_non_contiguous() {
+        let range = SplitBitRange(vec![BitRange::new(30, 31), BitRange::new(16, 21)]);
+        assert_eq!(range.mask(), 0b0000_0000_0000_0000_1111_1000_0000_0010);
+        assert_eq!(range.shift(), 1);
+        assert_eq!(range.len(), 6);
+        assert_eq!(range.max_value(), 0x3F);
+        assert_eq!(range.shift_value(u32::MAX), 0b0000_0000_0000_0000_1111_1000_0000_0010);
+        assert_eq!(range.shift_value(0x1F), 0b0000_0000_0000_0000_1111_1000_0000_0000);
     }
 }

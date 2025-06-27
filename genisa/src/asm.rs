@@ -8,21 +8,36 @@ use proc_macro2::{Literal, TokenStream};
 use quote::{format_ident, quote};
 use std::collections::BTreeMap;
 
+enum OpcodeOrMnemonic {
+    Opcode(Opcode),
+    Mnemonic(Mnemonic),
+}
+
+impl OpcodeOrMnemonic {
+    fn name(&self) -> &str {
+        match self {
+            OpcodeOrMnemonic::Opcode(opcode) => &opcode.name,
+            OpcodeOrMnemonic::Mnemonic(mnemonic) => &mnemonic.name,
+        }
+    }
+}
+
 pub fn gen_asm(isa: &Isa, max_args: usize) -> Result<TokenStream> {
     let mut functions = TokenStream::new();
 
     let mut func_map = phf_codegen::Map::new();
+    let mut mnemonic_map = BTreeMap::<String, Vec<OpcodeOrMnemonic>>::new();
     for opcode in &isa.opcodes {
-        let name = format_ident!("gen_{}", opcode.ident());
-        let inner = gen_opcode(opcode, isa)?;
-        functions.extend(quote! {
-            fn #name(args: &Arguments, modifiers: u32) -> Result<u32, ArgumentError> { #inner }
-        });
+        mnemonic_map
+            .entry(opcode.name.clone())
+            .or_default()
+            .push(OpcodeOrMnemonic::Opcode(opcode.clone()));
     }
-
-    let mut mnemonic_map = BTreeMap::<String, Vec<Mnemonic>>::new();
     for mnemonic in &isa.mnemonics {
-        mnemonic_map.entry(mnemonic.name.clone()).or_default().push(mnemonic.clone());
+        mnemonic_map
+            .entry(mnemonic.name.clone())
+            .or_default()
+            .push(OpcodeOrMnemonic::Mnemonic(mnemonic.clone()));
     }
     for (name, mnemonics) in &mnemonic_map {
         let fn_name = format!("gen_{}", to_ident(name));
@@ -32,12 +47,19 @@ pub fn gen_asm(isa: &Isa, max_args: usize) -> Result<TokenStream> {
             inner = TokenStream::new();
             let mut max_args = 0;
             for mnemonic in mnemonics {
-                let gen = gen_mnemonic(mnemonic, isa, false)?;
-                let arg_n = Literal::usize_unsuffixed(mnemonic.args.len());
+                let (gen, args_len) = match mnemonic {
+                    OpcodeOrMnemonic::Opcode(opcode) => {
+                        (gen_opcode(opcode, isa, false)?, opcode.args.len())
+                    }
+                    OpcodeOrMnemonic::Mnemonic(mnemonic) => {
+                        (gen_mnemonic(mnemonic, isa, false)?, mnemonic.args.len())
+                    }
+                };
+                let arg_n = Literal::usize_unsuffixed(args_len);
                 inner.extend(quote! {
                     #arg_n => { #gen }
                 });
-                max_args = max_args.max(mnemonic.args.len());
+                max_args = max_args.max(args_len);
             }
             let max_args = Literal::usize_unsuffixed(max_args);
             inner.extend(quote! {
@@ -45,31 +67,25 @@ pub fn gen_asm(isa: &Isa, max_args: usize) -> Result<TokenStream> {
             });
             inner = quote! { match arg_count(args) { #inner } };
         } else {
-            inner = gen_mnemonic(mnemonics.first().unwrap(), isa, true)?;
+            inner = match mnemonics.first().unwrap() {
+                OpcodeOrMnemonic::Opcode(opcode) => gen_opcode(opcode, isa, true)?,
+                OpcodeOrMnemonic::Mnemonic(mnemonic) => gen_mnemonic(mnemonic, isa, true)?,
+            };
         }
         functions.extend(quote! {
             fn #fn_ident(args: &Arguments, modifiers: u32) -> Result<u32, ArgumentError> { #inner }
         });
     }
 
-    for (opcode, modifiers) in isa.opcodes.iter().flat_map(|o| {
-        modifiers_iter(&o.modifiers, isa).filter(|m| modifiers_valid(m)).map(move |m| (o, m))
-    }) {
-        let suffix = modifiers.iter().map(|m| m.suffix).collect::<String>();
-        let mut pattern = 0;
-        for modifier in &modifiers {
-            pattern |= modifier.mask();
-        }
-        func_map.entry(
-            format!("{}{}", opcode.name, suffix),
-            &format!("(gen_{}, {:#x})", opcode.ident(), pattern),
-        );
-    }
-
     for (mnemonic, modifiers) in mnemonic_map.iter().flat_map(|(_, mnemonics)| {
         let mnemonic = mnemonics.first().unwrap();
-        let opcode = isa.find_opcode(&mnemonic.opcode).unwrap();
-        let modifiers = mnemonic.modifiers.as_deref().unwrap_or(&opcode.modifiers);
+        let modifiers = match mnemonic {
+            OpcodeOrMnemonic::Opcode(opcode) => &opcode.modifiers,
+            OpcodeOrMnemonic::Mnemonic(mnemonic) => {
+                let opcode = isa.find_opcode(&mnemonic.opcode).unwrap();
+                mnemonic.modifiers.as_deref().unwrap_or(&opcode.modifiers)
+            }
+        };
         modifiers_iter(modifiers, isa).filter(|m| modifiers_valid(m)).map(move |m| (mnemonic, m))
     }) {
         let suffix = modifiers.iter().map(|m| m.suffix).collect::<String>();
@@ -77,10 +93,8 @@ pub fn gen_asm(isa: &Isa, max_args: usize) -> Result<TokenStream> {
         for modifier in &modifiers {
             pattern |= modifier.mask();
         }
-        func_map.entry(
-            format!("{}{}", mnemonic.name, suffix),
-            &format!("(gen_{}, {:#x})", to_ident(&mnemonic.name), pattern),
-        );
+        let name = format!("{}{}", mnemonic.name(), suffix);
+        func_map.entry(name, &format!("(gen_{}, {:#x})", to_ident(&mnemonic.name()), pattern));
     }
 
     let func_map = syn::parse_str::<TokenStream>(&func_map.build().to_string())?;
@@ -105,7 +119,7 @@ pub fn gen_asm(isa: &Isa, max_args: usize) -> Result<TokenStream> {
 }
 
 fn gen_parse_field(field: &Field, i: usize) -> Result<(TokenStream, bool)> {
-    let Some(bits) = field.bits else { bail!("Field {} has no bits", field.name) };
+    let Some(bits) = &field.bits else { bail!("Field {} has no bits", field.name) };
     let i = Literal::usize_unsuffixed(i);
     Ok(if field.signed {
         let max_value = 1 << (bits.len() - 1 + field.shift_left);
@@ -119,89 +133,84 @@ fn gen_parse_field(field: &Field, i: usize) -> Result<(TokenStream, bool)> {
     })
 }
 
-fn gen_field(
-    field: &Field,
-    mut accessor: TokenStream,
-    finalize: fn(TokenStream) -> TokenStream,
-    signed: bool,
-) -> Result<TokenStream> {
-    let Some(bits) = field.bits else { bail!("Field {} has no bits", field.name) };
-    let mut shift_right = bits.shift();
-    let mut shift_left = field.shift_left;
-    if shift_right == shift_left {
-        // Optimization: these cancel each other out
-        // Adjust subsequent operations to operate on the full value
-        shift_right = 0;
-        shift_left = 0;
-    }
+fn gen_field(field: &Field, mut accessor: TokenStream, signed: bool) -> Result<TokenStream> {
+    let Some(bits) = &field.bits else { bail!("Field {} has no bits", field.name) };
+
+    // Optimization: offset all shifts to avoid unnecessary operations
+    let shift_offset = field.shift_left.min(bits.shift());
 
     // Handle the operations (in reverse order from disassembly)
     let mut operations = TokenStream::new();
-    let mut inner;
-
     if signed {
         accessor = quote! { #accessor as u32 };
     }
 
-    // Swap 5-bit halves (SPR, TBR)
-    if field.split {
+    let mut bit_position = 0;
+    for range in bits.0.iter().rev() {
+        let mut shift_right = range.shift() - shift_offset;
+        let mut shift_left = field.shift_left + bit_position - shift_offset;
+
+        // Optimize shifts
+        let common_shift = shift_right.min(shift_left);
+        shift_right -= common_shift;
+        shift_left -= common_shift;
+
+        // Shift left
+        let mut inner = if shift_left > 0 {
+            let shift_left = Literal::u8_unsuffixed(shift_left);
+            quote! { (arg >> #shift_left) }
+        } else {
+            quote! { arg }
+        };
+
+        // Mask
+        let mask = HexLiteral(range.mask() >> shift_right);
+        inner = quote! { #inner & #mask };
+
+        // Shift right
+        if shift_right > 0 {
+            let shift_right = Literal::u8_unsuffixed(shift_right);
+            inner = quote! { (#inner) << #shift_right };
+        }
+
+        bit_position += range.len();
         operations.extend(quote! {
-            value = ((value & 0b11111_00000) >> 5) | ((value & 0b00000_11111) << 5);
+            code |= #inner;
         });
-        inner = quote! { value };
-    } else {
-        inner = accessor.clone();
     }
 
-    // Handle left shift
-    if shift_left > 0 {
-        let shift_left = Literal::u8_unsuffixed(shift_left);
-        inner = quote! { (#inner >> #shift_left) };
-    }
-
-    // Mask
-    let mask = HexLiteral(bits.mask() >> shift_right);
-    inner = quote! { #inner & #mask };
-
-    // Shift right
-    if shift_right > 0 {
-        let shift = Literal::u8_unsuffixed(shift_right);
-        inner = quote! { (#inner) << #shift };
-    }
-
-    if operations.is_empty() {
-        Ok(finalize(inner))
-    } else {
-        inner = finalize(inner);
-        Ok(quote! {{
-            let mut value = #accessor;
-            #operations
-            #inner
-        }})
-    }
+    Ok(quote! {{
+        let arg = #accessor;
+        #operations
+    }})
 }
 
-fn gen_opcode(opcode: &Opcode, isa: &Isa) -> Result<TokenStream> {
+fn gen_opcode(opcode: &Opcode, isa: &Isa, check_arg_count: bool) -> Result<TokenStream> {
     let mut args = TokenStream::new();
     for (i, arg) in opcode.args.iter().enumerate() {
         let field = isa.find_field(arg).unwrap();
         let comment = format!(" {}", field.name);
         let (accessor, signed) = gen_parse_field(field, i)?;
-        let value = gen_field(field, accessor, |s| s, signed)?;
+        let operations = gen_field(field, accessor, signed)?;
         args.extend(quote! {
             #[comment = #comment]
-            code |= #value;
+            #operations
         });
     }
 
     let arg_count = Literal::usize_unsuffixed(opcode.args.len());
+    let mut result = TokenStream::new();
+    if check_arg_count {
+        result.extend(quote! { check_arg_count(args, #arg_count)?; });
+    }
+
     let pattern = HexLiteral(opcode.pattern);
-    Ok(quote! {
-        check_arg_count(args, #arg_count)?;
+    result.extend(quote! {
         let mut code = #pattern | modifiers;
         #args
         Ok(code)
-    })
+    });
+    Ok(result)
 }
 
 fn gen_mnemonic(mnemonic: &Mnemonic, isa: &Isa, check_arg_count: bool) -> Result<TokenStream> {
@@ -211,10 +220,10 @@ fn gen_mnemonic(mnemonic: &Mnemonic, isa: &Isa, check_arg_count: bool) -> Result
     let mut args = TokenStream::new();
     for (i, arg) in mnemonic.args.iter().enumerate() {
         let comment = format!(" {}", arg);
-        let arg = gen_argument(&mnemonic.args, i, isa, mnemonic.replace_assemble.get(arg))?;
+        let operations = gen_argument(&mnemonic.args, i, isa, mnemonic.replace_assemble.get(arg))?;
         args.extend(quote! {
             #[comment = #comment]
-            code |= #arg;
+            #operations
         });
     }
 
@@ -238,10 +247,10 @@ fn gen_mnemonic(mnemonic: &Mnemonic, isa: &Isa, check_arg_count: bool) -> Result
                             format!("Mnemonic {}: unknown field {}", mnemonic.name, in_field.name)
                         })?;
                     let (accessor, signed) = gen_parse_field(in_field, arg_n)?;
-                    let arg = gen_field(condition.field, accessor, |s| s, signed)?;
+                    let operations = gen_field(condition.field, accessor, signed)?;
                     args.extend(quote! {
                         #[comment = #comment]
-                        code |= #arg;
+                        #operations
                     });
                 }
                 ConditionValue::Complex(c) => {
@@ -256,10 +265,10 @@ fn gen_mnemonic(mnemonic: &Mnemonic, isa: &Isa, check_arg_count: bool) -> Result
                         any_signed |= signed;
                         Ok(s)
                     })?;
-                    let arg = gen_field(condition.field, quote! { (#arg) }, |s| s, any_signed)?;
+                    let operations = gen_field(condition.field, quote! { (#arg) }, any_signed)?;
                     args.extend(quote! {
                         #[comment = #comment]
-                        code |= #arg;
+                        #operations
                     });
                 }
             }
@@ -299,9 +308,9 @@ fn gen_argument(
             any_signed |= signed;
             Ok(parse)
         })?;
-        gen_field(field, quote! { (#stream) }, |s| s, any_signed)
+        gen_field(field, quote! { (#stream) }, any_signed)
     } else {
         let (accessor, signed) = gen_parse_field(field, arg_n)?;
-        gen_field(field, accessor, |s| s, signed)
+        gen_field(field, accessor, signed)
     }
 }

@@ -23,10 +23,11 @@ fields:
     desc: Branch Offset
     bits: 16..32
     signed: true
-  - name: offset64
+  - name: ds
     arg: Offset
-    desc: Branch Offset for 64 bit instructions
+    desc: Load/Store Double Word Offset (for 64-bit instructions)
     bits: 16..30
+    shift_left: 2
     signed: true
   # Branch fields
   - name: BO
@@ -54,32 +55,26 @@ fields:
     arg: OpaqueU
     desc: Shift Amount
     bits: 16..21
-  - name: SH1
+  - name: SH64
     arg: OpaqueU
-    desc: Shift Amount (for 64 bit implementations)
-    bits: 16..21
-  - name: SH2
-    arg: OpaqueU
-    desc: Shift Amount (for 64 bit implementations)
-    bits: 30..31
+    desc: Shift Amount (for 64-bit instructions)
+    bits: 30,16..21
   - name: MB
     arg: OpaqueU
     desc: Mask Begin
     bits: 21..26
   - name: MB64
     arg: OpaqueU
-    desc: Mask Begin (for 64 bit implementations)
-    bits: 21..27
-    split: true
+    desc: Mask Begin (for 64-bit instructions)
+    bits: 26,21..26
   - name: ME
     arg: OpaqueU
     desc: Mask End
     bits: 26..31
   - name: ME64
     arg: OpaqueU
-    desc: Mask End (for 64 bit implementations)
-    bits: 21..27
-    split: true
+    desc: Mask End (for 64-bit instructions)
+    bits: 26,21..26
   # Registers
   - name: rS
     arg: GPR
@@ -108,8 +103,7 @@ fields:
   - name: spr
     arg: SPR
     desc: Special Purpose Register
-    bits: 11..21
-    split: true
+    bits: 16..21,11..16
   # Floating-point registers
   - name: frS
     arg: FPR
@@ -133,27 +127,27 @@ fields:
     bits: 21..26
   # Vector registers
   - name: vS
-    arg: GPR
+    arg: VR
     desc: Vector Source Register
     bits: 6..11
   - name: vD
-    arg: GPR
+    arg: VR
     desc: Vector Destination Register
     bits: 6..11
   - name: vA
-    arg: GPR
+    arg: VR
     desc: Vector Register A
     bits: 11..16
   - name: vA.nz
-    arg: GPR
+    arg: VR
     desc: Vector Register A (non-zero)
     bits: 11..16
   - name: vB
-    arg: GPR
+    arg: VR
     desc: Vector Register B
     bits: 16..21
   - name: vC
-    arg: GPR
+    arg: VR
     desc: Vector Register C
     bits: 21..26
   # Condition register bits
@@ -190,8 +184,7 @@ fields:
   - name: tbr
     arg: OpaqueU
     desc: Time Base
-    bits: 11..21
-    split: true
+    bits: 16..21,11..16
   - name: mtfsf_FM
     arg: OpaqueU
     desc: Field Mask for mtfsf
@@ -230,7 +223,12 @@ fields:
     arg: OpaqueU
     desc: L field for sync
     bits: 9..11
+
   # AltiVec exclusive
+  - name: ds_A
+    arg: OpaqueU
+    desc: All field for ds instructions
+    bits: 6..7
   - name: STRM
     arg: OpaqueU
     desc: Stream ID
@@ -238,61 +236,28 @@ fields:
   - name: SHB
     arg: OpaqueU
     bits: 22..26
-  # VMX128 exclusive
-  # VD128
-  - name: VD128
-    arg: GPR
-    desc: VMX128 Dest Register, lower 5 bits
-    bits: 6..11
-  - name: VDh
-    arg: GPR
-    desc: VMX128 Dest Register, upper 2 bits
-    bits: 28..30
-  # VS128
-  - name: VS128
-    arg: GPR
-    desc: VMX128 Source Register, lower 5 bits
-    bits: 6..11
-  - name: VSh
-    arg: GPR
-    desc: VMX128 Source Register, upper 2 bits
-    bits: 28..30
-  # VA128
-  - name: VA128
-    arg: GPR
-    desc: VMX128 Register A, lower 5 bits
-    bits: 11..16
-  - name: VA128_5
-    arg: GPR
-    desc: VMX128 Register A, bit 6
-    bits: 26..27
-  - name: VA128_6
-    arg: GPR
-    desc: VMX128 Register A, bit 7
-    bits: 21..22
-  # VB128
-  - name: VB128
-    arg: GPR
-    desc: VMX128 Register B, lower 5 bits
-    bits: 16..21
-  - name: VBh
-    arg: GPR
-    desc: VMX128 Register B, upper 2 bits
-    bits: 30..32
-  # VC
-  - name: VC128
-    arg: GPR
-    desc: VMX128 Register C (must be within 3 bits)
-    bits: 23..26
 
-  - name: PERMh
-    arg: OpaqueU
-    desc: upper 3 bits of a permutation
+  # VMX128 exclusive
+  - name: VDS128
+    arg: VR
+    desc: VMX128 Source/Dest Register
+    bits: 28..30,6..11
+  - name: VA128
+    arg: VR
+    desc: VMX128 Register A
+    bits: 21,26,11..16
+  - name: VB128
+    arg: VR
+    desc: VMX128 Register B
+    bits: 30..32,16..21
+  - name: VC128
+    arg: VR
+    desc: VMX128 Register C
     bits: 23..26
-  - name: PERMl
+  - name: PERM
     arg: OpaqueU
-    desc: lower 5 bits of a permutation
-    bits: 11..16
+    desc: VMX128 Permutation
+    bits: 23..26,11..16
   - name: Ximm
     arg: OpaqueU
     desc: unknown immediate
@@ -340,11 +305,8 @@ modifiers:
     desc: Predict branch to be taken (implicit dest for LR/CTR)
     suffix: +
     bit: 10
+
   # AltiVec exclusive
-  - name: A
-    desc: All bit
-    suffix: a
-    bit: 6
   - name: T
     desc: Transient bit
     suffix: t
@@ -356,6 +318,7 @@ modifiers:
   # VMX128 exclusive
   - name: Rc128
     desc: Record Bit (VMX128)
+    suffix: .
     bit: 25
 
 opcodes:
@@ -677,7 +640,7 @@ opcodes:
     args: [ rD, rA, rB ]
     defs: [ rD ]
     uses: [ rA, rB ]
-    
+
   # 64-bit only
   - name: divdu
     desc: Divide Double Word Unsigned
@@ -752,7 +715,7 @@ opcodes:
     args: [ rA, rS ]
     defs: [ rA ]
     uses: [ rS ]
-    
+
   # 64-bit only
   - name: extsw
     desc: Extend Sign Word
@@ -789,7 +752,7 @@ opcodes:
     args: [ frD, frA, frB ]
     defs: [ frD ]
     uses: [ frA, frB ]
-    
+
   # 64-bit only
   - name: fcfid
     desc: Floating Convert from Integer Double Word
@@ -1093,10 +1056,10 @@ opcodes:
     desc: Load Double Word
     bitmask: 0xfc000003
     pattern: 0xe8000000
-    args: [ rD, offset64, rA ]
+    args: [ rD, ds, rA ]
     defs: [ rD ]
-    uses: [ offset64, rA.nz ]
-  
+    uses: [ rA.nz ]
+
   # 64-bit only
   - name: ldarx
     desc: Load Double Word and Reserve Indexed
@@ -1105,16 +1068,16 @@ opcodes:
     args: [ rD, rA, rB ]
     defs: [ rD ]
     uses: [ rA, rB ]
-  
+
   # 64-bit only
   - name: ldu
     desc: Load Double Word with Update
     bitmask: 0xfc000003
     pattern: 0xe8000001
-    args: [ rD, offset64, rA ]
+    args: [ rD, ds, rA ]
     defs: [ rD, rA ]
-    uses: [ offset64, rA ]
-  
+    uses: [ rA ]
+
   # 64-bit only
   - name: ldux
     desc: Load Double Word with Update Indexed
@@ -1123,7 +1086,7 @@ opcodes:
     args: [ rD, rA, rB ]
     defs: [ rD, rA ]
     uses: [ rA, rB ]
-  
+
   # 64-bit only
   - name: ldx
     desc: Load Double Word Indexed
@@ -1299,9 +1262,9 @@ opcodes:
     desc: Load Word Algebraic
     bitmask: 0xfc000003
     pattern: 0xe8000002
-    args: [ rD, offset64, rA ]
+    args: [ rD, ds, rA ]
     defs: [ rD ]
-    uses: [ offset64, rA.nz ]
+    uses: [ rA.nz ]
 
   - name: lwarx
     desc: Load String Word and Reverse Indexed
@@ -1310,7 +1273,7 @@ opcodes:
     args: [ rD, rA, rB ]
     defs: [ rD ]
     uses: [ rA.nz, rB ]
-  
+
   # 64-bit only
   - name: lwaux
     desc: Load Word Algebraic with Update Indexed
@@ -1319,7 +1282,7 @@ opcodes:
     args: [ rD, rA, rB ]
     defs: [ rD ]
     uses: [ rA, rB ]
-  
+
   # 64-bit only
   - name: lwax
     desc: Load Word Algebraic Indexed
@@ -1488,7 +1451,7 @@ opcodes:
     pattern: 0x7c000124
     args: [ rS ]
     uses: [ rS ]
-  
+
   # 64-bit only
   - name: mtmsrd
     desc: Move to Machine State Register Double Word
@@ -1510,7 +1473,7 @@ opcodes:
     pattern: 0x7c0001a4
     args: [ sr, rS ]
     uses: [ rS ]
-  
+
   # 64-bit only
   - name: mtsrd
     desc: Move to Segment Register Double Word
@@ -1518,7 +1481,7 @@ opcodes:
     pattern: 0x7c0000a4
     args: [ sr, rS ]
     uses: [ rS ]
-  
+
   # 64-bit only
   - name: mtsrdin
     desc: Move to Segment Register Double Word Indirect
@@ -1533,7 +1496,7 @@ opcodes:
     pattern: 0x7c0001e4
     args: [ rS, rB ]
     uses: [ rS, rB ]
-  
+
   # 64-bit only
   - name: mulhd
     desc: Multiply High Double Word
@@ -1543,7 +1506,7 @@ opcodes:
     args: [ rD, rA, rB ]
     defs: [ rD ]
     uses: [ rA, rB ]
-  
+
   # 64-bit only
   - name: mulhdu
     desc: Multiply High Double Word Unsigned
@@ -1697,9 +1660,9 @@ opcodes:
     bitmask: 0xfc00001c
     pattern: 0x78000008
     modifiers: [ Rc ]
-    args: [ rA, rS, SH1, MB64, SH2 ]
+    args: [ rA, rS, SH64, MB64 ]
     defs: [ rA ]
-    uses: [ rS, SH1, SH2 ]
+    uses: [ rS ]
 
   # 64-bit only
   - name: rldicl
@@ -1707,9 +1670,9 @@ opcodes:
     bitmask: 0xfc00001c
     pattern: 0x78000000
     modifiers: [ Rc ]
-    args: [ rA, rS, SH1, MB64, SH2 ]
+    args: [ rA, rS, SH64, MB64 ]
     defs: [ rA ]
-    uses: [ rS, SH1, SH2 ]
+    uses: [ rS ]
 
   # 64-bit only
   - name: rldicr
@@ -1717,9 +1680,9 @@ opcodes:
     bitmask: 0xfc00001c
     pattern: 0x78000004
     modifiers: [ Rc ]
-    args: [ rA, rS, SH1, ME64, SH2 ]
+    args: [ rA, rS, SH64, ME64 ]
     defs: [ rA ]
-    uses: [ rS, SH1, SH2 ]
+    uses: [ rS ]
 
   # 64-bit only
   - name: rldimi
@@ -1727,9 +1690,9 @@ opcodes:
     bitmask: 0xfc00001c
     pattern: 0x7800000c
     modifiers: [ Rc ]
-    args: [ rA, rS, SH1, MB64, SH2 ]
+    args: [ rA, rS, SH64, MB64 ]
     defs: [ rA ]
-    uses: [ rS, SH1, SH2 ]
+    uses: [ rS ]
 
   - name: rlwimi
     desc: Rotate Left Word Immediate then Mask Insert
@@ -1738,7 +1701,7 @@ opcodes:
     modifiers: [ Rc ]
     args: [ rA, rS, SH, MB, ME ]
     defs: [ rA ]
-    uses: [ rA, rS, SH ]
+    uses: [ rA, rS ]
 
   - name: rlwinm
     desc: Rotate Left Word Immediate then AND with Mask
@@ -1747,7 +1710,7 @@ opcodes:
     modifiers: [ Rc ]
     args: [ rA, rS, SH, MB, ME ]
     defs: [ rA ]
-    uses: [ rS, SH ]
+    uses: [ rS ]
 
   - name: rlwnm
     desc: Rotate Left Word then AND with Mask
@@ -1812,7 +1775,7 @@ opcodes:
     bitmask: 0xFC0007FC
     pattern: 0x7c000674
     modifiers: [ Rc ]
-    args: [ rA, rS, SH1, SH2 ]
+    args: [ rA, rS, SH64 ]
     defs: [ rA ]
     uses: [ rS ]
 
@@ -1888,7 +1851,7 @@ opcodes:
     desc: Store Double Word
     bitmask: 0xfc000003
     pattern: 0xf8000000
-    args: [ rS, offset64, rA ]
+    args: [ rS, ds, rA ]
     uses: [ rS, rA.nz ]
 
   # 64-bit only
@@ -1896,6 +1859,7 @@ opcodes:
     desc: Store Double Word Conditional Indexed
     bitmask: 0xfc0007ff
     pattern: 0x7c0001ad
+    side_effects: [ Rc ]
     args: [ rS, rA, rB ]
     uses: [ rS, rA.nz, rB ]
 
@@ -1904,7 +1868,7 @@ opcodes:
     desc: Store Double Word with Update
     bitmask: 0xfc000003
     pattern: 0xf8000001
-    args: [ rS, offset64, rA ]
+    args: [ rS, ds, rA ]
     defs: [ rA ]
     uses: [ rS, rA ]
 
@@ -2154,7 +2118,7 @@ opcodes:
     pattern: 0x7c0004ac
     args: [ sync_L ]
     uses: [ sync_L ]
-    
+
   # 64-bit only
   - name: td
     desc: Trap Double Word
@@ -2227,8 +2191,7 @@ opcodes:
     desc: Data Stream Stop
     bitmask: 0xfd9fffff
     pattern: 0x7c00066c
-    modifiers: [ A ]
-    args: [ STRM ]
+    args: [ STRM, ds_A ]
     uses: [ STRM ]
 
   - name: dst
@@ -2262,7 +2225,7 @@ opcodes:
     args: [ vD, rA, rB ]
     defs: [ vD ]
     uses: [ rA.nz, rB ]
-    
+
   - name: lvewx
     desc: Load Vector Element Word Indexed
     bitmask: 0xfc0007ff
@@ -2270,7 +2233,7 @@ opcodes:
     args: [ vD, rA, rB ]
     defs: [ vD ]
     uses: [ rA.nz, rB ]
-    
+
   - name: lvsl
     desc: Load Vector for Shift Left
     bitmask: 0xfc0007ff
@@ -2278,7 +2241,7 @@ opcodes:
     args: [ vD, rA, rB ]
     defs: [ vD ]
     uses: [ rA.nz, rB ]
-    
+
   - name: lvsr
     desc: Load Vector for Shift Right
     bitmask: 0xfc0007ff
@@ -2286,7 +2249,7 @@ opcodes:
     args: [ vD, rA, rB ]
     defs: [ vD ]
     uses: [ rA.nz, rB ]
-    
+
   - name: lvx
     desc: Load Vector Indexed
     bitmask: 0xfc0007ff
@@ -2294,7 +2257,7 @@ opcodes:
     args: [ vD, rA, rB ]
     defs: [ vD ]
     uses: [ rA.nz, rB ]
-    
+
   - name: lvxl
     desc: Load Vector Indexed LRU
     bitmask: 0xfc0007ff
@@ -2313,7 +2276,7 @@ opcodes:
   - name: mtvscr
     desc: Move to Vector Status and Control Register
     bitmask: 0xffff07ff
-    pattern: 0x10000c44
+    pattern: 0x10000644
     args: [ vB ]
     uses: [ vB ]
 
@@ -3502,612 +3465,604 @@ opcodes:
     uses: [ vA, vB ]
 
 # VMX128 exclusives
-# TODO: fill out the args/defs/uses
 # found here: https://github.com/xenia-project/xenia/blob/master/docs/ppc/vmx128.txt
   - name: lvewx128
     desc: Load Vector128 Element Word Indexed
     bitmask: 0xfc0007f3
     pattern: 0x10000083
-    args: [ VD128, rA, rB, VDh ]
-    defs: [ VD128, VDh ]
+    args: [ VDS128, rA, rB ]
+    defs: [ VDS128 ]
     uses: [ rA, rB ]
-    
+
   - name: lvlx128
     desc: Load Vector128 Left Indexed
     bitmask: 0xfc0007f3
     pattern: 0x10000403
-    args: [ VD128, rA, rB, VDh ]
-    defs: [ VD128, VDh ]
+    args: [ VDS128, rA, rB ]
+    defs: [ VDS128 ]
     uses: [ rA, rB ]
 
   - name: lvrx128
     desc: Load Vector128 Right Indexed
     bitmask: 0xfc0007f3
     pattern: 0x10000443
-    args: [ VD128, rA, rB, VDh ]
-    defs: [ VD128, VDh ]
+    args: [ VDS128, rA, rB ]
+    defs: [ VDS128 ]
     uses: [ rA, rB ]
 
   - name: lvlxl128
     desc: Load Vector128 Left Indexed LRU
     bitmask: 0xfc0007f3
     pattern: 0x10000603
-    args: [ VD128, rA, rB, VDh ]
-    defs: [ VD128, VDh ]
+    args: [ VDS128, rA, rB ]
+    defs: [ VDS128 ]
     uses: [ rA, rB ]
 
   - name: lvrxl128
     desc: Load Vector128 Right Indexed LRU
     bitmask: 0xfc0007f3
     pattern: 0x10000643
-    args: [ VD128, rA, rB, VDh ]
-    defs: [ VD128, VDh ]
+    args: [ VDS128, rA, rB ]
+    defs: [ VDS128 ]
     uses: [ rA, rB ]
 
   - name: lvsl128
     desc: Load Vector128 for Shift Left
     bitmask: 0xfc0007f3
     pattern: 0x10000003
-    args: [ VD128, rA, rB, VDh ]
-    defs: [ VD128, VDh ]
+    args: [ VDS128, rA, rB ]
+    defs: [ VDS128 ]
     uses: [ rA, rB ]
 
   - name: lvsr128
     desc: Load Vector128 for Shift Right
     bitmask: 0xfc0007f3
     pattern: 0x10000043
-    args: [ VD128, rA, rB, VDh ]
-    defs: [ VD128, VDh ]
+    args: [ VDS128, rA, rB ]
+    defs: [ VDS128 ]
     uses: [ rA, rB ]
 
   - name: lvx128
     desc: Load Vector128 Indexed
     bitmask: 0xfc0007f3
     pattern: 0x100000C3
-    args: [ VD128, rA, rB, VDh ]
-    defs: [ VD128, VDh ]
+    args: [ VDS128, rA, rB ]
+    defs: [ VDS128 ]
     uses: [ rA, rB ]
 
   - name: lvxl128
     desc: Load Vector128 Indexed LRU
     bitmask: 0xfc0007f3
     pattern: 0x100002C3
-    args: [ VD128, rA, rB, VDh ]
-    defs: [ VD128, VDh ]
+    args: [ VDS128, rA, rB ]
+    defs: [ VDS128 ]
     uses: [ rA, rB ]
 
   - name: stvewx128
     desc: Store Vector128 Element Word Indexed
     bitmask: 0xfc0007f3
     pattern: 0x10000303
-    args: [ VD128, rA, rB, VDh ]
-    defs: [ VD128, VDh ]
-    uses: [ rA, rB ]
+    args: [ VDS128, rA, rB ]
+    uses: [ VDS128, rA, rB ]
 
   - name: stvlx128
     desc: Store Vector128 Left Indexed
     bitmask: 0xfc0007f3
     pattern: 0x10000503
-    args: [ VD128, rA, rB, VDh ]
-    defs: [ VD128, VDh ]
-    uses: [ rA, rB ]
+    args: [ VDS128, rA, rB ]
+    uses: [ VDS128, rA, rB ]
 
   - name: stvlxl128
     desc: Store Vector128 Left Indexed LRU
     bitmask: 0xfc0007f3
     pattern: 0x10000703
-    args: [ VD128, rA, rB, VDh ]
-    defs: [ VD128, VDh ]
-    uses: [ rA, rB ]
+    args: [ VDS128, rA, rB ]
+    uses: [ VDS128, rA, rB ]
 
   - name: stvrx128
     desc: Store Vector128 Right Indexed
     bitmask: 0xfc0007f3
     pattern: 0x10000543
-    args: [ VD128, rA, rB, VDh ]
-    defs: [ VD128, VDh ]
-    uses: [ rA, rB ]
+    args: [ VDS128, rA, rB ]
+    uses: [ VDS128, rA, rB ]
 
   - name: stvrxl128
     desc: Store Vector128 Right Indexed LRU
     bitmask: 0xfc0007f3
     pattern: 0x10000743
-    args: [ VD128, rA, rB, VDh ]
-    defs: [ VD128, VDh ]
-    uses: [ rA, rB ]
+    args: [ VDS128, rA, rB ]
+    uses: [ VDS128, rA, rB ]
 
   - name: stvx128
     desc: Store Vector128 Indexed
     bitmask: 0xfc0007f3
     pattern: 0x100001C3
-    args: [ VD128, rA, rB, VDh ]
-    defs: [ VD128, VDh ]
-    uses: [ rA, rB ]
+    args: [ VDS128, rA, rB ]
+    uses: [ VDS128, rA, rB ]
 
   - name: stvxl128
     desc: Store Vector128 Indexed LRU
     bitmask: 0xfc0007f3
     pattern: 0x100003C3
-    args: [ VD128, rA, rB, VDh ]
-    defs: [ VD128, VDh ]
-    uses: [ rA, rB ]
+    args: [ VDS128, rA, rB ]
+    uses: [ VDS128, rA, rB ]
 
   - name: vaddfp128
     desc: Vector128 Add Floating Point
     bitmask: 0xfc0003d0
     pattern: 0x14000010
-    args: [ VD128, VA128, VB128, VA128_6, VA128_5, VDh, VBh ]
-    defs: [ VD128, VDh ]
-    uses: [ VA128, VB128, VA128_6, VA128_5, VBh ]
+    args: [ VDS128, VA128, VB128 ]
+    defs: [ VDS128 ]
+    uses: [ VA128, VB128 ]
 
   - name: vand128
     desc: Vector128 Logical AND
     bitmask: 0xfc0003d0
     pattern: 0x14000210
-    args: [ VD128, VA128, VB128, VA128_6, VA128_5, VDh, VBh ]
-    defs: [ VD128, VDh ]
-    uses: [ VA128, VB128, VA128_6, VA128_5, VBh ]
+    args: [ VDS128, VA128, VB128 ]
+    defs: [ VDS128 ]
+    uses: [ VA128, VB128 ]
 
   - name: vandc128
     desc: Vector128 Logical AND with Complement
     bitmask: 0xfc0003d0
     pattern: 0x14000290
-    args: [ VD128, VA128, VB128, VA128_6, VA128_5, VDh, VBh ]
-    defs: [ VD128, VDh ]
-    uses: [ VA128, VB128, VA128_6, VA128_5, VBh ]
+    args: [ VDS128, VA128, VB128 ]
+    defs: [ VDS128 ]
+    uses: [ VA128, VB128 ]
 
   - name: vcfpsxws128
     desc: Vector128 Convert From Floating-Point to Signed Fixed-Point Word Saturate
     bitmask: 0xfc0007f0
     pattern: 0x18000230
-    args: [ VD128, vsimm, VB128, VDh, VBh ]
-    defs: [ VD128, VDh ]
-    uses: [ vsimm, VB128, VBh ]
+    args: [ VDS128, VB128, vsimm ]
+    defs: [ VDS128 ]
+    uses: [ VB128 ]
 
   - name: vcfpuxws128
     desc: Vector128 Convert From Floating-Point to Unsigned Fixed-Point Word Saturate
     bitmask: 0xfc0007f0
     pattern: 0x18000270
-    args: [ VD128, vuimm, VB128, VDh, VBh ]
-    defs: [ VD128, VDh ]
-    uses: [ vuimm, VB128, VBh ]
+    args: [ VDS128, VB128, vuimm ]
+    defs: [ VDS128 ]
+    uses: [ VB128 ]
 
   - name: vcmpbfp128
     desc: Vector128 Compare Bounds Floating Point
     bitmask: 0xfc000390
     pattern: 0x18000180
     modifiers: [ Rc128 ]
-    args: [ VD128, VA128, VB128, VA128_6, VA128_5, VDh, VBh ]
-    defs: [ VD128, VDh ]
-    uses: [ VA128, VB128, VA128_6, VA128_5, VBh ]
+    args: [ VDS128, VA128, VB128 ]
+    defs: [ VDS128 ]
+    uses: [ VA128, VB128 ]
 
   - name: vcmpeqfp128
     desc: Vector128 Compare Equal-to Floating Point
     bitmask: 0xfc000390
     pattern: 0x18000000
     modifiers: [ Rc128 ]
-    args: [ VD128, VA128, VB128, VA128_6, VA128_5, VDh, VBh ]
-    defs: [ VD128, VDh ]
-    uses: [ VA128, VB128, VA128_6, VA128_5, VBh ]
+    args: [ VDS128, VA128, VB128 ]
+    defs: [ VDS128 ]
+    uses: [ VA128, VB128 ]
 
   - name: vcmpequw128
     desc: Vector128 Compare Equal-to Unsigned Word
     bitmask: 0xfc000390
     pattern: 0x18000200
     modifiers: [ Rc128 ]
-    args: [ VD128, VA128, VB128, VA128_6, VA128_5, VDh, VBh ]
-    defs: [ VD128, VDh ]
-    uses: [ VA128, VB128, VA128_6, VA128_5, VBh ]
+    args: [ VDS128, VA128, VB128 ]
+    defs: [ VDS128 ]
+    uses: [ VA128, VB128 ]
 
   - name: vcmpgefp128
     desc: Vector128 Compare Greater-Than-or-Equal-to Floating Point
     bitmask: 0xfc000390
     pattern: 0x18000080
     modifiers: [ Rc128 ]
-    args: [ VD128, VA128, VB128, VA128_6, VA128_5, VDh, VBh ]
-    defs: [ VD128, VDh ]
-    uses: [ VA128, VB128, VA128_6, VA128_5, VBh ]
+    args: [ VDS128, VA128, VB128 ]
+    defs: [ VDS128 ]
+    uses: [ VA128, VB128 ]
 
   - name: vcmpgtfp128
     desc: Vector128 Compare Greater-Than Floating-Point
     bitmask: 0xfc000390
     pattern: 0x18000100
     modifiers: [ Rc128 ]
-    args: [ VD128, VA128, VB128, VA128_6, VA128_5, VDh, VBh ]
-    defs: [ VD128, VDh ]
-    uses: [ VA128, VB128, VA128_6, VA128_5, VBh ]
+    args: [ VDS128, VA128, VB128 ]
+    defs: [ VDS128 ]
+    uses: [ VA128, VB128 ]
 
   - name: vcsxwfp128
     desc: Vector128 Convert From Signed Fixed-Point Word to Floating-Point
     bitmask: 0xfc0007f0
     pattern: 0x180002b0
-    args: [ VD128, vsimm, VB128, VDh, VBh ]
-    defs: [ VD128, VDh ]
-    uses: [ vsimm, VB128, VBh ]
+    args: [ VDS128, VB128, vsimm ]
+    defs: [ VDS128 ]
+    uses: [ VB128 ]
 
   - name: vcuxwfp128
     desc: Vector128 Convert From Unsigned Fixed-Point Word to Floating-Point
     bitmask: 0xfc0007f0
     pattern: 0x180002f0
-    args: [ VD128, vuimm, VB128, VDh, VBh ]
-    defs: [ VD128, VDh ]
-    uses: [ vuimm, VB128, VBh ]
-    
+    args: [ VDS128, VB128, vuimm ]
+    defs: [ VDS128 ]
+    uses: [ VB128 ]
+
   - name: vexptefp128
     desc: Vector128 2 Raised to the Exponent Estimate Floating Point
     bitmask: 0xfc1f07f0
     pattern: 0x180006b0
-    args: [ VD128, VB128, VDh, VBh ]
-    defs: [ VD128, VDh ]
-    uses: [ VB128, VBh ]
+    args: [ VDS128, VB128 ]
+    defs: [ VDS128 ]
+    uses: [ VB128 ]
 
   - name: vlogefp128
     desc: Vector128 Log2 Estimate Floating Point
     bitmask: 0xfc1f07f0
     pattern: 0x180006f0
-    args: [ VD128, VB128, VDh, VBh ]
-    defs: [ VD128, VDh ]
-    uses: [ VB128, VBh ]
+    args: [ VDS128, VB128 ]
+    defs: [ VDS128 ]
+    uses: [ VB128 ]
 
   - name: vmaddcfp128
     desc: Vector128 Multiply Add Carryout Floating Point
     bitmask: 0xfc0003d0
     pattern: 0x14000110
-    args: [ VD128, VA128, VB128, VA128_6, VA128_5, VDh, VBh ]
-    defs: [ VD128, VDh ]
-    uses: [ VA128, VB128, VA128_6, VA128_5, VBh ]
+    args: [ VDS128, VA128, VB128 ]
+    defs: [ VDS128 ]
+    uses: [ VA128, VB128 ]
 
   - name: vmaddfp128
     desc: Vector128 Multiply Add Floating Point
     bitmask: 0xfc0003d0
     pattern: 0x140000d0
-    args: [ VD128, VA128, VB128, VA128_6, VA128_5, VDh, VBh ]
-    defs: [ VD128, VDh ]
-    uses: [ VA128, VB128, VA128_6, VA128_5, VBh ]
+    args: [ VDS128, VA128, VB128 ]
+    defs: [ VDS128 ]
+    uses: [ VA128, VB128 ]
 
   - name: vmaxfp128
     desc: Vector128 Maximum Floating Point
     bitmask: 0xfc0003d0
     pattern: 0x18000280
-    args: [ VD128, VA128, VB128, VA128_6, VA128_5, VDh, VBh ]
-    defs: [ VD128, VDh ]
-    uses: [ VA128, VB128, VA128_6, VA128_5, VBh ]
+    args: [ VDS128, VA128, VB128 ]
+    defs: [ VDS128 ]
+    uses: [ VA128, VB128 ]
 
   - name: vminfp128
     desc: Vector128 Minimum Floating Point
     bitmask: 0xfc0003d0
     pattern: 0x180002c0
-    args: [ VD128, VA128, VB128, VA128_6, VA128_5, VDh, VBh ]
-    defs: [ VD128, VDh ]
-    uses: [ VA128, VB128, VA128_6, VA128_5, VBh ]
+    args: [ VDS128, VA128, VB128 ]
+    defs: [ VDS128 ]
+    uses: [ VA128, VB128 ]
 
   - name: vmrghw128
     desc: Vector128 Merge High Word
     bitmask: 0xfc0003d0
     pattern: 0x18000300
-    args: [ VD128, VA128, VB128, VA128_6, VA128_5, VDh, VBh ]
-    defs: [ VD128, VDh ]
-    uses: [ VA128, VB128, VA128_6, VA128_5, VBh ]
+    args: [ VDS128, VA128, VB128 ]
+    defs: [ VDS128 ]
+    uses: [ VA128, VB128 ]
 
   - name: vmrglw128
     desc: Vector128 Merge Low Word
     bitmask: 0xfc0003d0
     pattern: 0x18000340
-    args: [ VD128, VA128, VB128, VA128_6, VA128_5, VDh, VBh ]
-    defs: [ VD128, VDh ]
-    uses: [ VA128, VB128, VA128_6, VA128_5, VBh ]
-    
+    args: [ VDS128, VA128, VB128 ]
+    defs: [ VDS128 ]
+    uses: [ VA128, VB128 ]
+
   - name: vmsum3fp128
     desc: Vector128 Multiply Sum 3-way Floating Point
     bitmask: 0xfc0003d0
     pattern: 0x14000190
-    args: [ VD128, VA128, VB128, VA128_6, VA128_5, VDh, VBh ]
-    defs: [ VD128, VDh ]
-    uses: [ VA128, VB128, VA128_6, VA128_5, VBh ]
-    
+    args: [ VDS128, VA128, VB128 ]
+    defs: [ VDS128 ]
+    uses: [ VA128, VB128 ]
+
   - name: vmsum4fp128
     desc: Vector128 Multiply Sum 4-way Floating Point
     bitmask: 0xfc0003d0
     pattern: 0x140001d0
-    args: [ VD128, VA128, VB128, VA128_6, VA128_5, VDh, VBh ]
-    defs: [ VD128, VDh ]
-    uses: [ VA128, VB128, VA128_6, VA128_5, VBh ]
+    args: [ VDS128, VA128, VB128 ]
+    defs: [ VDS128 ]
+    uses: [ VA128, VB128 ]
 
   - name: vmulfp128
     desc: Vector128 Multiply Floating-Point
     bitmask: 0xfc0003d0
     pattern: 0x14000090
-    args: [ VD128, VA128, VB128, VA128_6, VA128_5, VDh, VBh ]
-    defs: [ VD128, VDh ]
-    uses: [ VA128, VB128, VA128_6, VA128_5, VBh ]
+    args: [ VDS128, VA128, VB128 ]
+    defs: [ VDS128 ]
+    uses: [ VA128, VB128 ]
 
   - name: vnmsubfp128
     desc: Vector128 Negative Multiply-Subtract Floating Point
     bitmask: 0xfc0003d0
     pattern: 0x14000150
-    args: [ VD128, VA128, VB128, VA128_6, VA128_5, VDh, VBh ]
-    defs: [ VD128, VDh ]
-    uses: [ VA128, VB128, VA128_6, VA128_5, VBh ]
+    args: [ VDS128, VA128, VB128 ]
+    defs: [ VDS128 ]
+    uses: [ VA128, VB128 ]
 
   - name: vnor128
     desc: Vector128 Logical NOR
     bitmask: 0xfc0003d0
     pattern: 0x14000290
-    args: [ VD128, VA128, VB128, VA128_6, VA128_5, VDh, VBh ]
-    defs: [ VD128, VDh ]
-    uses: [ VA128, VB128, VA128_6, VA128_5, VBh ]
+    args: [ VDS128, VA128, VB128 ]
+    defs: [ VDS128 ]
+    uses: [ VA128, VB128 ]
 
   - name: vor128
     desc: Vector128 Logical OR
     bitmask: 0xfc0003d0
     pattern: 0x140002d0
-    args: [ VD128, VA128, VB128, VA128_6, VA128_5, VDh, VBh ]
-    defs: [ VD128, VDh ]
-    uses: [ VA128, VB128, VA128_6, VA128_5, VBh ]
+    args: [ VDS128, VA128, VB128 ]
+    defs: [ VDS128 ]
+    uses: [ VA128, VB128 ]
 
   - name: vperm128
     desc: Vector128 Permutation
     bitmask: 0xfc000210
     pattern: 0x14000000
-    args: [ VD128, VA128, VB128, VA128_6, VA128_5, VDh, VBh, VC128 ]
-    defs: [ VD128, VDh ]
-    uses: [ VA128, VB128, VA128_6, VA128_5, VBh, VC128 ]
+    args: [ VDS128, VA128, VB128, VC128 ]
+    defs: [ VDS128 ]
+    uses: [ VA128, VB128, VC128 ]
 
   - name: vpermwi128
     desc: Vector128 Permutate Word Immediate
     bitmask: 0xfc000630
     pattern: 0x18000210
-    args: [ VD128, VB128, VDh, VBh, PERMh, PERMl ]
-    defs: [ VD128, VDh ]
-    uses: [ VB128, VBh, PERMh, PERMl ]
+    args: [ VDS128, VB128, PERM ]
+    defs: [ VDS128 ]
+    uses: [ VB128 ]
 
   - name: vpkd3d128
     desc: Vector128 Pack D3Dtype, Rotate Left Immediate and Mask Insert
     bitmask: 0xfc000730
     pattern: 0x18000610
-    args: [ VD128, VB128, VDh, VBh, Ximm, Yimm, Zimm ]
-    defs: [ VD128, VDh ]
-    uses: [ VB128, VBh, Ximm, Yimm, Zimm ]
+    args: [ VDS128, VB128, Ximm, Yimm, Zimm ]
+    defs: [ VDS128 ]
+    uses: [ VB128, Ximm, Yimm, Zimm ]
 
   - name: vpkshss128
     desc: Vector128 Pack Signed Half Word Signed Saturate
     bitmask: 0xfc0003d0
     pattern: 0x14000200
-    args: [ VD128, VA128, VB128, VA128_6, VA128_5, VDh, VBh ]
-    defs: [ VD128, VDh ]
-    uses: [ VA128, VB128, VA128_6, VA128_5, VBh ]
+    args: [ VDS128, VA128, VB128 ]
+    defs: [ VDS128 ]
+    uses: [ VA128, VB128 ]
 
   - name: vpkshus128
     desc: Vector128 Pack Signed Half Word Unsigned Saturate
     bitmask: 0xfc0003d0
     pattern: 0x14000240
-    args: [ VD128, VA128, VB128, VA128_6, VA128_5, VDh, VBh ]
-    defs: [ VD128, VDh ]
-    uses: [ VA128, VB128, VA128_6, VA128_5, VBh ]
+    args: [ VDS128, VA128, VB128 ]
+    defs: [ VDS128 ]
+    uses: [ VA128, VB128 ]
 
   - name: vpkswss128
     desc: Vector128 Pack Signed Word Signed Saturate
     bitmask: 0xfc0003d0
     pattern: 0x14000280
-    args: [ VD128, VA128, VB128, VA128_6, VA128_5, VDh, VBh ]
-    defs: [ VD128, VDh ]
-    uses: [ VA128, VB128, VA128_6, VA128_5, VBh ]
+    args: [ VDS128, VA128, VB128 ]
+    defs: [ VDS128 ]
+    uses: [ VA128, VB128 ]
 
   - name: vpkswus128
     desc: Vector128 Pack Signed Word Unsigned Saturate
     bitmask: 0xfc0003d0
     pattern: 0x140002c0
-    args: [ VD128, VA128, VB128, VA128_6, VA128_5, VDh, VBh ]
-    defs: [ VD128, VDh ]
-    uses: [ VA128, VB128, VA128_6, VA128_5, VBh ]
-    
+    args: [ VDS128, VA128, VB128 ]
+    defs: [ VDS128 ]
+    uses: [ VA128, VB128 ]
+
   - name: vpkuhum128
     desc: Vector128 Pack Unsigned Half Word Unsigned Modulo
     bitmask: 0xfc0003d0
     pattern: 0x14000300
-    args: [ VD128, VA128, VB128, VA128_6, VA128_5, VDh, VBh ]
-    defs: [ VD128, VDh ]
-    uses: [ VA128, VB128, VA128_6, VA128_5, VBh ]
+    args: [ VDS128, VA128, VB128 ]
+    defs: [ VDS128 ]
+    uses: [ VA128, VB128 ]
 
   - name: vpkuhus128
     desc: Vector128 Pack Unsigned Half Word Unsigned Saturate
     bitmask: 0xfc0003d0
     pattern: 0x14000340
-    args: [ VD128, VA128, VB128, VA128_6, VA128_5, VDh, VBh ]
-    defs: [ VD128, VDh ]
-    uses: [ VA128, VB128, VA128_6, VA128_5, VBh ]
+    args: [ VDS128, VA128, VB128 ]
+    defs: [ VDS128 ]
+    uses: [ VA128, VB128 ]
 
   - name: vpkuwum128
     desc: Vector128 Pack Unsigned Word Unsigned Modulo
     bitmask: 0xfc0003d0
     pattern: 0x14000380
-    args: [ VD128, VA128, VB128, VA128_6, VA128_5, VDh, VBh ]
-    defs: [ VD128, VDh ]
-    uses: [ VA128, VB128, VA128_6, VA128_5, VBh ]
+    args: [ VDS128, VA128, VB128 ]
+    defs: [ VDS128 ]
+    uses: [ VA128, VB128 ]
 
   - name: vpkuwus128
     desc: Vector128 Pack Unsigned Word Unsigned Saturate
     bitmask: 0xfc0003d0
     pattern: 0x140003c0
-    args: [ VD128, VA128, VB128, VA128_6, VA128_5, VDh, VBh ]
-    defs: [ VD128, VDh ]
-    uses: [ VA128, VB128, VA128_6, VA128_5, VBh ]
+    args: [ VDS128, VA128, VB128 ]
+    defs: [ VDS128 ]
+    uses: [ VA128, VB128 ]
 
   - name: vrefp128
     desc: Vector128 Reciprocal Estimate Floating Point
     bitmask: 0xfc1f07f0
     pattern: 0x18000630
-    args: [ VD128, VB128, VDh, VBh ]
-    defs: [ VD128, VDh ]
-    uses: [ VB128, VBh ]
+    args: [ VDS128, VB128 ]
+    defs: [ VDS128 ]
+    uses: [ VB128 ]
 
   - name: vrfim128
-    desc: Vector128 Round to Floating-Point Integer toward -oo
+    desc: Vector128 Round to Floating-Point Integer toward Minus Infinity
     bitmask: 0xfc1f07f0
     pattern: 0x18000330
-    args: [ VD128, VB128, VDh, VBh ]
-    defs: [ VD128, VDh ]
-    uses: [ VB128, VBh ]
+    args: [ VDS128, VB128 ]
+    defs: [ VDS128 ]
+    uses: [ VB128 ]
 
   - name: vrfin128
     desc: Vector128 Round to Floating-Point Integer toward Nearest
     bitmask: 0xfc1f07f0
     pattern: 0x18000370
-    args: [ VD128, VB128, VDh, VBh ]
-    defs: [ VD128, VDh ]
-    uses: [ VB128, VBh ]
+    args: [ VDS128, VB128 ]
+    defs: [ VDS128 ]
+    uses: [ VB128 ]
 
   - name: vrfip128
-    desc: Vector128 Round to Floating-Point Integer toward +oo
+    desc: Vector128 Round to Floating-Point Integer toward Plus Infinity
     bitmask: 0xfc1f07f0
     pattern: 0x180003b0
-    args: [ VD128, VB128, VDh, VBh ]
-    defs: [ VD128, VDh ]
-    uses: [ VB128, VBh ]
+    args: [ VDS128, VB128 ]
+    defs: [ VDS128 ]
+    uses: [ VB128 ]
 
   - name: vrfiz128
     desc: Vector128 Round to Floating-Point Integer toward Zero
     bitmask: 0xfc1f07f0
     pattern: 0x180003f0
-    args: [ VD128, VB128, VDh, VBh ]
-    defs: [ VD128, VDh ]
-    uses: [ VB128, VBh ]
+    args: [ VDS128, VB128 ]
+    defs: [ VDS128 ]
+    uses: [ VB128 ]
 
   - name: vrlimi128
     desc: Vector128 Rotate Left Immediate and Mask Insert
     bitmask: 0xfc000730
     pattern: 0x18000710
-    args: [ VD128, vuimm, VB128, VDh, VBh, Zimm ]
-    defs: [ VD128, VDh ]
-    uses: [ vuimm, VB128, VBh, Zimm ]
+    args: [ VDS128, VB128, vuimm, Zimm ]
+    defs: [ VDS128 ]
+    uses: [ VB128 ]
 
   - name: vrlw128
     desc: Vector128 Rotate Left Word
     bitmask: 0xfc0003d0
     pattern: 0x14000050
-    args: [ VD128, VA128, VB128, VA128_6, VA128_5, VDh, VBh ]
-    defs: [ VD128, VDh ]
-    uses: [ VA128, VB128, VA128_6, VA128_5, VBh ]
+    args: [ VDS128, VA128, VB128 ]
+    defs: [ VDS128 ]
+    uses: [ VA128, VB128 ]
 
   - name: vrsqrtefp128
     desc: Vector128 Reciprocal Square Root Estimate Floating Point
     bitmask: 0xfc1f07f0
     pattern: 0x18000670
-    args: [ VD128, VB128, VDh, VBh ]
-    defs: [ VD128, VDh ]
-    uses: [ VB128, VBh ]
+    args: [ VDS128, VB128 ]
+    defs: [ VDS128 ]
+    uses: [ VB128 ]
 
   - name: vsel128
     desc: Vector128 Select
     bitmask: 0xfc0003d0
     pattern: 0x14000350
-    args: [ VD128, VA128, VB128, VA128_6, VA128_5, VDh, VBh ]
-    defs: [ VD128, VDh ]
-    uses: [ VA128, VB128, VA128_6, VA128_5, VBh ]
+    args: [ VDS128, VA128, VB128 ]
+    defs: [ VDS128 ]
+    uses: [ VA128, VB128 ]
 
   - name: vsldoi128
     desc: Vector128 Shift Left Double by Octet Immediate
     bitmask: 0xfc000010
     pattern: 0x10000010
-    args: [ VD128, VA128, VB128, VA128_6, VA128_5, VDh, VBh, SHB ]
-    defs: [ VD128, VDh ]
-    uses: [ VA128, VB128, VA128_6, VA128_5, VBh, SHB ]
+    args: [ VDS128, VA128, VB128, SHB ]
+    defs: [ VDS128 ]
+    uses: [ VA128, VB128 ]
 
   - name: vslo128
     desc: Vector128 Shift Left Octet
     bitmask: 0xfc0003d0
     pattern: 0x14000390
-    args: [ VD128, VA128, VB128, VA128_6, VA128_5, VDh, VBh ]
-    defs: [ VD128, VDh ]
-    uses: [ VA128, VB128, VA128_6, VA128_5, VBh ]
+    args: [ VDS128, VA128, VB128 ]
+    defs: [ VDS128 ]
+    uses: [ VA128, VB128 ]
 
   - name: vslw128
     desc: Vector128 Shift Left Word
     bitmask: 0xfc0003d0
     pattern: 0x180000d0
-    args: [ VD128, VA128, VB128, VA128_6, VA128_5, VDh, VBh ]
-    defs: [ VD128, VDh ]
-    uses: [ VA128, VB128, VA128_6, VA128_5, VBh ]
-    
+    args: [ VDS128, VA128, VB128 ]
+    defs: [ VDS128 ]
+    uses: [ VA128, VB128 ]
+
   - name: vspltisw128
     desc: Vector128 Splat Immediate Signed Word
     bitmask: 0xfc0007f0
     pattern: 0x18000770
-    args: [ VD128, vsimm, VB128, VDh, VBh ]
-    defs: [ VD128, VDh ]
-    uses: [ vsimm, VB128, VBh ]
-    
+    args: [ VDS128, VB128, vsimm ]
+    defs: [ VDS128 ]
+    uses: [ VB128 ]
+
   - name: vspltw128
     desc: Vector128 Splat Word
     bitmask: 0xfc0007f0
     pattern: 0x18000730
-    args: [ VD128, vuimm, VB128, VDh, VBh ]
-    defs: [ VD128, VDh ]
-    uses: [ vuimm, VB128, VBh ]
+    args: [ VDS128, VB128, vuimm ]
+    defs: [ VDS128 ]
+    uses: [ VB128 ]
 
   - name: vsraw128
     desc: Vector128 Shift Right Arithmetic Word
     bitmask: 0xfc0003d0
     pattern: 0x18000150
-    args: [ VD128, VA128, VB128, VA128_6, VA128_5, VDh, VBh ]
-    defs: [ VD128, VDh ]
-    uses: [ VA128, VB128, VA128_6, VA128_5, VBh ]
+    args: [ VDS128, VA128, VB128 ]
+    defs: [ VDS128 ]
+    uses: [ VA128, VB128 ]
 
   - name: vsro128
     desc: Vector128 Shift Right Octet
     bitmask: 0xfc0003d0
     pattern: 0x180003d0
-    args: [ VD128, VA128, VB128, VA128_6, VA128_5, VDh, VBh ]
-    defs: [ VD128, VDh ]
-    uses: [ VA128, VB128, VA128_6, VA128_5, VBh ]
+    args: [ VDS128, VA128, VB128 ]
+    defs: [ VDS128 ]
+    uses: [ VA128, VB128 ]
 
   - name: vsrw128
     desc: Vector128 Shift Right Word
     bitmask: 0xfc0003d0
     pattern: 0x180001d0
-    args: [ VD128, VA128, VB128, VA128_6, VA128_5, VDh, VBh ]
-    defs: [ VD128, VDh ]
-    uses: [ VA128, VB128, VA128_6, VA128_5, VBh ]
+    args: [ VDS128, VA128, VB128 ]
+    defs: [ VDS128 ]
+    uses: [ VA128, VB128 ]
 
   - name: vsubfp128
     desc: Vector128 Subtract Floating Point
     bitmask: 0xfc0003d0
     pattern: 0x14000050
-    args: [ VD128, VA128, VB128, VA128_6, VA128_5, VDh, VBh ]
-    defs: [ VD128, VDh ]
-    uses: [ VA128, VB128, VA128_6, VA128_5, VBh ]
+    args: [ VDS128, VA128, VB128 ]
+    defs: [ VDS128 ]
+    uses: [ VA128, VB128 ]
 
   - name: vupkd3d128
     desc: Vector128 Unpack D3Dtype
     bitmask: 0xfc0007f0
     pattern: 0x180007f0
-    args: [ VD128, vuimm, VB128, VDh, VBh ]
-    defs: [ VD128, VDh ]
-    uses: [ vuimm, VB128, VBh ]
+    args: [ VDS128, vuimm, VB128 ]
+    defs: [ VDS128 ]
+    uses: [ vuimm, VB128 ]
 
   - name: vupkhsb128
     desc: Vector128 Unpack High Signed Byte
     bitmask: 0xfc1f07f0
     pattern: 0x18000380
-    args: [ VD128, VB128, VDh, VBh ]
-    defs: [ VD128, VDh ]
-    uses: [ VB128, VBh ]
+    args: [ VDS128, VB128 ]
+    defs: [ VDS128 ]
+    uses: [ VB128 ]
 
   - name: vupklsb128
     desc: Vector128 Unpack Low Signed Byte
     bitmask: 0xfc1f07f0
     pattern: 0x180003c0
-    args: [ VD128, VB128, VDh, VBh ]
-    defs: [ VD128, VDh ]
-    uses: [ VB128, VBh ]
+    args: [ VDS128, VB128 ]
+    defs: [ VDS128 ]
+    uses: [ VB128 ]
 
   - name: vxor128
     desc: Vector128 Logical XOR
     bitmask: 0xfc0003d0
     pattern: 0x14000310
-    args: [ VD128, VA128, VB128, VA128_6, VA128_5, VDh, VBh ]
-    defs: [ VD128, VDh ]
-    uses: [ VA128, VB128, VA128_6, VA128_5, VBh ]
+    args: [ VDS128, VA128, VB128 ]
+    defs: [ VDS128 ]
+    uses: [ VA128, VB128 ]
 
 mnemonics:
   # Arithmetic
@@ -4167,7 +4122,7 @@ mnemonics:
   - name: rotld
     opcode: rldcl
     args: [ rA, rS, rB ]
-    condition: MB == 0
+    condition: MB64 == 0
 
   # TODO rlwimi: inslwi/insrwi
   # TODO: the mnemonics for rldic, rldicl, rldicr, and rldimi
@@ -4358,6 +4313,10 @@ mnemonics:
     opcode: tdi
     args: [ rA, simm ]
     condition: TO == 24
+
+  - name: sync
+    opcode: sync
+    condition: sync_L == 0
   - name: lwsync
     opcode: sync
     condition: sync_L == 1
@@ -4771,3 +4730,20 @@ mnemonics:
     opcode: bclr
     args: [ BI ]
     condition: BO & 0b11110 == 0
+
+  # AltiVec
+  - name: dss
+    opcode: dss
+    args: [ STRM ]
+    condition: ds_A == 0
+  - name: dssall
+    opcode: dss
+    condition: ds_A == 1 && STRM == 0
+  - name: vnot
+    opcode: vnor
+    args: [ vD, vA ]
+    condition: vB == vA
+  - name: vmr
+    opcode: vor
+    args: [ vD, vA ]
+    condition: vB == vA

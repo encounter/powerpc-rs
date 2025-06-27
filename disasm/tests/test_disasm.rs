@@ -1,4 +1,4 @@
-use ppc750cl::{Argument, Ins, InsIter, Opcode, FPR, GPR};
+use ppc750cl::{Argument, Ins, InsIter, Opcode, GPR};
 
 macro_rules! assert_asm {
     ($ins:ident, $disasm:literal) => {{
@@ -50,11 +50,11 @@ fn test_ins_addi() {
     // );
     assert_eq!(
         ins.defs(),
-        [Argument::GPR(GPR(0)), Argument::None, Argument::None, Argument::None, Argument::None, Argument::None, Argument::None, Argument::None]
+        [Argument::GPR(GPR(0)), Argument::None, Argument::None, Argument::None, Argument::None]
     );
     assert_eq!(
         ins.uses(),
-        [Argument::GPR(GPR(1)), Argument::None, Argument::None, Argument::None, Argument::None, Argument::None, Argument::None, Argument::None]
+        [Argument::GPR(GPR(1)), Argument::None, Argument::None, Argument::None, Argument::None]
     );
     assert_asm!(ins, "addi r0, r1, 0x140");
 
@@ -205,6 +205,7 @@ fn test_ins_cmpi() {
 #[test]
 fn test_ins_cmpl() {
     assert_asm!(0x7C9A2040, "cmplw cr1, r26, r4");
+    assert_asm!(0x7f295840, "cmpld cr6, r9, r11");
 }
 
 #[test]
@@ -493,8 +494,8 @@ fn test_ins_lbzx() {
 
 #[test]
 fn test_ins_ld() {
-    assert_asm!(0xE8030480, "ld r0, 0x120(r3)");
-    assert_asm!(0xE8A101A8, "ld r5, 0x6a(r1)");
+    assert_asm!(0xebe10058, "ld r31, 0x58(r1)");
+    assert_asm!(0xe9790010, "ld r11, 0x10(r25)");
 }
 
 #[test]
@@ -504,7 +505,8 @@ fn test_ins_ldarx() {
 
 #[test]
 fn test_ins_ldu() {
-    assert_asm!(0xE8830061, "ldu r4, 0x18(r3)");
+    assert_asm!(0xe97cfff9, "ldu r11, -0x8(r28)");
+    assert_asm!(0xe8deffe9, "ldu r6, -0x18(r30)");
 }
 
 #[test]
@@ -600,7 +602,7 @@ fn test_ins_lmw() {
 
 #[test]
 fn test_ins_lwa() {
-    assert_asm!(0xE8030DA2, "lwa r0, 0x368(r3)");
+    assert_asm!(0xe97fffea, "lwa r11, -0x18(r31)");
 }
 
 #[test]
@@ -772,6 +774,7 @@ fn test_ins_mulhwu() {
 #[test]
 fn test_ins_mulld() {
     assert_asm!(0x7C6419D2, "mulld r3, r4, r3");
+    assert_asm!(0x7d6b49d2, "mulld r11, r11, r9");
 }
 
 #[test]
@@ -1013,6 +1016,7 @@ fn test_ins_rfid() {
 #[test]
 fn test_ins_rldcl() {
     assert_asm!(0x780336D0, "rldcl r3, r0, r6, 27");
+    assert_asm!(0x78033010, "rotld r3, r0, r6");
 }
 
 #[test]
@@ -1028,17 +1032,21 @@ fn test_ins_rldic() {
 #[test]
 fn test_ins_rldicl() {
     assert_asm!(0x78c50020, "rldicl r5, r6, 0, 32");
-    assert_asm!(0x79073980, "rldicl r7, r8, 7, 24");
+    assert_asm!(0x7bab07a0, "rldicl r11, r29, 0, 62");
 }
 
 #[test]
 fn test_ins_rldicr() {
     assert_asm!(0x7883ffe6, "rldicr r3, r4, 63, 63");
-    assert_asm!(0x7883ffe6, "rldicr r8, r9, 12, 42"); // fix
+    assert_asm!(0x798c37e4, "rldicr r12, r12, 6, 63");
+    assert_asm!(0x798c07c6, "rldicr r12, r12, 32, 31");
+    assert_asm!(0x798ccfe6, "rldicr r12, r12, 57, 63");
 }
 
 #[test]
 fn test_ins_rldimi() {
+    assert_asm!(0x78a3a04e, "rldimi r3, r5, 52, 1");
+    assert_asm!(0x794b000e, "rldimi r11, r10, 32, 0");
     assert_asm!(0x780331CC, "rldimi r3, r0, 6, 7");
 }
 
@@ -1094,6 +1102,7 @@ fn test_ins_slbie() {
 
 #[test]
 fn test_ins_sld() {
+    assert_asm!(0x7d6a5036, "sld r10, r11, r10");
     assert_asm!(0x7D034836, "sld r3, r8, r9");
 }
 
@@ -1104,13 +1113,14 @@ fn test_ins_slw() {
 
 #[test]
 fn test_ins_srad() {
+    assert_asm!(0x7d0b5e34, "srad r11, r8, r11");
     assert_asm!(0x7C033634, "srad r3, r0, r6");
 }
 
 #[test]
 fn test_ins_sradi() {
-    assert_asm!(0x7D070676, "sradi r7, r8, 0x20");
-    assert_asm!(0, "srad r3, r7, 17");
+    assert_asm!(0x7cc4a674, "sradi r4, r6, 20");
+    assert_asm!(0x7d6b0676, "sradi r11, r11, 32");
 }
 
 #[test]
@@ -1126,6 +1136,8 @@ fn test_ins_srawi() {
 
 #[test]
 fn test_ins_srd() {
+    assert_asm!(0x7d0a4c36, "srd r10, r8, r9");
+    assert_asm!(0x7d675436, "srd r7, r11, r10");
     assert_asm!(0x7C001C36, "srd r0, r0, r3");
     assert_asm!(0x7C600436, "srd r0, r3, r0");
 }
@@ -1160,27 +1172,31 @@ fn test_ins_stbx() {
 
 #[test]
 fn test_ins_std() {
-    assert_asm!(0xF8031080, "std r0, 0x420(r3)");
+    assert_asm!(0xfbe1fff0, "std r31, -0x10(r1)");
 }
 
 #[test]
 fn test_ins_stdcx() {
     assert_asm!(0x7CA749AD, "stdcx. r5, r7, r9");
+    assert_asm!(0x7fc0e9ad, "stdcx. r30, r0, r29");
 }
 
 #[test]
 fn test_ins_stdu() {
-    assert_asm!(0xF8601431, "stdu r3, 0x50c(r0)");
+    assert_asm!(0xf9690009, "stdu r11, 0x8(r9)");
+    assert_asm!(0xf97ffff9, "stdu r11, -0x8(r31)");
 }
 
 #[test]
 fn test_ins_stdux() {
     assert_asm!(0x7C03316A, "stdux r0, r3, r6");
+    assert_asm!(0x7d5cc96a, "stdux r10, r28, r25");
 }
 
 #[test]
 fn test_ins_stdx() {
     assert_asm!(0x7CA7F92A, "stdx r5, r7, r31");
+    assert_asm!(0x7cc3212a, "stdx r6, r3, r4");
 }
 
 #[test]
@@ -1295,7 +1311,12 @@ fn test_ins_subfze() {
 
 #[test]
 fn test_ins_sync() {
-    assert_asm!(0x7C0004AC, "sync 0");
+    assert_basic!(0x7c0004ac, "sync 0");
+    assert_basic!(0x7c2004ac, "sync 1");
+    assert_basic!(0x7c4004ac, "sync 2");
+    assert_asm!(0x7c0004ac, "sync");
+    assert_asm!(0x7c2004ac, "lwsync");
+    assert_asm!(0x7c4004Ac, "ptesync");
 }
 
 #[test]

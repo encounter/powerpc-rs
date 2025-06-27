@@ -5,7 +5,6 @@ use anyhow::{bail, ensure, Result};
 use proc_macro2::{Literal, TokenStream};
 use quote::{format_ident, quote};
 use std::collections::HashMap;
-use std::num::NonZeroU8;
 
 pub fn gen_disasm(isa: &Isa, max_args: usize) -> Result<TokenStream> {
     // The entry table allows us to quickly find the range of possible opcodes
@@ -14,8 +13,8 @@ pub fn gen_disasm(isa: &Isa, max_args: usize) -> Result<TokenStream> {
         start: u16,
         count: u16,
     }
-    let mut sorted_ops = Vec::<Opcode>::new();
-    let mut entries = Vec::<OpcodeEntry>::new();
+    let mut sorted_ops = Vec::<Opcode>::with_capacity(isa.opcodes.len());
+    let mut entries = Vec::<OpcodeEntry>::with_capacity(64);
     for i in 0..64 {
         let mut entry = OpcodeEntry { start: 0, count: 0 };
         for opcode in &isa.opcodes {
@@ -74,7 +73,7 @@ pub fn gen_disasm(isa: &Isa, max_args: usize) -> Result<TokenStream> {
     // Generate field and modifier accessors
     let mut ins_fields = TokenStream::new();
     for field in &isa.fields {
-        let Some(bits) = field.bits else {
+        let Some(bits) = &field.bits else {
             continue;
         };
         // TODO get rid of .nz hack
@@ -82,56 +81,72 @@ pub fn gen_disasm(isa: &Isa, max_args: usize) -> Result<TokenStream> {
             continue;
         }
 
-        let mut shift_right = bits.shift();
-        let mut shift_left = field.shift_left;
-        if shift_right == shift_left {
-            // Optimization: these cancel each other out
-            // Adjust subsequent operations to operate on the full value
-            shift_right = 0;
-            shift_left = 0;
-        }
+        // Optimization: offset all shifts to avoid unnecessary operations
+        let shift_offset = field.shift_left.min(bits.shift());
 
-        // Shift right and mask
-        let mut inner = quote! { self.code };
-        if shift_right > 0 {
-            let shift = Literal::u8_unsuffixed(shift_right);
-            inner = quote! { (#inner >> #shift) };
+        // Extract the field bits from the instruction
+        let mut operations = Vec::new();
+        let mut bit_position = 0;
+        for range in bits.0.iter().rev() {
+            let mut shift_right = range.shift() - shift_offset;
+            let mut shift_left = bit_position;
+
+            // Optimize shifts
+            let common_shift = shift_right.min(shift_left);
+            shift_right -= common_shift;
+            shift_left -= common_shift;
+
+            // Shift right
+            let mut result = quote! { self.code };
+            if shift_right > 0 {
+                let shift = Literal::u8_unsuffixed(shift_right);
+                result = quote! { (#result >> #shift) };
+            }
+
+            // Mask
+            let mask = HexLiteral(range.mask() >> shift_right);
+            result = quote! { (#result & #mask) };
+
+            // Shift left
+            if shift_left > 0 {
+                let shift = Literal::u8_unsuffixed(shift_left);
+                result = quote! { (#result << #shift) };
+            }
+
+            bit_position += range.len();
+            operations.push(result);
         }
-        let mask = HexLiteral(bits.mask() >> shift_right);
-        inner = quote! { #inner & #mask };
+        let mut inner = if operations.len() > 1 {
+            quote! { (#(#operations)|*) }
+        } else {
+            operations.into_iter().next().unwrap()
+        };
 
         // Determine the smallest integer type that can hold the value
         let num_bits = bits.len() + field.shift_left;
         let (out_type, cast, sign_shift) = match (num_bits, field.signed) {
-            (1..=8, false) => (ident!(u8), true, None),
-            (9..=16, false) => (ident!(u16), true, None),
-            (17..=32, false) => (ident!(u32), false, None),
-            (1..=8, true) => (ident!(i8), true, NonZeroU8::new(8 - num_bits)),
-            (9..=16, true) => (ident!(i16), true, NonZeroU8::new(16 - num_bits)),
-            (17..=32, true) => (ident!(i32), true, NonZeroU8::new(32 - num_bits)),
+            (1..=8, false) => (ident!(u8), true, 0),
+            (9..=16, false) => (ident!(u16), true, 0),
+            (17..=32, false) => (ident!(u32), false, 0),
+            (1..=8, true) => (ident!(i8), true, 8 - bits.len()),
+            (9..=16, true) => (ident!(i16), true, 16 - bits.len()),
+            (17..=32, true) => (ident!(i32), true, 32 - bits.len()),
             (v, _) => bail!("Unsupported field size {v}"),
         };
 
         // Handle sign extension
-        if let Some(sign_shift) = sign_shift {
-            let sign_shift = Literal::u8_unsuffixed(sign_shift.get());
-            inner = quote! { (((#inner) << #sign_shift) as #out_type) >> #sign_shift };
+        if sign_shift > shift_offset {
+            let sign_shift = Literal::u8_unsuffixed(sign_shift - shift_offset);
+            inner = quote! { ((#inner << #sign_shift) as #out_type) >> #sign_shift };
         } else if cast {
-            inner = quote! { (#inner) as #out_type };
+            inner = quote! { #inner as #out_type };
         }
 
         // Handle left shift
+        let shift_left = field.shift_left - shift_offset;
         if shift_left > 0 {
             let shift_left = Literal::u8_unsuffixed(shift_left);
-            inner = quote! { (#inner) << #shift_left };
-        }
-
-        // Swap 5-bit halves (SPR, TBR)
-        if field.split {
-            inner = quote! {
-                let value = #inner;
-                ((value & 0b11111_00000) >> 5) | ((value & 0b00000_11111) << 5)
-            };
+            inner = quote! { #inner << #shift_left };
         }
 
         // Write the accessor
@@ -289,22 +304,13 @@ pub fn gen_disasm(isa: &Isa, max_args: usize) -> Result<TokenStream> {
         fn defs_uses_empty(out: &mut Arguments, _ins: Ins) { *out = EMPTY_ARGS; }
     });
 
-    // Filling the tables to 256 entries to avoid bounds checks
-    // with altivec extension, extended table to 512
-    for _ in sorted_ops.len()..512 {
-        opcode_patterns.extend(quote! { (0, 0), });
-        opcode_names.extend(quote! { "<illegal>", });
-        basic_functions_ref.extend(quote! { mnemonic_illegal, });
-        simplified_functions_ref.extend(quote! { mnemonic_illegal, });
-        defs_refs.extend(quote! { defs_uses_empty, });
-        uses_refs.extend(quote! { defs_uses_empty, });
-    }
-
     let mut none_args = TokenStream::new();
     for _ in 0..max_args {
         none_args.extend(quote! { Argument::None, });
     }
 
+    let entries_count = Literal::usize_unsuffixed(entries.len());
+    let opcode_count = Literal::usize_unsuffixed(sorted_ops.len());
     let max_args = Literal::usize_unsuffixed(max_args);
     Ok(quote! {
         #![allow(unused)]
@@ -313,11 +319,11 @@ pub fn gen_disasm(isa: &Isa, max_args: usize) -> Result<TokenStream> {
         use crate::disasm::*;
         #[doc = " The entry table allows us to quickly find the range of possible opcodes for a"]
         #[doc = " given 6-bit prefix. 2*64 bytes should fit in a cache line (or two)."]
-        static OPCODE_ENTRIES: [(u16, u16); 64] = [#opcode_entries];
+        static OPCODE_ENTRIES: [(u16, u16); #entries_count] = [#opcode_entries];
         #[doc = " The bitmask and pattern for each opcode."]
-        static OPCODE_PATTERNS: [(u32, u32); 512] = [#opcode_patterns];
+        static OPCODE_PATTERNS: [(u32, u32); #opcode_count] = [#opcode_patterns];
         #[doc = " The name of each opcode."]
-        static OPCODE_NAMES: [&str; 512] = [#opcode_names];
+        static OPCODE_NAMES: [&str; #opcode_count] = [#opcode_names];
 
         #[derive(Copy, Clone, Debug, Default, PartialEq, Eq)]
         #[repr(u16)]
@@ -330,12 +336,12 @@ pub fn gen_disasm(isa: &Isa, max_args: usize) -> Result<TokenStream> {
         }
         impl Opcode {
             #[inline]
-            pub fn _mnemonic(self) -> &'static str {
-                OPCODE_NAMES[self as usize]
+            pub fn mnemonic(self) -> &'static str {
+                OPCODE_NAMES.get(self as usize).copied().unwrap_or("<illegal>")
             }
 
             #[inline]
-            pub fn _detect(code: u32) -> Self {
+            pub fn detect(code: u32) -> Self {
                 let entry = OPCODE_ENTRIES[(code >> 26) as usize];
                 for i in entry.0..entry.1 {
                     let pattern = OPCODE_PATTERNS[i as usize];
@@ -374,28 +380,28 @@ pub fn gen_disasm(isa: &Isa, max_args: usize) -> Result<TokenStream> {
 
         type MnemonicFunction = fn(&mut ParsedIns, Ins);
         #mnemonic_functions
-        static BASIC_MNEMONICS: [MnemonicFunction; 512] = [#basic_functions_ref];
+        static BASIC_MNEMONICS: [MnemonicFunction; #opcode_count] = [#basic_functions_ref];
         #[inline]
         pub fn parse_basic(out: &mut ParsedIns, ins: Ins) {
-            BASIC_MNEMONICS[ins.op as usize](out, ins)
+            BASIC_MNEMONICS.get(ins.op as usize).copied().unwrap_or(mnemonic_illegal)(out, ins)
         }
-        static SIMPLIFIED_MNEMONICS: [MnemonicFunction; 512] = [#simplified_functions_ref];
+        static SIMPLIFIED_MNEMONICS: [MnemonicFunction; #opcode_count] = [#simplified_functions_ref];
         #[inline]
         pub fn parse_simplified(out: &mut ParsedIns, ins: Ins) {
-            SIMPLIFIED_MNEMONICS[ins.op as usize](out, ins)
+            SIMPLIFIED_MNEMONICS.get(ins.op as usize).copied().unwrap_or(mnemonic_illegal)(out, ins)
         }
 
         type DefsUsesFunction = fn(&mut Arguments, Ins);
         #defs_uses_functions
-        static DEFS_FUNCTIONS: [DefsUsesFunction; 512] = [#defs_refs];
+        static DEFS_FUNCTIONS: [DefsUsesFunction; #opcode_count] = [#defs_refs];
         #[inline]
         pub fn parse_defs(out: &mut Arguments, ins: Ins) {
-            DEFS_FUNCTIONS[ins.op as usize](out, ins)
+            DEFS_FUNCTIONS.get(ins.op as usize).copied().unwrap_or(defs_uses_empty)(out, ins)
         }
-        static USES_FUNCTIONS: [DefsUsesFunction; 512] = [#uses_refs];
+        static USES_FUNCTIONS: [DefsUsesFunction; #opcode_count] = [#uses_refs];
         #[inline]
         pub fn parse_uses(out: &mut Arguments, ins: Ins) {
-            USES_FUNCTIONS[ins.op as usize](out, ins)
+            USES_FUNCTIONS.get(ins.op as usize).copied().unwrap_or(defs_uses_empty)(out, ins)
         }
     })
 }

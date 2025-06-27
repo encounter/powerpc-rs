@@ -5,7 +5,7 @@ mod isa;
 
 use crate::asm::gen_asm;
 use crate::disasm::gen_disasm;
-use anyhow::{ensure, Context, Result};
+use anyhow::{Context, Result};
 use condition::{parse_conditions, ConditionOp, ConditionValue};
 use isa::load_isa;
 use std::path::Path;
@@ -19,7 +19,7 @@ macro_rules! ident {
 }
 
 fn main() -> Result<()> {
-    simple_logger::SimpleLogger::new().env().init().unwrap();
+    simple_logger::SimpleLogger::new().env().init()?;
 
     let isa = load_isa(Path::new("isa.yaml"))?;
     // Make sure we can fit the opcodes into a u8
