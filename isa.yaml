@@ -258,17 +258,17 @@ fields:
     arg: OpaqueU
     desc: VMX128 Permutation
     bits: 23..26,11..16
-  - name: Ximm
+  - name: D3DType
     arg: OpaqueU
-    desc: unknown immediate
+    desc: the packed data type
     bits: 11..14
-  - name: Yimm
+  - name: VMASK
     arg: OpaqueU
-    desc: unknown immediate
+    desc: the pack mask
     bits: 14..16
   - name: Zimm
     arg: OpaqueU
-    desc: unknown immediate
+    desc: amount to rotate/shift left
     bits: 24..26
 
 modifiers:
@@ -2234,6 +2234,38 @@ opcodes:
     defs: [ vD ]
     uses: [ rA.nz, rB ]
 
+  - name: lvlx
+    desc: Load Vector Left Indexed
+    bitmask: 0xfc0007ff
+    pattern: 0x7c00040e
+    args: [ vD, rA, rB ]
+    defs: [ vD ]
+    uses: [ rA.nz, rB ]
+
+  - name: lvlxl
+    desc: Load Vector Left Indexed Last
+    bitmask: 0xfc0007ff
+    pattern: 0x7c00060e
+    args: [ vD, rA, rB ]
+    defs: [ vD ]
+    uses: [ rA.nz, rB ]
+
+  - name: lvrx
+    desc: Load Vector Right Indexed
+    bitmask: 0xfc0007ff
+    pattern: 0x7c00044e
+    args: [ vD, rA, rB ]
+    defs: [ vD ]
+    uses: [ rA.nz, rB ]
+
+  - name: lvrxl
+    desc: Load Vector Right Indexed Last
+    bitmask: 0xfc0007ff
+    pattern: 0x7c00064e
+    args: [ vD, rA, rB ]
+    defs: [ vD ]
+    uses: [ rA.nz, rB ]
+
   - name: lvsl
     desc: Load Vector for Shift Left
     bitmask: 0xfc0007ff
@@ -2298,6 +2330,34 @@ opcodes:
     desc: Store Vector Element Word Indexed
     bitmask: 0xfc0007ff
     pattern: 0x7c00018e
+    args: [ vS, rA, rB ]
+    uses: [ rA.nz, rB ]
+
+  - name: stvlx
+    desc: Store Vector Left Indexed
+    bitmask: 0xfc0007ff
+    pattern: 0x7c00050e
+    args: [ vS, rA, rB ]
+    uses: [ rA.nz, rB ]
+
+  - name: stvlxl
+    desc: Store Vector Left Indexed Last
+    bitmask: 0xfc0007ff
+    pattern: 0x7c00070e
+    args: [ vS, rA, rB ]
+    uses: [ rA.nz, rB ]
+
+  - name: stvrx
+    desc: Store Vector Right Indexed
+    bitmask: 0xfc0007ff
+    pattern: 0x7c00054e
+    args: [ vS, rA, rB ]
+    uses: [ rA.nz, rB ]
+    
+  - name: stvrxl
+    desc: Store Vector Right Indexed Last
+    bitmask: 0xfc0007ff
+    pattern: 0x7c00074e
     args: [ vS, rA, rB ]
     uses: [ rA.nz, rB ]
 
@@ -3466,13 +3526,14 @@ opcodes:
 
 # VMX128 exclusives
 # found here: https://github.com/xenia-project/xenia/blob/master/docs/ppc/vmx128.txt
+# and here: https://github.com/kakaroto/ps3ida/blob/master/plugins/PPCAltivec/src/main.cpp
   - name: lvewx128
     desc: Load Vector128 Element Word Indexed
     bitmask: 0xfc0007f3
     pattern: 0x10000083
     args: [ VDS128, rA, rB ]
     defs: [ VDS128 ]
-    uses: [ rA, rB ]
+    uses: [ rA.nz, rB ]
 
   - name: lvlx128
     desc: Load Vector128 Left Indexed
@@ -3480,15 +3541,7 @@ opcodes:
     pattern: 0x10000403
     args: [ VDS128, rA, rB ]
     defs: [ VDS128 ]
-    uses: [ rA, rB ]
-
-  - name: lvrx128
-    desc: Load Vector128 Right Indexed
-    bitmask: 0xfc0007f3
-    pattern: 0x10000443
-    args: [ VDS128, rA, rB ]
-    defs: [ VDS128 ]
-    uses: [ rA, rB ]
+    uses: [ rA.nz, rB ]
 
   - name: lvlxl128
     desc: Load Vector128 Left Indexed LRU
@@ -3496,7 +3549,15 @@ opcodes:
     pattern: 0x10000603
     args: [ VDS128, rA, rB ]
     defs: [ VDS128 ]
-    uses: [ rA, rB ]
+    uses: [ rA.nz, rB ]
+
+  - name: lvrx128
+    desc: Load Vector128 Right Indexed
+    bitmask: 0xfc0007f3
+    pattern: 0x10000443
+    args: [ VDS128, rA, rB ]
+    defs: [ VDS128 ]
+    uses: [ rA.nz, rB ]
 
   - name: lvrxl128
     desc: Load Vector128 Right Indexed LRU
@@ -3504,7 +3565,7 @@ opcodes:
     pattern: 0x10000643
     args: [ VDS128, rA, rB ]
     defs: [ VDS128 ]
-    uses: [ rA, rB ]
+    uses: [ rA.nz, rB ]
 
   - name: lvsl128
     desc: Load Vector128 for Shift Left
@@ -3512,7 +3573,7 @@ opcodes:
     pattern: 0x10000003
     args: [ VDS128, rA, rB ]
     defs: [ VDS128 ]
-    uses: [ rA, rB ]
+    uses: [ rA.nz, rB ]
 
   - name: lvsr128
     desc: Load Vector128 for Shift Right
@@ -3520,7 +3581,7 @@ opcodes:
     pattern: 0x10000043
     args: [ VDS128, rA, rB ]
     defs: [ VDS128 ]
-    uses: [ rA, rB ]
+    uses: [ rA.nz, rB ]
 
   - name: lvx128
     desc: Load Vector128 Indexed
@@ -3528,7 +3589,7 @@ opcodes:
     pattern: 0x100000C3
     args: [ VDS128, rA, rB ]
     defs: [ VDS128 ]
-    uses: [ rA, rB ]
+    uses: [ rA.nz, rB ]
 
   - name: lvxl128
     desc: Load Vector128 Indexed LRU
@@ -3536,56 +3597,56 @@ opcodes:
     pattern: 0x100002C3
     args: [ VDS128, rA, rB ]
     defs: [ VDS128 ]
-    uses: [ rA, rB ]
+    uses: [ rA.nz, rB ]
 
   - name: stvewx128
     desc: Store Vector128 Element Word Indexed
     bitmask: 0xfc0007f3
-    pattern: 0x10000303
+    pattern: 0x10000183
     args: [ VDS128, rA, rB ]
-    uses: [ VDS128, rA, rB ]
+    uses: [ rA.nz, rB ]
 
   - name: stvlx128
     desc: Store Vector128 Left Indexed
     bitmask: 0xfc0007f3
     pattern: 0x10000503
     args: [ VDS128, rA, rB ]
-    uses: [ VDS128, rA, rB ]
+    uses: [ rA.nz, rB ]
 
   - name: stvlxl128
     desc: Store Vector128 Left Indexed LRU
     bitmask: 0xfc0007f3
     pattern: 0x10000703
     args: [ VDS128, rA, rB ]
-    uses: [ VDS128, rA, rB ]
+    uses: [ rA.nz, rB ]
 
   - name: stvrx128
     desc: Store Vector128 Right Indexed
     bitmask: 0xfc0007f3
     pattern: 0x10000543
     args: [ VDS128, rA, rB ]
-    uses: [ VDS128, rA, rB ]
+    uses: [ rA.nz, rB ]
 
   - name: stvrxl128
     desc: Store Vector128 Right Indexed LRU
     bitmask: 0xfc0007f3
     pattern: 0x10000743
     args: [ VDS128, rA, rB ]
-    uses: [ VDS128, rA, rB ]
+    uses: [ rA.nz, rB ]
 
   - name: stvx128
     desc: Store Vector128 Indexed
     bitmask: 0xfc0007f3
     pattern: 0x100001C3
     args: [ VDS128, rA, rB ]
-    uses: [ VDS128, rA, rB ]
+    uses: [ rA.nz, rB ]
 
   - name: stvxl128
     desc: Store Vector128 Indexed LRU
     bitmask: 0xfc0007f3
     pattern: 0x100003C3
     args: [ VDS128, rA, rB ]
-    uses: [ VDS128, rA, rB ]
+    uses: [ rA.nz, rB ]
 
   - name: vaddfp128
     desc: Vector128 Add Floating Point
@@ -3606,7 +3667,7 @@ opcodes:
   - name: vandc128
     desc: Vector128 Logical AND with Complement
     bitmask: 0xfc0003d0
-    pattern: 0x14000290
+    pattern: 0x14000250
     args: [ VDS128, VA128, VB128 ]
     defs: [ VDS128 ]
     uses: [ VA128, VB128 ]
@@ -3820,9 +3881,9 @@ opcodes:
     desc: Vector128 Pack D3Dtype, Rotate Left Immediate and Mask Insert
     bitmask: 0xfc000730
     pattern: 0x18000610
-    args: [ VDS128, VB128, Ximm, Yimm, Zimm ]
+    args: [ VDS128, VB128, D3DType, VMASK, Zimm ]
     defs: [ VDS128 ]
-    uses: [ VB128, Ximm, Yimm, Zimm ]
+    uses: [ VB128, D3DType, VMASK, Zimm ]
 
   - name: vpkshss128
     desc: Vector128 Pack Signed Half Word Signed Saturate
@@ -3939,7 +4000,7 @@ opcodes:
   - name: vrlw128
     desc: Vector128 Rotate Left Word
     bitmask: 0xfc0003d0
-    pattern: 0x14000050
+    pattern: 0x18000050
     args: [ VDS128, VA128, VB128 ]
     defs: [ VDS128 ]
     uses: [ VA128, VB128 ]
@@ -4011,7 +4072,7 @@ opcodes:
   - name: vsro128
     desc: Vector128 Shift Right Octet
     bitmask: 0xfc0003d0
-    pattern: 0x180003d0
+    pattern: 0x140003d0
     args: [ VDS128, VA128, VB128 ]
     defs: [ VDS128 ]
     uses: [ VA128, VB128 ]
@@ -4036,9 +4097,9 @@ opcodes:
     desc: Vector128 Unpack D3Dtype
     bitmask: 0xfc0007f0
     pattern: 0x180007f0
-    args: [ VDS128, vuimm, VB128 ]
+    args: [ VDS128, VB128, vuimm ]
     defs: [ VDS128 ]
-    uses: [ vuimm, VB128 ]
+    uses: [ VB128, vuimm ]
 
   - name: vupkhsb128
     desc: Vector128 Unpack High Signed Byte
@@ -4738,7 +4799,7 @@ mnemonics:
     condition: ds_A == 0
   - name: dssall
     opcode: dss
-    condition: ds_A == 1 && STRM == 0
+    condition: ds_A == 1
   - name: vnot
     opcode: vnor
     args: [ vD, vA ]
@@ -4747,3 +4808,16 @@ mnemonics:
     opcode: vor
     args: [ vD, vA ]
     condition: vB == vA
+
+# missing instructions (there seem to be no documentation on these anywhere)
+# vctsxs128
+# vcfpsxws
+# vctuxs128
+# vcfpuxws
+# vcsxwfp
+# vcfux128
+# vcuxwfp
+# vdot3fp
+# vdot4fp
+# vupkhsh128
+# vupklsh128
