@@ -74,7 +74,7 @@ pub fn parse_conditions<'a>(condition: &'a str, isa: &'a Isa) -> Result<Vec<Cond
         };
         let field = isa
             .find_field(field)
-            .with_context(|| format!("Condition  references unknown field {}", field))?;
+            .with_context(|| format!("Condition references unknown field {field}"))?;
         let value = if let Ok(value) = parse_unsigned(value) {
             ConditionValue::ConstantUnsigned(value)
         } else if let Ok(value) = parse_signed(value) {

@@ -2353,7 +2353,7 @@ opcodes:
     pattern: 0x7c00054e
     args: [ vS, rA, rB ]
     uses: [ rA.nz, rB ]
-    
+
   - name: stvrxl
     desc: Store Vector Right Indexed Last
     bitmask: 0xfc0007ff
@@ -2528,6 +2528,7 @@ opcodes:
     uses: [ vA, vB ]
 
   - name: vcfsx
+    aliases: [ vcsxwfp ]
     desc: Vector Convert from Signed Fixed-Point Word
     bitmask: 0xfc0007ff
     pattern: 0x1000034a
@@ -2536,6 +2537,7 @@ opcodes:
     uses: [ vB, vuimm ]
 
   - name: vcfux
+    aliases: [ vcuxwfp ]
     desc: Vector Convert from Unsigned Fixed-Point Word
     bitmask: 0xfc0007ff
     pattern: 0x1000030a
@@ -2661,6 +2663,7 @@ opcodes:
     uses: [ vA, vB ]
 
   - name: vctsxs
+    aliases: [ vcfpsxws ]
     desc: Vector Convert to Signed Fixed-Point Word Saturate
     bitmask: 0xfc0007ff
     pattern: 0x100003ca
@@ -2669,6 +2672,7 @@ opcodes:
     uses: [ vB, vuimm ]
 
   - name: vctuxs
+    aliases: [ vcfpuxws ]
     desc: Vector Convert to Unsigned Fixed-Point Word Saturate
     bitmask: 0xfc0007ff
     pattern: 0x1000038a
@@ -3524,9 +3528,9 @@ opcodes:
     defs: [ vD ]
     uses: [ vA, vB ]
 
-# VMX128 exclusives
-# found here: https://github.com/xenia-project/xenia/blob/master/docs/ppc/vmx128.txt
-# and here: https://github.com/kakaroto/ps3ida/blob/master/plugins/PPCAltivec/src/main.cpp
+  # VMX128 exclusives
+  # found here: https://github.com/xenia-project/xenia/blob/master/docs/ppc/vmx128.txt
+  # and here: https://github.com/kakaroto/ps3ida/blob/master/plugins/PPCAltivec/src/main.cpp
   - name: lvewx128
     desc: Load Vector128 Element Word Indexed
     bitmask: 0xfc0007f3
@@ -3672,16 +3676,18 @@ opcodes:
     defs: [ VDS128 ]
     uses: [ VA128, VB128 ]
 
-  - name: vcfpsxws128
-    desc: Vector128 Convert From Floating-Point to Signed Fixed-Point Word Saturate
+  - name: vctsxs128
+    aliases: [ vcfpsxws128 ]
+    desc: Vector128 Convert to Signed Fixed-Point Word Saturate
     bitmask: 0xfc0007f0
     pattern: 0x18000230
     args: [ VDS128, VB128, vsimm ]
     defs: [ VDS128 ]
     uses: [ VB128 ]
 
-  - name: vcfpuxws128
-    desc: Vector128 Convert From Floating-Point to Unsigned Fixed-Point Word Saturate
+  - name: vctuxs128
+    aliases: [ vcfpuxws128 ]
+    desc: Vector128 Convert to Unsigned Fixed-Point Word Saturate
     bitmask: 0xfc0007f0
     pattern: 0x18000270
     args: [ VDS128, VB128, vuimm ]
@@ -3733,16 +3739,18 @@ opcodes:
     defs: [ VDS128 ]
     uses: [ VA128, VB128 ]
 
-  - name: vcsxwfp128
-    desc: Vector128 Convert From Signed Fixed-Point Word to Floating-Point
+  - name: vcfsx128
+    aliases: [ vcsxwfp128 ]
+    desc: Vector128 Convert From Signed Fixed-Point Word
     bitmask: 0xfc0007f0
     pattern: 0x180002b0
     args: [ VDS128, VB128, vsimm ]
     defs: [ VDS128 ]
     uses: [ VB128 ]
 
-  - name: vcuxwfp128
-    desc: Vector128 Convert From Unsigned Fixed-Point Word to Floating-Point
+  - name: vcfux128
+    aliases: [ vcuxwfp128 ]
+    desc: Vector128 Convert From Unsigned Fixed-Point Word
     bitmask: 0xfc0007f0
     pattern: 0x180002f0
     args: [ VDS128, VB128, vuimm ]
@@ -4109,10 +4117,26 @@ opcodes:
     defs: [ VDS128 ]
     uses: [ VB128 ]
 
+  - name: vupkhsh128
+    desc: Vector128 Unpack High Signed Half Word
+    bitmask: 0xfc1f07f0
+    pattern: 0x180007a0
+    args: [ VDS128, VB128 ]
+    defs: [ VDS128 ]
+    uses: [ VB128 ]
+
   - name: vupklsb128
     desc: Vector128 Unpack Low Signed Byte
     bitmask: 0xfc1f07f0
     pattern: 0x180003c0
+    args: [ VDS128, VB128 ]
+    defs: [ VDS128 ]
+    uses: [ VB128 ]
+
+  - name: vupklsh128
+    desc: Vector128 Unpack Low Signed Half Word
+    bitmask: 0xfc1f07f0
+    pattern: 0x180007e0
     args: [ VDS128, VB128 ]
     defs: [ VDS128 ]
     uses: [ VB128 ]
@@ -4799,7 +4823,7 @@ mnemonics:
     condition: ds_A == 0
   - name: dssall
     opcode: dss
-    condition: ds_A == 1
+    condition: ds_A == 1 && STRM == 0
   - name: vnot
     opcode: vnor
     args: [ vD, vA ]
@@ -4808,16 +4832,3 @@ mnemonics:
     opcode: vor
     args: [ vD, vA ]
     condition: vB == vA
-
-# missing instructions (there seem to be no documentation on these anywhere)
-# vctsxs128
-# vcfpsxws
-# vctuxs128
-# vcfpuxws
-# vcsxwfp
-# vcfux128
-# vcuxwfp
-# vdot3fp
-# vdot4fp
-# vupkhsh128
-# vupklsh128

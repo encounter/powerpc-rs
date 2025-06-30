@@ -40,7 +40,6 @@ pub fn gen_disasm(isa: &Isa, max_args: usize) -> Result<TokenStream> {
         entries.push(entry);
     }
     ensure!(sorted_ops.len() == isa.opcodes.len());
-    // ensure!(sorted_ops.len() <= 255);
     let opcode_max = Literal::u16_unsuffixed((sorted_ops.len() - 1) as u16);
 
     // Generate the opcode entries table
@@ -383,12 +382,18 @@ pub fn gen_disasm(isa: &Isa, max_args: usize) -> Result<TokenStream> {
         static BASIC_MNEMONICS: [MnemonicFunction; #opcode_count] = [#basic_functions_ref];
         #[inline]
         pub fn parse_basic(out: &mut ParsedIns, ins: Ins) {
-            BASIC_MNEMONICS.get(ins.op as usize).copied().unwrap_or(mnemonic_illegal)(out, ins)
+            match BASIC_MNEMONICS.get(ins.op as usize) {
+                Some(f) => f(out, ins),
+                None => mnemonic_illegal(out, ins),
+            }
         }
         static SIMPLIFIED_MNEMONICS: [MnemonicFunction; #opcode_count] = [#simplified_functions_ref];
         #[inline]
         pub fn parse_simplified(out: &mut ParsedIns, ins: Ins) {
-            SIMPLIFIED_MNEMONICS.get(ins.op as usize).copied().unwrap_or(mnemonic_illegal)(out, ins)
+            match SIMPLIFIED_MNEMONICS.get(ins.op as usize) {
+                Some(f) => f(out, ins),
+                None => mnemonic_illegal(out, ins),
+            }
         }
 
         type DefsUsesFunction = fn(&mut Arguments, Ins);
@@ -396,12 +401,18 @@ pub fn gen_disasm(isa: &Isa, max_args: usize) -> Result<TokenStream> {
         static DEFS_FUNCTIONS: [DefsUsesFunction; #opcode_count] = [#defs_refs];
         #[inline]
         pub fn parse_defs(out: &mut Arguments, ins: Ins) {
-            DEFS_FUNCTIONS.get(ins.op as usize).copied().unwrap_or(defs_uses_empty)(out, ins)
+            match DEFS_FUNCTIONS.get(ins.op as usize) {
+                Some(f) => f(out, ins),
+                None => defs_uses_empty(out, ins),
+            }
         }
         static USES_FUNCTIONS: [DefsUsesFunction; #opcode_count] = [#uses_refs];
         #[inline]
         pub fn parse_uses(out: &mut Arguments, ins: Ins) {
-            USES_FUNCTIONS.get(ins.op as usize).copied().unwrap_or(defs_uses_empty)(out, ins)
+            match USES_FUNCTIONS.get(ins.op as usize) {
+                Some(f) => f(out, ins),
+                None => defs_uses_empty(out, ins),
+            }
         }
     })
 }
@@ -474,7 +485,7 @@ fn gen_mnemonic(
         }
         let names_len = Literal::usize_unsuffixed(names.len());
         Ok(quote! { {
-            const MODIFIERS: [&str; #names_len] = [#(#names),*];
+            static MODIFIERS: [&str; #names_len] = [#(#names),*];
             ParsedIns { mnemonic: MODIFIERS[#bitset], args: #arguments }
         } })
     }

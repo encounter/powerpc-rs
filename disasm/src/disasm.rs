@@ -294,7 +294,7 @@ impl From<u8> for OpaqueU {
     }
 }
 // Vector register.
-field_arg!(VR, u8, "vr{}");
+field_arg!(VR, u8, "v{}");
 
 #[derive(Debug, Default, Copy, Clone, Eq, Hash, PartialEq)]
 pub enum Argument {
@@ -373,7 +373,7 @@ impl Display for ParsedIns {
             } else if !writing_offset {
                 write!(f, ", ")?;
             }
-            write!(f, "{}", argument)?;
+            write!(f, "{argument}")?;
             if let Argument::Offset(_) = argument {
                 write!(f, "(")?;
                 writing_offset = true;

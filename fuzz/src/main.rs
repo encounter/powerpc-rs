@@ -65,7 +65,7 @@ impl MultiFuzzer {
                 last = now;
                 let progress = 100f32 * ((now as f32) / (0x1_0000_0000u64 as f32));
                 let avg = now as f32 / elapsed.as_secs_f32() / this.threads.len() as f32;
-                println!("{}/s\t{:05.2}%\tn=0x{:08x} (avg {}/s)", per_second, progress, now, avg);
+                println!("{per_second}/s\t{progress:05.2}%\tn=0x{now:08x} (avg {avg}/s)");
             }
         });
     }
@@ -104,7 +104,7 @@ impl Fuzzer {
             let mut parsed = ppc750cl::ParsedIns::default();
             for x in range.clone() {
                 ppc750cl::Ins::new(x).parse_simplified(&mut parsed);
-                writeln!(&mut devnull, "{}", parsed).unwrap();
+                writeln!(&mut devnull, "{parsed}").unwrap();
                 if x % (1 << 19) == 0 {
                     counter.store(x, Ordering::Relaxed);
                 }

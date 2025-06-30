@@ -397,7 +397,7 @@ pub fn to_variant(key: &str) -> String {
         s.push(match c {
             'a'..='z' => c.to_ascii_uppercase(),
             'A'..='Z' => c,
-            _ => panic!("invalid identifier: {}", key),
+            _ => panic!("invalid identifier: {key}"),
         });
         loop {
             let c = match chars.next() {
@@ -411,7 +411,7 @@ pub fn to_variant(key: &str) -> String {
                     s.push('_');
                     break;
                 }
-                _ => panic!("invalid character in variant: {}", key),
+                _ => panic!("invalid character in variant: {key}"),
             }
         }
     }
@@ -459,7 +459,7 @@ where
     T: std::fmt::LowerHex,
 {
     fn to_tokens(&self, tokens: &mut TokenStream) {
-        let s = format!("{:#x}", self);
+        let s = format!("{self:#x}");
         tokens.extend(TokenStream::from_str(&s).unwrap());
     }
 }
@@ -486,7 +486,7 @@ where
     T: PrimInt + std::fmt::LowerHex,
 {
     fn to_tokens(&self, tokens: &mut TokenStream) {
-        let s = format!("{:#x}", self);
+        let s = format!("{self:#x}");
         tokens.extend(TokenStream::from_str(&s).unwrap());
     }
 }
