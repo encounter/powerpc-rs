@@ -1,13 +1,39 @@
-use ppc750cl::Ins;
+use powerpc::{Extension, Extensions, Ins};
+
+const EXTENSIONS: Extensions = Extensions::from_extension(Extension::Vmx128);
 
 macro_rules! assert_asm {
     ($ins:ident, $disasm:literal) => {{
         assert_eq!(format!("{}", $ins.simplified()), $disasm)
     }};
     ($code:literal, $disasm:literal) => {{
-        let ins = Ins::new($code);
+        let ins = Ins::new($code, EXTENSIONS);
         assert_eq!(format!("{}", ins.simplified()), $disasm)
     }};
+}
+
+#[test]
+fn test_vmx_enables_altivec() {
+    let extensions = Extensions::from_extension(Extension::Vmx128);
+    assert!(extensions.contains(Extension::AltiVec));
+}
+
+#[test]
+fn test_extensions_remove_vmx() {
+    let mut extensions = Extensions::from_extension(Extension::Vmx128);
+    extensions.remove(Extension::Vmx128);
+    assert!(!extensions.contains(Extension::Vmx128));
+    // Ensure AltiVec is still enabled
+    assert!(extensions.contains(Extension::AltiVec));
+}
+
+#[test]
+fn test_extensions_remove_altivec() {
+    let mut extensions = Extensions::from_extension(Extension::Vmx128);
+    extensions.remove(Extension::AltiVec);
+    assert!(!extensions.contains(Extension::AltiVec));
+    // Ensure Vmx128 is disabled (AltiVec required)
+    assert!(!extensions.contains(Extension::Vmx128));
 }
 
 #[test]

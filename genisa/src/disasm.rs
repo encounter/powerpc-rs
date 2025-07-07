@@ -1,10 +1,15 @@
-use crate::condition::{parse_conditions, replace_fields};
-use crate::ident;
-use crate::isa::{modifiers_iter, modifiers_valid, HexLiteral, Isa, Opcode};
+use crate::{
+    condition::{parse_conditions, replace_fields},
+    ident,
+    isa::{modifiers_iter, modifiers_valid, HexLiteral, Isa, Opcode},
+};
 use anyhow::{bail, ensure, Result};
-use proc_macro2::{Literal, TokenStream};
+use proc_macro2::{Ident, Literal, TokenStream};
 use quote::{format_ident, quote};
-use std::collections::HashMap;
+use std::{
+    collections::{btree_map, BTreeMap, HashMap},
+    hash::{DefaultHasher, Hash, Hasher},
+};
 
 pub fn gen_disasm(isa: &Isa, max_args: usize) -> Result<TokenStream> {
     // The entry table allows us to quickly find the range of possible opcodes
@@ -59,7 +64,19 @@ pub fn gen_disasm(isa: &Isa, max_args: usize) -> Result<TokenStream> {
         let pattern = HexLiteral(opcode.pattern);
         let enum_idx = Literal::u16_unsuffixed(idx as u16);
         let name = &opcode.name;
-        opcode_patterns.extend(quote! { (#bitmask, #pattern), });
+        let comment = format!(" {}", name);
+        let extension =
+            isa.extensions.iter().find(|(_, e)| e.opcodes.iter().any(|o| o.name == opcode.name));
+        let initializer = if let Some((id, _)) = extension {
+            let ident = format_ident!("{id}");
+            quote! { OpcodePattern::extension(#bitmask, #pattern, Extension::#ident) }
+        } else {
+            quote! { OpcodePattern::base(#bitmask, #pattern) }
+        };
+        opcode_patterns.extend(quote! {
+            #[comment = #comment]
+            #initializer,
+        });
         opcode_names.extend(quote! { #name, });
         let doc = opcode.doc();
         let variant = opcode.variant();
@@ -244,9 +261,12 @@ pub fn gen_disasm(isa: &Isa, max_args: usize) -> Result<TokenStream> {
     let mut defs_uses_functions = TokenStream::new();
     let mut defs_refs = TokenStream::new();
     let mut uses_refs = TokenStream::new();
+
+    // Deduplicate equivalent functions
+    let mut hash_to_fn = BTreeMap::<u64, Ident>::new();
+
     for opcode in &sorted_ops {
         let mut defs = TokenStream::new();
-        let mut uses = TokenStream::new();
         let mut defs_count = 0;
         for def in &opcode.defs {
             if isa.find_field(def).is_some_and(|f| f.arg.is_none()) {
@@ -256,6 +276,8 @@ pub fn gen_disasm(isa: &Isa, max_args: usize) -> Result<TokenStream> {
             defs.extend(quote! { #arg, });
             defs_count += 1;
         }
+
+        let mut uses = TokenStream::new();
         let mut use_count = 0;
         for use_ in &opcode.uses {
             if let Some(use_) = use_.strip_suffix(".nz") {
@@ -278,10 +300,23 @@ pub fn gen_disasm(isa: &Isa, max_args: usize) -> Result<TokenStream> {
                 defs.extend(quote! { Argument::None, });
             }
             let defs_name = format_ident!("defs_{}", opcode.ident());
-            defs_uses_functions.extend(quote! {
-                fn #defs_name(out: &mut Arguments, ins: Ins) { *out = [#defs]; }
-            });
-            defs_refs.extend(quote! { #defs_name, });
+
+            let mut hasher = DefaultHasher::default();
+            opcode.defs.hash(&mut hasher);
+            let defs_hash = hasher.finish();
+            match hash_to_fn.entry(defs_hash) {
+                btree_map::Entry::Vacant(e) => {
+                    e.insert(defs_name.clone());
+                    defs_uses_functions.extend(quote! {
+                        fn #defs_name(out: &mut Arguments, ins: Ins) { *out = [#defs]; }
+                    });
+                    defs_refs.extend(quote! { #defs_name, });
+                }
+                btree_map::Entry::Occupied(e) => {
+                    let ident = e.get();
+                    defs_refs.extend(quote! { #ident, });
+                }
+            }
         } else {
             defs_refs.extend(quote! { defs_uses_empty, });
         }
@@ -291,10 +326,23 @@ pub fn gen_disasm(isa: &Isa, max_args: usize) -> Result<TokenStream> {
                 uses.extend(quote! { Argument::None, });
             }
             let uses_name = format_ident!("uses_{}", opcode.ident());
-            defs_uses_functions.extend(quote! {
-                fn #uses_name(out: &mut Arguments, ins: Ins) { *out = [#uses]; }
-            });
-            uses_refs.extend(quote! { #uses_name, });
+
+            let mut hasher = DefaultHasher::default();
+            opcode.uses.hash(&mut hasher);
+            let uses_hash = hasher.finish();
+            match hash_to_fn.entry(uses_hash) {
+                btree_map::Entry::Vacant(e) => {
+                    e.insert(uses_name.clone());
+                    defs_uses_functions.extend(quote! {
+                        fn #uses_name(out: &mut Arguments, ins: Ins) { *out = [#uses]; }
+                    });
+                    uses_refs.extend(quote! { #uses_name, });
+                }
+                btree_map::Entry::Occupied(e) => {
+                    let ident = e.get();
+                    uses_refs.extend(quote! { #ident, });
+                }
+            }
         } else {
             uses_refs.extend(quote! { defs_uses_empty, });
         }
@@ -308,19 +356,96 @@ pub fn gen_disasm(isa: &Isa, max_args: usize) -> Result<TokenStream> {
         none_args.extend(quote! { Argument::None, });
     }
 
+    let extension_variants = isa
+        .extensions
+        .iter()
+        .map(|(id, ext)| {
+            let ident = format_ident!("{id}");
+            let desc = format!(" {}", ext.name);
+            quote! {
+                #[doc = #desc]
+                #ident,
+            }
+        })
+        .collect::<Vec<_>>();
+    let extension_requires = isa
+        .extensions
+        .iter()
+        .filter_map(|(id, ext)| {
+            if ext.requires.is_empty() {
+                return None;
+            }
+            let requires = ext
+                .requires
+                .iter()
+                .map(|parent| {
+                    let ident = format_ident!("{parent}");
+                    quote! { Extension::#ident.bitmask() }
+                })
+                .collect::<Vec<_>>();
+            let ident = format_ident!("{id}");
+            Some(quote! { Extension::#ident => #(#requires)|*, })
+        })
+        .collect::<Vec<_>>();
+    let extension_names = isa
+        .extensions
+        .iter()
+        .map(|(id, ext)| {
+            let ident = format_ident!("{id}");
+            let name = &ext.name;
+            Some(quote! { Extension::#ident => #name, })
+        })
+        .collect::<Vec<_>>();
+    let extensions = quote! {
+        #[derive(Copy, Clone, Debug, PartialEq, Eq)]
+        #[repr(u32)]
+        pub enum Extension {
+            #(#extension_variants)*
+        }
+        impl Extension {
+            #[inline]
+            pub const fn bitmask(self) -> u32 {
+                (1 << (self as u32)) | match self {
+                    #(#extension_requires)*
+                    _ => 0,
+                }
+            }
+            pub const fn name(self) -> &'static str {
+                match self {
+                    #(#extension_names)*
+                }
+            }
+        }
+    };
+
     let entries_count = Literal::usize_unsuffixed(entries.len());
     let opcode_count = Literal::usize_unsuffixed(sorted_ops.len());
     let max_args = Literal::usize_unsuffixed(max_args);
     Ok(quote! {
         #![allow(unused)]
         #![cfg_attr(rustfmt, rustfmt_skip)]
-        #[comment = " Code generated by ppc750-genisa. DO NOT EDIT."]
+        #[comment = " Code generated by powerpc-genisa. DO NOT EDIT."]
         use crate::disasm::*;
+        #extensions
         #[doc = " The entry table allows us to quickly find the range of possible opcodes for a"]
         #[doc = " given 6-bit prefix. 2*64 bytes should fit in a cache line (or two)."]
         static OPCODE_ENTRIES: [(u16, u16); #entries_count] = [#opcode_entries];
+        #[derive(Copy, Clone)]
+        struct OpcodePattern {
+            bitmask: u32,
+            pattern: u32,
+            extensions: Extensions,
+        }
+        impl OpcodePattern {
+            const fn base(bitmask: u32, pattern: u32) -> Self {
+                Self { bitmask, pattern, extensions: Extensions::none() }
+            }
+            const fn extension(bitmask: u32, pattern: u32, extension: Extension) -> Self {
+                Self { bitmask, pattern, extensions: Extensions::from_extension(extension) }
+            }
+        }
         #[doc = " The bitmask and pattern for each opcode."]
-        static OPCODE_PATTERNS: [(u32, u32); #opcode_count] = [#opcode_patterns];
+        static OPCODE_PATTERNS: [OpcodePattern; #opcode_count] = [#opcode_patterns];
         #[doc = " The name of each opcode."]
         static OPCODE_NAMES: [&str; #opcode_count] = [#opcode_names];
 
@@ -334,17 +459,15 @@ pub fn gen_disasm(isa: &Isa, max_args: usize) -> Result<TokenStream> {
             #opcode_enum
         }
         impl Opcode {
-            #[inline]
             pub fn mnemonic(self) -> &'static str {
                 OPCODE_NAMES.get(self as usize).copied().unwrap_or("<illegal>")
             }
 
-            #[inline]
-            pub fn detect(code: u32) -> Self {
+            pub fn detect(code: u32, extensions: Extensions) -> Self {
                 let entry = OPCODE_ENTRIES[(code >> 26) as usize];
                 for i in entry.0..entry.1 {
-                    let pattern = OPCODE_PATTERNS[i as usize];
-                    if (code & pattern.0) == pattern.1 {
+                    let op = OPCODE_PATTERNS[i as usize];
+                    if extensions.contains_all(op.extensions) && (code & op.bitmask) == op.pattern {
                         #[comment = " Safety: The enum is repr(u16) and the value is within the enum's range"]
                         return unsafe { core::mem::transmute::<u16, Opcode>(i) };
                     }
@@ -380,16 +503,14 @@ pub fn gen_disasm(isa: &Isa, max_args: usize) -> Result<TokenStream> {
         type MnemonicFunction = fn(&mut ParsedIns, Ins);
         #mnemonic_functions
         static BASIC_MNEMONICS: [MnemonicFunction; #opcode_count] = [#basic_functions_ref];
-        #[inline]
-        pub fn parse_basic(out: &mut ParsedIns, ins: Ins) {
+        pub(crate) fn parse_basic(out: &mut ParsedIns, ins: Ins) {
             match BASIC_MNEMONICS.get(ins.op as usize) {
                 Some(f) => f(out, ins),
                 None => mnemonic_illegal(out, ins),
             }
         }
         static SIMPLIFIED_MNEMONICS: [MnemonicFunction; #opcode_count] = [#simplified_functions_ref];
-        #[inline]
-        pub fn parse_simplified(out: &mut ParsedIns, ins: Ins) {
+        pub(crate) fn parse_simplified(out: &mut ParsedIns, ins: Ins) {
             match SIMPLIFIED_MNEMONICS.get(ins.op as usize) {
                 Some(f) => f(out, ins),
                 None => mnemonic_illegal(out, ins),
@@ -399,16 +520,14 @@ pub fn gen_disasm(isa: &Isa, max_args: usize) -> Result<TokenStream> {
         type DefsUsesFunction = fn(&mut Arguments, Ins);
         #defs_uses_functions
         static DEFS_FUNCTIONS: [DefsUsesFunction; #opcode_count] = [#defs_refs];
-        #[inline]
-        pub fn parse_defs(out: &mut Arguments, ins: Ins) {
+        pub(crate) fn parse_defs(out: &mut Arguments, ins: Ins) {
             match DEFS_FUNCTIONS.get(ins.op as usize) {
                 Some(f) => f(out, ins),
                 None => defs_uses_empty(out, ins),
             }
         }
         static USES_FUNCTIONS: [DefsUsesFunction; #opcode_count] = [#uses_refs];
-        #[inline]
-        pub fn parse_uses(out: &mut Arguments, ins: Ins) {
+        pub(crate) fn parse_uses(out: &mut Arguments, ins: Ins) {
             match USES_FUNCTIONS.get(ins.op as usize) {
                 Some(f) => f(out, ins),
                 None => defs_uses_empty(out, ins),

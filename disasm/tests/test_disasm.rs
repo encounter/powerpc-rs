@@ -1,11 +1,13 @@
-use ppc750cl::{Argument, Ins, InsIter, Opcode, GPR};
+use powerpc::{Argument, Extensions, Ins, InsIter, Opcode, GPR};
+
+const EXTENSIONS: Extensions = Extensions::none();
 
 macro_rules! assert_asm {
     ($ins:ident, $disasm:literal) => {{
         assert_eq!(format!("{}", $ins.simplified()), $disasm)
     }};
     ($code:literal, $disasm:literal) => {{
-        let ins = Ins::new($code);
+        let ins = Ins::new($code, EXTENSIONS);
         assert_eq!(format!("{}", ins.simplified()), $disasm)
     }};
 }
@@ -15,7 +17,7 @@ macro_rules! assert_basic {
         assert_eq!(format!("{}", $ins.basic_form()), $disasm)
     }};
     ($code:literal, $disasm:literal) => {{
-        let ins = Ins::new($code);
+        let ins = Ins::new($code, EXTENSIONS);
         assert_eq!(format!("{}", ins.basic()), $disasm)
     }};
 }
@@ -30,7 +32,7 @@ fn test_ins_add() {
 
 #[test]
 fn test_ins_addc() {
-    let ins = Ins::new(0x7c002014);
+    let ins = Ins::new(0x7c002014, EXTENSIONS);
     assert_eq!(ins.op, Opcode::Addc);
     // assert_eq!(ins.fields(), vec![rD(GPR(0)), rA(GPR(0)), rB(GPR(4))]);
     assert_asm!(ins, "addc r0, r0, r4");
@@ -42,7 +44,7 @@ fn test_ins_addc() {
 
 #[test]
 fn test_ins_addi() {
-    let ins = Ins::new(0x38010140);
+    let ins = Ins::new(0x38010140, EXTENSIONS);
     assert_eq!(ins.op, Opcode::Addi);
     // assert_eq!(
     //     ins.fields(),
@@ -215,11 +217,6 @@ fn test_ins_cmpli() {
 }
 
 #[test]
-fn test_ins_cntlzd() {
-    assert_asm!(0x7CA30074, "cntlzd r3, r5");
-}
-
-#[test]
 fn test_ins_cntlzw() {
     assert_asm!(0x7C030034, "cntlzw r3, r0");
 }
@@ -292,21 +289,6 @@ fn test_ins_dcbz() {
 }
 
 #[test]
-fn test_ins_dcbz_l() {
-    assert_asm!(0x10061FEC, "dcbz_l r6, r3");
-}
-
-#[test]
-fn test_ins_divd() {
-    assert_asm!(0x7CA63BD2, "divd r5, r6, r7");
-}
-
-#[test]
-fn test_ins_divdu() {
-    assert_asm!(0x7C839392, "divdu r4, r3, r18");
-}
-
-#[test]
 fn test_ins_divw() {
     assert_asm!(0x7C8073D6, "divw r4, r0, r14");
 }
@@ -329,12 +311,6 @@ fn test_ins_extsh() {
 }
 
 #[test]
-fn test_ins_extsw() {
-    assert_asm!(0x7CC307B4, "extsw r3, r6");
-    assert_asm!(0x7CC307B5, "extsw. r3, r6");
-}
-
-#[test]
 fn test_ins_fabs() {
     assert_asm!(0xFC000A10, "fabs f0, f1");
 }
@@ -350,11 +326,6 @@ fn test_ins_fadds() {
 }
 
 #[test]
-fn test_ins_fcfid() {
-    assert_asm!(0xFC602E9C, "fcfid f3, f5");
-}
-
-#[test]
 fn test_ins_fcmpo() {
     assert_asm!(0xFC00C840, "fcmpo cr0, f0, f25");
 }
@@ -362,16 +333,6 @@ fn test_ins_fcmpo() {
 #[test]
 fn test_ins_fcmpu() {
     assert_asm!(0xFC00D000, "fcmpu cr0, f0, f26");
-}
-
-#[test]
-fn test_ins_fctid() {
-    assert_asm!(0xFC60065C, "fctid f3, f0");
-}
-
-#[test]
-fn test_ins_fctidz() {
-    assert_asm!(0xFC60065E, "fctidz f3, f0");
 }
 
 #[test]
@@ -493,33 +454,6 @@ fn test_ins_lbzx() {
 }
 
 #[test]
-fn test_ins_ld() {
-    assert_asm!(0xebe10058, "ld r31, 0x58(r1)");
-    assert_asm!(0xe9790010, "ld r11, 0x10(r25)");
-}
-
-#[test]
-fn test_ins_ldarx() {
-    assert_asm!(0x7C6538A8, "ldarx r3, r5, r7");
-}
-
-#[test]
-fn test_ins_ldu() {
-    assert_asm!(0xe97cfff9, "ldu r11, -0x8(r28)");
-    assert_asm!(0xe8deffe9, "ldu r6, -0x18(r30)");
-}
-
-#[test]
-fn test_ins_ldux() {
-    assert_asm!(0x7C60286A, "ldux r3, r0, r5");
-}
-
-#[test]
-fn test_ins_ldx() {
-    assert_asm!(0x7C60282A, "ldx r3, r0, r5");
-}
-
-#[test]
 fn test_ins_lfd() {
     assert_asm!(0xC80140C8, "lfd f0, 0x40c8(r1)");
     assert_asm!(0xC8028090, "lfd f0, -0x7f70(r2)");
@@ -598,21 +532,6 @@ fn test_ins_lhzx() {
 #[test]
 fn test_ins_lmw() {
     assert_asm!(0xBB210444, "lmw r25, 0x444(r1)");
-}
-
-#[test]
-fn test_ins_lwa() {
-    assert_asm!(0xe97fffea, "lwa r11, -0x18(r31)");
-}
-
-#[test]
-fn test_ins_lwaux() {
-    assert_asm!(0x7C8532EA, "lwaux r4, r5, r6");
-}
-
-#[test]
-fn test_ins_lwax() {
-    assert_asm!(0x7CA63AAA, "lwax r5, r6, r7");
 }
 
 #[test]
@@ -717,12 +636,6 @@ fn test_ins_mtmsr() {
 }
 
 #[test]
-fn test_ins_mtmsrd() {
-    assert_asm!(0x7C000164, "mtmsrd r0, 0");
-    assert_asm!(0x7D210164, "mtmsrd r9, 1");
-}
-
-#[test]
 fn test_ins_mtspr() {
     assert_asm!(0x7E75FBA6, "mtspr DABR, r19");
     assert_asm!(0x7C70FBA6, "mtspr HID0, r3");
@@ -742,26 +655,6 @@ fn test_ins_mtsr() {
 }
 
 #[test]
-fn test_ins_mtsrd() {
-    assert_asm!(0x7E0000A4, "mtsrd 0, r16");
-}
-
-#[test]
-fn test_ins_mtsrdin() {
-    assert_asm!(0x7C8040E4, "mtsrdin r4, r8");
-}
-
-#[test]
-fn test_ins_mulhd() {
-    assert_asm!(0x7C7CF892, "mulhd r3, r28, r31");
-}
-
-#[test]
-fn test_ins_mulhdu() {
-    assert_asm!(0x7CBCF812, "mulhdu r5, r28, r31");
-}
-
-#[test]
 fn test_ins_mulhw() {
     assert_asm!(0x7C7F2096, "mulhw r3, r31, r4");
 }
@@ -769,12 +662,6 @@ fn test_ins_mulhw() {
 #[test]
 fn test_ins_mulhwu() {
     assert_asm!(0x7C7D0016, "mulhwu r3, r29, r0");
-}
-
-#[test]
-fn test_ins_mulld() {
-    assert_asm!(0x7C6419D2, "mulld r3, r4, r3");
-    assert_asm!(0x7d6b49d2, "mulld r11, r11, r9");
 }
 
 #[test]
@@ -826,228 +713,9 @@ fn test_ins_oris() {
     assert_asm!(0x67A06800, "oris r0, r29, 0x6800");
 }
 
-// #[test]
-// fn test_ins_psq_l() {
-//     assert_asm!(0xE02500AC, "psq_l f1, 0xac(r5), 0, qr0");
-// }
-
-// #[test]
-// fn test_ins_psq_lu() {
-//     assert_asm!(0xE5435010, "psq_lu f10, 0x10(r3), 0, qr5");
-// }
-
-// #[test]
-// fn test_ins_psq_lx() {
-//     let ins = Ins::new(0x1000000C);
-//     assert_eq!(ins.op, Opcode::PsqLx);
-//     // assert_eq!(
-//     //     ins.fields(),
-//     //     vec![
-//     //         frD(FPR(0)),
-//     //         rA(GPR(0)),
-//     //         rB(GPR(0)),
-//     //         ps_WX(OpaqueU(0)),
-//     //         ps_IX(GQR(0)),
-//     //     ]
-//     // );
-//     assert_eq!(
-//         ins.defs(),
-//         [Argument::FPR(FPR(0)), Argument::None, Argument::None, Argument::None, Argument::None]
-//     );
-//     assert_eq!(
-//         ins.uses(),
-//         [Argument::None, Argument::GPR(GPR(0)), Argument::None, Argument::None, Argument::None]
-//     );
-
-//     assert_asm!(0x1000000C, "psq_lx f0, r0, r0, 0, qr0");
-// }
-
-// #[test]
-// fn test_ins_psq_st() {
-//     assert_asm!(0xF1230210, "psq_st f9, 0x210(r3), 0, qr0");
-//     assert_asm!(0xF1238008, "psq_st f9, 0x8(r3), 1, qr0");
-// }
-
-// #[test]
-// fn test_ins_psq_stu() {
-//     assert_asm!(0xF40A0020, "psq_stu f0, 0x20(r10), 0, qr0");
-// }
-
-// #[test]
-// fn test_ins_psq_stx() {
-//     assert_asm!(0x13E1000E, "psq_stx f31, r1, r0, 0, qr0");
-// }
-
-// #[test]
-// fn test_ins_ps_abs() {
-//     assert_asm!(0x10A03210, "ps_abs f5, f6");
-// }
-
-// #[test]
-// fn test_ins_ps_add() {
-//     assert_asm!(0x1006382A, "ps_add f0, f6, f7");
-// }
-
-// #[test]
-// fn test_ins_ps_cmpo0() {
-//     assert_asm!(0x10070840, "ps_cmpo0 cr0, f7, f1");
-// }
-
-// #[test]
-// fn test_ins_ps_cmpu0() {
-//     assert_asm!(0x10003000, "ps_cmpu0 cr0, f0, f6");
-// }
-
-// #[test]
-// fn test_ins_ps_cmpu1() {
-//     assert_asm!(0x10003080, "ps_cmpu1 cr0, f0, f6");
-// }
-
-// #[test]
-// fn test_ins_ps_madd() {
-//     assert_asm!(0x112141FA, "ps_madd f9, f1, f7, f8");
-// }
-
-// #[test]
-// fn test_ins_ps_madds0() {
-//     assert_asm!(0x10AC299C, "ps_madds0 f5, f12, f6, f5");
-// }
-
-// #[test]
-// fn test_ins_ps_madds1() {
-//     assert_asm!(0x110640DE, "ps_madds1 f8, f6, f3, f8");
-// }
-
-// #[test]
-// fn test_ins_ps_merge00() {
-//     assert_asm!(0x10400420, "ps_merge00 f2, f0, f0");
-// }
-
-// #[test]
-// fn test_ins_ps_merge01() {
-//     assert_asm!(0x10400C60, "ps_merge01 f2, f0, f1");
-// }
-
-// #[test]
-// fn test_ins_ps_merge10() {
-//     assert_asm!(0x104004A0, "ps_merge10 f2, f0, f0");
-// }
-
-// #[test]
-// fn test_ins_ps_merge11() {
-//     assert_asm!(0x10AA14E0, "ps_merge11 f5, f10, f2");
-// }
-
-// #[test]
-// fn test_ins_ps_mr() {
-//     assert_asm!(0x10200090, "ps_mr f1, f0");
-// }
-
-// #[test]
-// fn test_ins_ps_msub() {
-//     assert_asm!(0x10A53778, "ps_msub f5, f5, f29, f6");
-// }
-
-// #[test]
-// fn test_ins_ps_mul() {
-//     assert_asm!(0x10000032, "ps_mul f0, f0, f0");
-// }
-
-// #[test]
-// fn test_ins_ps_muls0() {
-//     assert_asm!(0x100002D8, "ps_muls0 f0, f0, f11");
-// }
-
-// #[test]
-// fn test_ins_ps_muls1() {
-//     assert_asm!(0x10A2005A, "ps_muls1 f5, f2, f1");
-// }
-
-// #[test]
-// fn test_ins_ps_nabs() {
-//     assert_asm!(0x10803210, "ps_abs f4, f6");
-// }
-
-// #[test]
-// fn test_ins_ps_neg() {
-//     assert_asm!(0x10E03850, "ps_neg f7, f7");
-// }
-
-// #[test]
-// fn test_ins_ps_nmadd() {
-//     assert_asm!(0x10CB30FE, "ps_nmadd f6, f11, f3, f6");
-// }
-
-// #[test]
-// fn test_ins_ps_nmsub() {
-//     assert_asm!(0x107E083C, "ps_nmsub f3, f30, f0, f1");
-// }
-
-// #[test]
-// fn test_ins_ps_sel() {
-//     assert_asm!(0x106428EE, "ps_sel f3, f4, f3, f5");
-// }
-
-// #[test]
-// fn test_ins_ps_sub() {
-//     assert_asm!(0x10A92828, "ps_sub f5, f9, f5");
-// }
-
-// #[test]
-// fn test_ins_ps_sum0() {
-//     assert_asm!(0x10230854, "ps_sum0 f1, f3, f1, f1");
-// }
-
-// #[test]
-// fn test_ins_ps_sum1() {
-//     assert_asm!(0x10A12956, "ps_sum1 f5, f1, f5, f5");
-// }
-
 #[test]
 fn test_ins_rfi() {
     assert_asm!(0x4C000064, "rfi");
-}
-
-#[test]
-fn test_ins_rfid() {
-    assert_asm!(0x4c000024, "rfid");
-}
-
-#[test]
-fn test_ins_rldcl() {
-    assert_asm!(0x780336D0, "rldcl r3, r0, r6, 27");
-    assert_asm!(0x78033010, "rotld r3, r0, r6");
-}
-
-#[test]
-fn test_ins_rldcr() {
-    assert_asm!(0x78A345D2, "rldcr r3, r5, r8, 23");
-}
-
-#[test]
-fn test_ins_rldic() {
-    assert_asm!(0x78C51928, "rldic r5, r6, 3, 36");
-}
-
-#[test]
-fn test_ins_rldicl() {
-    assert_asm!(0x78c50020, "rldicl r5, r6, 0, 32");
-    assert_asm!(0x7bab07a0, "rldicl r11, r29, 0, 62");
-}
-
-#[test]
-fn test_ins_rldicr() {
-    assert_asm!(0x7883ffe6, "rldicr r3, r4, 63, 63");
-    assert_asm!(0x798c37e4, "rldicr r12, r12, 6, 63");
-    assert_asm!(0x798c07c6, "rldicr r12, r12, 32, 31");
-    assert_asm!(0x798ccfe6, "rldicr r12, r12, 57, 63");
-}
-
-#[test]
-fn test_ins_rldimi() {
-    assert_asm!(0x78a3a04e, "rldimi r3, r5, 52, 1");
-    assert_asm!(0x794b000e, "rldimi r11, r10, 32, 0");
-    assert_asm!(0x780331CC, "rldimi r3, r0, 6, 7");
 }
 
 #[test]
@@ -1091,36 +759,8 @@ fn test_ins_sc() {
 }
 
 #[test]
-fn test_ins_slbia() {
-    assert_asm!(0x7c0003e4, "slbia");
-}
-
-#[test]
-fn test_ins_slbie() {
-    assert_asm!(0x7C002B64, "slbie r5");
-}
-
-#[test]
-fn test_ins_sld() {
-    assert_asm!(0x7d6a5036, "sld r10, r11, r10");
-    assert_asm!(0x7D034836, "sld r3, r8, r9");
-}
-
-#[test]
 fn test_ins_slw() {
     assert_asm!(0x7C042830, "slw r4, r0, r5");
-}
-
-#[test]
-fn test_ins_srad() {
-    assert_asm!(0x7d0b5e34, "srad r11, r8, r11");
-    assert_asm!(0x7C033634, "srad r3, r0, r6");
-}
-
-#[test]
-fn test_ins_sradi() {
-    assert_asm!(0x7cc4a674, "sradi r4, r6, 20");
-    assert_asm!(0x7d6b0676, "sradi r11, r11, 32");
 }
 
 #[test]
@@ -1132,14 +772,6 @@ fn test_ins_sraw() {
 fn test_ins_srawi() {
     assert_asm!(0x7C000E70, "srawi r0, r0, 1");
     assert_asm!(0x7C001670, "srawi r0, r0, 2");
-}
-
-#[test]
-fn test_ins_srd() {
-    assert_asm!(0x7d0a4c36, "srd r10, r8, r9");
-    assert_asm!(0x7d675436, "srd r7, r11, r10");
-    assert_asm!(0x7C001C36, "srd r0, r0, r3");
-    assert_asm!(0x7C600436, "srd r0, r3, r0");
 }
 
 #[test]
@@ -1168,35 +800,6 @@ fn test_ins_stbux() {
 #[test]
 fn test_ins_stbx() {
     assert_asm!(0x7C03F9AE, "stbx r0, r3, r31");
-}
-
-#[test]
-fn test_ins_std() {
-    assert_asm!(0xfbe1fff0, "std r31, -0x10(r1)");
-}
-
-#[test]
-fn test_ins_stdcx() {
-    assert_asm!(0x7CA749AD, "stdcx. r5, r7, r9");
-    assert_asm!(0x7fc0e9ad, "stdcx. r30, r0, r29");
-}
-
-#[test]
-fn test_ins_stdu() {
-    assert_asm!(0xf9690009, "stdu r11, 0x8(r9)");
-    assert_asm!(0xf97ffff9, "stdu r11, -0x8(r31)");
-}
-
-#[test]
-fn test_ins_stdux() {
-    assert_asm!(0x7C03316A, "stdux r0, r3, r6");
-    assert_asm!(0x7d5cc96a, "stdux r10, r28, r25");
-}
-
-#[test]
-fn test_ins_stdx() {
-    assert_asm!(0x7CA7F92A, "stdx r5, r7, r31");
-    assert_asm!(0x7cc3212a, "stdx r6, r3, r4");
 }
 
 #[test]
@@ -1320,16 +923,6 @@ fn test_ins_sync() {
 }
 
 #[test]
-fn test_ins_td() {
-    assert_asm!(0x7DC30088, "td 14, r3, r0");
-}
-
-#[test]
-fn test_ins_tdi() {
-    assert_asm!(0x09830058, "tdi 12, r3, 0x58");
-}
-
-#[test]
 fn test_tlbie() {
     assert_asm!(0x7C001A64, "tlbie r3");
 }
@@ -1373,8 +966,9 @@ fn test_ins_xoris() {
 
 #[test]
 fn test_ins_iter() {
-    let mut iter = InsIter::new(&[0x7C, 0x43, 0x22, 0x14, 0x7E, 0x1A, 0x02, 0xA6, 0xFF], 0);
-    assert_eq!(iter.next(), Some((0, Ins::new(0x7C432214))));
-    assert_eq!(iter.next(), Some((4, Ins::new(0x7E1A02A6))));
+    let mut iter =
+        InsIter::new(&[0x7C, 0x43, 0x22, 0x14, 0x7E, 0x1A, 0x02, 0xA6, 0xFF], 0, EXTENSIONS);
+    assert_eq!(iter.next(), Some((0, Ins::new(0x7C432214, EXTENSIONS))));
+    assert_eq!(iter.next(), Some((4, Ins::new(0x7E1A02A6, EXTENSIONS))));
     assert_eq!(iter.next(), None);
 }

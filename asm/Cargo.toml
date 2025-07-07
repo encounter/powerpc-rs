@@ -1,14 +1,14 @@
 [package]
-name = "ppc750cl-asm"
+name = "powerpc-asm"
 version.workspace = true
 edition.workspace = true
 authors.workspace = true
 license.workspace = true
-description = "Assembler for PowerPC 750CL"
+description = "PowerPC assembler"
 readme = "../README.md"
 keywords.workspace = true
 repository.workspace = true
-documentation = "https://docs.rs/ppc750cl-asm"
+documentation = "https://docs.rs/powerpc-asm"
 rust-version.workspace = true
 
 [features]

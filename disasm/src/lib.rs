@@ -3,7 +3,7 @@ mod disasm;
 mod generated;
 
 pub use disasm::{
-    Argument, BranchDest, CRBit, CRField, Ins, InsIter, Offset, OpaqueU, ParsedIns, Simm, Uimm,
-    FPR, GPR, GQR, SPR, SR,
+    Argument, BranchDest, CRBit, CRField, Extensions, Ins, InsIter, Offset, OpaqueU, ParsedIns,
+    Simm, Uimm, FPR, GPR, GQR, SPR, SR,
 };
-pub use generated::{Arguments, Opcode};
+pub use generated::{Arguments, Extension, Opcode};

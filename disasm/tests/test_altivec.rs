@@ -1,11 +1,13 @@
-use ppc750cl::Ins;
+use powerpc::{Extension, Extensions, Ins};
+
+const EXTENSIONS: Extensions = Extensions::from_extension(Extension::AltiVec);
 
 macro_rules! assert_asm {
     ($ins:ident, $disasm:literal) => {{
         assert_eq!(format!("{}", $ins.simplified()), $disasm)
     }};
     ($code:literal, $disasm:literal) => {{
-        let ins = Ins::new($code);
+        let ins = Ins::new($code, EXTENSIONS);
         assert_eq!(format!("{}", ins.simplified()), $disasm)
     }};
 }

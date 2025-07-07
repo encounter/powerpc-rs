@@ -1,24 +1,24 @@
-use ppc750cl_asm::*;
-use Argument::{None, Signed as S, Unsigned as U};
+use powerpc_asm::*;
+use Argument::{None as N, Signed as S, Unsigned as U};
 
 macro_rules! assert_asm {
     ($mnemonic:literal, $arg1:expr, $arg2:expr, $arg3:expr, $arg4:expr, $arg5: expr, $code:literal) => {{
         assert_eq!(assemble($mnemonic, &[$arg1, $arg2, $arg3, $arg4, $arg5]).unwrap(), $code)
     }};
     ($mnemonic:literal, $arg1:expr, $arg2:expr, $arg3:expr, $arg4:expr, $code:literal) => {{
-        assert_eq!(assemble($mnemonic, &[$arg1, $arg2, $arg3, $arg4, None]).unwrap(), $code)
+        assert_eq!(assemble($mnemonic, &[$arg1, $arg2, $arg3, $arg4, N]).unwrap(), $code)
     }};
     ($mnemonic:literal, $arg1:expr, $arg2:expr, $arg3:expr, $code:literal) => {{
-        assert_eq!(assemble($mnemonic, &[$arg1, $arg2, $arg3, None, None]).unwrap(), $code)
+        assert_eq!(assemble($mnemonic, &[$arg1, $arg2, $arg3, N, N]).unwrap(), $code)
     }};
     ($mnemonic:literal, $arg1:expr, $arg2:expr, $code:literal) => {{
-        assert_eq!(assemble($mnemonic, &[$arg1, $arg2, None, None, None]).unwrap(), $code)
+        assert_eq!(assemble($mnemonic, &[$arg1, $arg2, N, N, N]).unwrap(), $code)
     }};
     ($mnemonic:literal, $arg1:expr, $code:literal) => {{
-        assert_eq!(assemble($mnemonic, &[$arg1, None, None, None, None]).unwrap(), $code)
+        assert_eq!(assemble($mnemonic, &[$arg1, N, N, N, N]).unwrap(), $code)
     }};
     ($mnemonic:literal, $code:literal) => {{
-        assert_eq!(assemble($mnemonic, &[None, None, None, None, None]).unwrap(), $code)
+        assert_eq!(assemble($mnemonic, &[N, N, N, N, N]).unwrap(), $code)
     }};
 }
 

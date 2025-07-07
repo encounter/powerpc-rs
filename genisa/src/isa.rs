@@ -1,7 +1,8 @@
 use std::collections::HashMap;
 use std::{fs::File, path::Path, str::FromStr};
 
-use anyhow::{Context, Result};
+use anyhow::{bail, Context, Result};
+use indexmap::IndexMap;
 use num_traits::PrimInt;
 use proc_macro2::{Ident, Span, TokenStream};
 use quote::{format_ident, ToTokens};
@@ -11,14 +12,73 @@ use serde::{Deserialize, Deserializer, Serialize};
 pub fn load_isa(path: &Path) -> Result<Isa> {
     let yaml_file =
         File::open(path).with_context(|| format!("Failed to open file {}", path.display()))?;
-    let isa: Isa = serde_yaml::from_reader(yaml_file)
+    let mut isa: Isa = serde_yaml::from_reader(yaml_file)
         .with_context(|| format!("While parsing file {}", path.display()))?;
+    // Merge in all extensions
+    for extension in isa.extensions.values() {
+        for field in &extension.fields {
+            if isa.find_field(&field.name).is_some() {
+                bail!(
+                    "Field {} already exists (while applying extension {})",
+                    field.name,
+                    extension.name
+                );
+            } else {
+                isa.fields.push(field.clone());
+            }
+        }
+        for modifier in &extension.modifiers {
+            if isa.find_modifier(&modifier.name).is_some() {
+                bail!(
+                    "Modifier {} already exists (while applying extension {})",
+                    modifier.name,
+                    extension.name
+                );
+            } else {
+                isa.modifiers.push(modifier.clone());
+            }
+        }
+        for opcode in &extension.opcodes {
+            if isa.find_opcode(&opcode.name).is_some() {
+                bail!(
+                    "Opcode {} already exists (while applying extension {})",
+                    opcode.name,
+                    extension.name
+                );
+            } else {
+                isa.opcodes.push(opcode.clone());
+            }
+        }
+        for mnemonic in &extension.mnemonics {
+            if isa.find_mnemonic(&mnemonic.name).is_some() {
+                bail!(
+                    "Mnemonic {} already exists (while applying extension {})",
+                    mnemonic.name,
+                    extension.name
+                );
+            } else {
+                isa.mnemonics.push(mnemonic.clone());
+            }
+        }
+    }
     Ok(isa)
 }
 
 #[derive(Deserialize, Serialize, Clone, Debug, Default)]
 #[serde(default)]
 pub struct Isa {
+    pub fields: Vec<Field>,
+    pub modifiers: Vec<Modifier>,
+    pub opcodes: Vec<Opcode>,
+    pub mnemonics: Vec<Mnemonic>,
+    pub extensions: IndexMap<String, Extension>,
+}
+
+#[derive(Deserialize, Serialize, Clone, Debug, Default)]
+#[serde(default)]
+pub struct Extension {
+    pub name: String,
+    pub requires: Vec<String>,
     pub fields: Vec<Field>,
     pub modifiers: Vec<Modifier>,
     pub opcodes: Vec<Opcode>,
@@ -36,6 +96,10 @@ impl Isa {
 
     pub fn find_opcode(&self, name: &str) -> Option<&Opcode> {
         self.opcodes.iter().find(|o| o.name == name)
+    }
+
+    pub fn find_mnemonic(&self, name: &str) -> Option<&Mnemonic> {
+        self.mnemonics.iter().find(|m| m.name == name)
     }
 }
 
@@ -222,6 +286,7 @@ pub fn modifiers_iter<'a>(
 }
 
 #[derive(Copy, Clone, Debug, Default)]
+#[repr(transparent)]
 pub struct BitRange(pub (u8, u8));
 
 impl BitRange {
@@ -231,42 +296,42 @@ impl BitRange {
     }
 
     #[inline]
-    pub fn start(&self) -> u8 {
+    pub fn start(self) -> u8 {
         self.0 .0
     }
 
     #[inline]
-    pub fn end(&self) -> u8 {
+    pub fn end(self) -> u8 {
         self.0 .1
     }
 
     /// Calculate the mask from the range
     #[inline]
-    pub fn mask(&self) -> u32 {
+    pub fn mask(self) -> u32 {
         self.max_value() << self.shift()
     }
 
     /// Number of bits to shift
     #[inline]
-    pub fn shift(&self) -> u8 {
+    pub fn shift(self) -> u8 {
         32 - self.end()
     }
 
     /// Number of bits in the range
     #[inline]
-    pub fn len(&self) -> u8 {
+    pub fn len(self) -> u8 {
         self.end() - self.start()
     }
 
     /// Shift and mask a value according to the range
     #[inline]
-    pub fn shift_value(&self, value: u32) -> u32 {
+    pub fn shift_value(self, value: u32) -> u32 {
         (value & self.max_value()) << self.shift()
     }
 
     /// Calculate the maximum value that can be represented by the range
     #[inline]
-    pub fn max_value(&self) -> u32 {
+    pub fn max_value(self) -> u32 {
         (1 << self.len()) - 1
     }
 }
@@ -308,13 +373,13 @@ pub struct SplitBitRange(pub Vec<BitRange>);
 impl SplitBitRange {
     #[inline]
     pub fn end(&self) -> u8 {
-        self.0.iter().map(|r| r.end()).max().unwrap_or(0)
+        self.iter().map(BitRange::end).max().unwrap_or(0)
     }
 
     /// Calculate the mask from the range
     #[inline]
     pub fn mask(&self) -> u32 {
-        self.0.iter().map(|r| r.mask()).fold(0, |acc, m| acc | m)
+        self.iter().map(BitRange::mask).fold(0, |acc, m| acc | m)
     }
 
     /// Number of bits to shift
@@ -326,14 +391,14 @@ impl SplitBitRange {
     /// Number of bits in the range
     #[inline]
     pub fn len(&self) -> u8 {
-        self.0.iter().map(|r| r.len()).sum()
+        self.iter().map(BitRange::len).sum()
     }
 
     /// Shift and mask a value according to the range
     #[inline]
     pub fn shift_value(&self, mut value: u32) -> u32 {
         let mut result = 0;
-        for range in self.0.iter().rev() {
+        for range in self.iter().rev() {
             result |= range.shift_value(value);
             value >>= range.len();
         }
@@ -344,6 +409,12 @@ impl SplitBitRange {
     #[inline]
     pub fn max_value(&self) -> u32 {
         (1 << self.len()) - 1
+    }
+
+    /// Create an iterator over the contained bit ranges
+    #[inline]
+    pub fn iter(&self) -> impl DoubleEndedIterator<Item = BitRange> + use<'_> {
+        self.0.iter().copied()
     }
 }
 

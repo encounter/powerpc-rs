@@ -1,18 +1,20 @@
 [package]
-name = "ppc750cl-genisa"
+name = "powerpc-genisa"
 version.workspace = true
 edition.workspace = true
 authors.workspace = true
 license.workspace = true
-description = "Rust code generator for ppc750cl"
+description = "Rust code generator for powerpc"
 repository.workspace = true
 rust-version.workspace = true
 publish = false
 
 [dependencies]
 anyhow = "1.0"
+indexmap = { version = "2.10", features = ["serde"] }
 log = "0.4"
 num-traits = "0.2"
+phf_codegen = "0.11"
 prettyplease = "0.2"
 proc-macro2 = "1.0"
 quote = "1.0"
@@ -20,5 +22,3 @@ serde = { version = "1.0", features = ["derive"] }
 serde_yaml = "0.9"
 simple_logger = "5.0"
 syn = { version = "2", default-features = false, features = ["full", "parsing"] }
-phf = "0.11"
-phf_codegen = "0.11"

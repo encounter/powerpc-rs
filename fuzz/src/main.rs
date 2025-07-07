@@ -1,3 +1,4 @@
+use powerpc::Extensions;
 use std::io::Write;
 use std::ops::Range;
 use std::sync::atomic::{AtomicU32, Ordering};
@@ -5,9 +6,9 @@ use std::sync::Arc;
 use std::time::{Duration, Instant};
 
 fn main() {
-    let matches = clap::Command::new("ppc750cl-fuzz")
-        .version("0.2.0")
-        .about("Complete \"fuzzer\" for ppc750cl disassembler")
+    let matches = clap::Command::new("powerpc-fuzz")
+        .version(env!("CARGO_PKG_VERSION"))
+        .about("Complete \"fuzzer\" for powerpc disassembler")
         .arg(
             clap::Arg::new("threads")
                 .short('t')
@@ -101,9 +102,10 @@ impl Fuzzer {
         let counter = Arc::clone(&self.counter);
         let range = self.range.clone();
         std::thread::spawn(move || {
-            let mut parsed = ppc750cl::ParsedIns::default();
+            let mut parsed = powerpc::ParsedIns::default();
             for x in range.clone() {
-                ppc750cl::Ins::new(x).parse_simplified(&mut parsed);
+                powerpc::Ins::new(x, Extensions::from_bitmask(u32::MAX))
+                    .parse_simplified(&mut parsed);
                 writeln!(&mut devnull, "{parsed}").unwrap();
                 if x % (1 << 19) == 0 {
                     counter.store(x, Ordering::Relaxed);

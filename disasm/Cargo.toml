@@ -1,14 +1,14 @@
 [package]
-name = "ppc750cl"
+name = "powerpc"
 version.workspace = true
 edition.workspace = true
 authors.workspace = true
 license.workspace = true
-description = "Disassembler for PowerPC 750CL"
+description = "PowerPC disassembler"
 readme = "../README.md"
 keywords.workspace = true
 repository.workspace = true
-documentation = "https://docs.rs/ppc750cl"
+documentation = "https://docs.rs/powerpc"
 rust-version.workspace = true
 
 [dependencies]

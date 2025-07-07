@@ -1,13 +1,13 @@
-use core::{
-    fmt,
-    fmt::{Display, Formatter, LowerHex},
-};
-
 use crate::generated::{
-    parse_basic, parse_defs, parse_simplified, parse_uses, Arguments, Opcode, EMPTY_ARGS,
+    parse_basic, parse_defs, parse_simplified, parse_uses, Arguments, Extension, Opcode, EMPTY_ARGS,
+};
+use core::{
+    fmt::{self, Display, Formatter, LowerHex},
+    hash::{Hash, Hasher},
+    ops::{BitAnd, BitAndAssign, BitOr, BitOrAssign, Not},
 };
 
-/// A PowerPC 750CL instruction.
+/// A PowerPC instruction.
 #[derive(Default, Copy, Clone, Debug, Eq, PartialEq)]
 pub struct Ins {
     pub code: u32,
@@ -16,8 +16,9 @@ pub struct Ins {
 
 impl Ins {
     /// Create a new instruction from its raw code.
-    pub fn new(code: u32) -> Self {
-        Self { code, op: Opcode::detect(code) }
+    #[inline]
+    pub fn new(code: u32, extensions: Extensions) -> Self {
+        Self { code, op: Opcode::detect(code, extensions) }
     }
 
     /// Parse the instruction into a simplified mnemonic, if any match.
@@ -126,6 +127,22 @@ impl Ins {
     #[inline]
     pub fn is_blr(&self) -> bool {
         self.code == 0x4e800020
+    }
+}
+
+impl Hash for Ins {
+    #[inline]
+    fn hash<H: Hasher>(&self, state: &mut H) {
+        self.code.hash(state);
+    }
+}
+
+impl Hash for Opcode {
+    /// Opcode enum discriminants are not stable.
+    /// Instead, hash the mnemonic string.
+    #[inline]
+    fn hash<H: Hasher>(&self, state: &mut H) {
+        self.mnemonic().hash(state);
     }
 }
 
@@ -336,7 +353,7 @@ impl Display for Argument {
     }
 }
 
-/// A parsed PowerPC 750CL instruction.
+/// A parsed PowerPC instruction.
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub struct ParsedIns {
     pub mnemonic: &'static str,
@@ -344,6 +361,7 @@ pub struct ParsedIns {
 }
 
 impl Default for ParsedIns {
+    #[inline]
     fn default() -> Self {
         Self::new()
     }
@@ -351,6 +369,7 @@ impl Default for ParsedIns {
 
 impl ParsedIns {
     /// An empty parsed instruction.
+    #[inline]
     pub const fn new() -> Self {
         Self { mnemonic: "<illegal>", args: EMPTY_ARGS }
     }
@@ -412,20 +431,29 @@ impl LowerHex for SignedHexLiteral<i32> {
 
 pub struct InsIter<'a> {
     address: u32,
+    extensions: Extensions,
     data: &'a [u8],
 }
 
 impl<'a> InsIter<'a> {
-    pub fn new(data: &'a [u8], address: u32) -> Self {
-        Self { address, data }
+    #[inline]
+    pub fn new(data: &'a [u8], address: u32, extensions: Extensions) -> Self {
+        Self { address, extensions, data }
     }
 
+    #[inline]
     pub fn address(&self) -> u32 {
         self.address
     }
 
+    #[inline]
     pub fn data(&self) -> &'a [u8] {
         self.data
+    }
+
+    #[inline]
+    pub fn extensions(&self) -> Extensions {
+        self.extensions
     }
 }
 
@@ -439,10 +467,194 @@ impl Iterator for InsIter<'_> {
 
         // SAFETY: The slice is guaranteed to be at least 4 bytes long.
         let chunk = unsafe { *(self.data.as_ptr() as *const [u8; 4]) };
-        let ins = Ins::new(u32::from_be_bytes(chunk));
+        let ins = Ins::new(u32::from_be_bytes(chunk), self.extensions);
         let addr = self.address;
         self.address += 4;
         self.data = &self.data[4..];
         Some((addr, ins))
+    }
+}
+
+#[derive(Copy, Clone, Debug, PartialEq, Eq, Hash)]
+#[repr(transparent)]
+pub struct Extensions(u32);
+
+impl Extensions {
+    /// Creates an empty set of extensions.
+    #[inline]
+    pub const fn none() -> Self {
+        Self(0)
+    }
+
+    /// The set of extensions used by the PowerPC 750CXe (Gekko) / 750CL (Broadway) CPUs
+    /// used in the GameCube and Wii respectively.
+    #[inline]
+    pub const fn gekko_broadway() -> Self {
+        Self::from_bitmask(Extension::PairedSingles.bitmask())
+    }
+
+    /// The set of extensions used by the PowerPC Xenon CPU used in the Xbox 360.
+    #[inline]
+    pub const fn xenon() -> Self {
+        Self::from_bitmask(
+            Extension::Ppc64.bitmask() | Extension::AltiVec.bitmask() | Extension::Vmx128.bitmask(),
+        )
+    }
+
+    /// Checks if the given extension (and all required extensions) are enabled.
+    #[inline]
+    pub const fn contains(&self, ext: Extension) -> bool {
+        let bitmask = ext.bitmask();
+        (self.0 & bitmask) == bitmask
+    }
+
+    /// Checks if the given set of extensions are enabled.
+    #[inline]
+    pub const fn contains_all(&self, other: Extensions) -> bool {
+        (self.0 & other.0) == other.0
+    }
+
+    /// Enables the given extension. Implicitly enables all required extensions.
+    #[inline]
+    pub const fn insert(&mut self, ext: Extension) {
+        self.0 |= ext.bitmask();
+    }
+
+    /// Disables the given extension.
+    #[inline]
+    pub const fn remove(&mut self, ext: Extension) {
+        // Instead of using bitmask, which includes required extensions,
+        // we only clear the bit for the specific extension.
+        self.0 &= !(1 << (ext as u32));
+    }
+
+    /// Enables or disables the given extension.
+    #[inline]
+    pub const fn set(&mut self, ext: Extension, value: bool) {
+        if value {
+            self.insert(ext);
+        } else {
+            self.remove(ext);
+        }
+    }
+
+    /// Returns whether the extensions set is empty.
+    #[inline]
+    pub const fn is_empty(&self) -> bool {
+        self.0 == 0
+    }
+
+    /// Returns the raw bitmask of the extensions.
+    #[inline]
+    pub const fn bitmask(&self) -> u32 {
+        self.0
+    }
+
+    /// Creates a set of extensions from a raw bitmask.
+    #[inline]
+    pub const fn from_bitmask(bitmask: u32) -> Self {
+        Self(bitmask)
+    }
+
+    /// Creates a set of extensions from a single extension (and its required extensions).
+    #[inline]
+    pub const fn from_extension(ext: Extension) -> Self {
+        Self(ext.bitmask())
+    }
+}
+
+impl Default for Extensions {
+    #[inline]
+    fn default() -> Self {
+        Self::none()
+    }
+}
+
+impl From<Extension> for Extensions {
+    #[inline]
+    fn from(ext: Extension) -> Self {
+        Self::from_extension(ext)
+    }
+}
+
+impl BitOr for Extensions {
+    type Output = Extensions;
+
+    #[inline]
+    fn bitor(self, rhs: Self) -> Self::Output {
+        Self(self.0 | rhs.0)
+    }
+}
+
+impl BitOr<Extension> for Extensions {
+    type Output = Extensions;
+
+    #[inline]
+    fn bitor(self, rhs: Extension) -> Self::Output {
+        Self(self.0 | rhs.bitmask())
+    }
+}
+
+impl BitOrAssign<Extension> for Extensions {
+    #[inline]
+    fn bitor_assign(&mut self, rhs: Extension) {
+        self.0 |= rhs.bitmask();
+    }
+}
+
+impl BitAnd for Extensions {
+    type Output = Extensions;
+
+    #[inline]
+    fn bitand(self, rhs: Self) -> Self::Output {
+        Self(self.0 & rhs.0)
+    }
+}
+
+impl BitAnd<Extension> for Extensions {
+    type Output = Extensions;
+
+    #[inline]
+    fn bitand(self, rhs: Extension) -> Self::Output {
+        Self(self.0 & rhs.bitmask())
+    }
+}
+
+impl BitAndAssign<Extension> for Extensions {
+    #[inline]
+    fn bitand_assign(&mut self, rhs: Extension) {
+        self.0 &= rhs.bitmask();
+    }
+}
+
+impl Not for Extensions {
+    type Output = Extensions;
+
+    #[inline]
+    fn not(self) -> Self::Output {
+        Self(!self.0)
+    }
+}
+
+impl BitOr for Extension {
+    type Output = Extensions;
+
+    #[inline]
+    fn bitor(self, rhs: Self) -> Self::Output {
+        Extensions(self.bitmask() | rhs.bitmask())
+    }
+}
+
+impl Hash for Extension {
+    #[inline]
+    fn hash<H: Hasher>(&self, state: &mut H) {
+        self.bitmask().hash(state);
+    }
+}
+
+impl Display for Extension {
+    #[inline]
+    fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
+        f.write_str(self.name())
     }
 }
