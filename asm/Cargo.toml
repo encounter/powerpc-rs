@@ -16,4 +16,5 @@ default = ["std"]
 std = []
 
 [dependencies]
-phf = "0.11"
+phf = "0.12"
+thiserror = "2.0"

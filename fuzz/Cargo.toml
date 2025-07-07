@@ -11,5 +11,5 @@ publish = false
 
 [dependencies]
 clap = "4"
-num_cpus = "1.16"
+num_cpus = "1.17"
 powerpc = { path = "../disasm" }

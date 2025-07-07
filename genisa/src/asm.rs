@@ -94,7 +94,7 @@ pub fn gen_asm(isa: &Isa, max_args: usize) -> Result<TokenStream> {
             pattern |= modifier.mask();
         }
         let name = format!("{}{}", mnemonic.name(), suffix);
-        func_map.entry(name, &format!("(gen_{}, {:#x})", to_ident(mnemonic.name()), pattern));
+        func_map.entry(name, format!("(gen_{}, {:#x})", to_ident(mnemonic.name()), pattern));
     }
 
     let func_map = syn::parse_str::<TokenStream>(&func_map.build().to_string())?;

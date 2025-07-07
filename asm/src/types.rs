@@ -1,22 +1,21 @@
 use crate::Arguments;
-use core::fmt::Formatter;
+use thiserror::Error;
 
-#[derive(Debug)]
+#[derive(Error, Debug)]
 pub enum ArgumentError {
+    #[error(
+        "argument index {index} is out of range: {value} (expected between {start} and {end})"
+    )]
     ArgOutOfRangeUnsigned { index: usize, value: u32, start: u32, end: u32 },
+    #[error(
+        "argument index {index} is out of range: {value} (expected between {start} and {end})"
+    )]
     ArgOutOfRangeSigned { index: usize, value: i32, start: i32, end: i32 },
+    #[error("unexpected number of arguments: {value} (expected at most {expected})")]
     ArgCount { value: usize, expected: usize },
+    #[error("unknown instruction mnemonic")]
     UnknownMnemonic,
 }
-
-impl core::fmt::Display for ArgumentError {
-    fn fmt(&self, _f: &mut Formatter<'_>) -> core::fmt::Result {
-        todo!()
-    }
-}
-
-#[cfg(feature = "std")]
-impl std::error::Error for ArgumentError {}
 
 #[derive(Debug, Default, Clone, Copy, Eq, PartialEq)]
 pub enum Argument {
