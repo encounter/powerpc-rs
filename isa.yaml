@@ -214,6 +214,7 @@ opcodes:
     uses: [ rA, rB ]
 
   - name: addc
+    aliases: [ a ]
     desc: Add Carrying
     bitmask: 0xfc0003fe
     pattern: 0x7c000014
@@ -223,6 +224,7 @@ opcodes:
     uses: [ rA, rB ]
 
   - name: adde
+    aliases: [ ae ]
     desc: Add Extended
     bitmask: 0xfc0003fe
     pattern: 0x7c000114
@@ -232,6 +234,7 @@ opcodes:
     uses: [ rA, rB ]
 
   - name: addi
+    aliases: [ cal ]
     desc: Add Immediate
     bitmask: 0xfc000000
     pattern: 0x38000000
@@ -240,6 +243,7 @@ opcodes:
     uses: [ rA.nz ]
 
   - name: addic
+    aliases: [ ai ]
     desc: Add Immediate Carrying
     bitmask: 0xfc000000
     pattern: 0x30000000
@@ -249,6 +253,7 @@ opcodes:
     uses: [ rA ]
 
   - name: addic.
+    aliases: [ ai. ]
     desc: Add Immediate Carrying and Record
     bitmask: 0xfc000000
     pattern: 0x34000000
@@ -258,6 +263,7 @@ opcodes:
     uses: [ rA ]
 
   - name: addis
+    aliases: [ cau ]
     desc: Add Immediate Shifted
     bitmask: 0xfc000000
     pattern: 0x3c000000
@@ -266,6 +272,7 @@ opcodes:
     uses: [ rA.nz ]
 
   - name: addme
+    aliases: [ ame ]
     desc: Add to Minus One Extended
     bitmask: 0xfc00fbfe
     pattern: 0x7c0001d4
@@ -275,6 +282,7 @@ opcodes:
     uses: [ rA ]
 
   - name: addze
+    aliases: [ aze ]
     desc: Add to Zero Extended
     bitmask: 0xfc00fbfe
     pattern: 0x7c000194
@@ -302,6 +310,7 @@ opcodes:
     uses: [ rS, rB ]
 
   - name: andi.
+    aliases: [ andil. ]
     desc: AND Immediate
     bitmask: 0xfc000000
     pattern: 0x70000000
@@ -311,6 +320,7 @@ opcodes:
     uses: [ rB ]
 
   - name: andis.
+    aliases: [ andiu. ]
     desc: AND Immediate Shifted
     bitmask: 0xfc000000
     pattern: 0x74000000
@@ -334,6 +344,7 @@ opcodes:
     args: [ BO, BI, BD ]
 
   - name: bcctr
+    aliases: [ bcc ]
     desc: Branch Conditional to Count Register
     bitmask: 0xfc00fffe
     pattern: 0x4c000420
@@ -342,6 +353,7 @@ opcodes:
     uses: [ ctr ]
 
   - name: bclr
+    aliases: [ bcr ]
     desc: Branch Conditional to Link Register
     bitmask: 0xfc00fffe
     pattern: 0x4c000020
@@ -382,6 +394,7 @@ opcodes:
     uses: [ rA ]
 
   - name: cntlzw
+    aliases: [ cntlz ]
     desc: Count Leading Zeros Word
     bitmask: 0xfc00fffe
     pattern: 0x7c000034
@@ -490,6 +503,7 @@ opcodes:
     uses: [ rA.nz, rB ]
 
   - name: dcbz
+    aliases: [ dclz ]
     desc: Data Cache Block Clear to Zero
     bitmask: 0xffe007ff
     pattern: 0x7c0007ec
@@ -553,6 +567,7 @@ opcodes:
     uses: [ rS ]
 
   - name: extsh
+    aliases: [ exts ]
     desc: Extend Sign Half Word
     bitmask: 0xfc00fffe
     pattern: 0x7c000734
@@ -571,6 +586,7 @@ opcodes:
     uses: [ frB ]
 
   - name: fadd
+    aliases: [ fa ]
     desc: Floating Add (Double-Precision)
     bitmask: 0xfc0007fe
     pattern: 0xfc00002a
@@ -605,6 +621,7 @@ opcodes:
     uses: [ frA, frB ]
 
   - name: fctiw
+    aliases: [ fcir ]
     desc: Floating Convert to Integer Word
     bitmask: 0xfc1f07fe
     pattern: 0xfc00001c
@@ -614,6 +631,7 @@ opcodes:
     uses: [ frB ]
 
   - name: fctiwz
+    aliases: [ fcirz ]
     desc: Floating Convert to Integer Word with Round toward Zero
     bitmask: 0xfc1f07fe
     pattern: 0xfc00001e
@@ -623,6 +641,7 @@ opcodes:
     uses: [ frB ]
 
   - name: fdiv
+    aliases: [ fd ]
     desc: Floating Divide (Double-Precision)
     bitmask: 0xfc0007fe
     pattern: 0xfc000024
@@ -641,6 +660,7 @@ opcodes:
     uses: [ frA, frB ]
 
   - name: fmadd
+    aliases: [ fma ]
     desc: Floating Multiply-Add (Double-Precision)
     bitmask: 0xfc00003e
     pattern: 0xfc00003a
@@ -668,6 +688,7 @@ opcodes:
     uses: [ frB ]
 
   - name: fmsub
+    aliases: [ fms ]
     desc: Floating Multiply-Subtract (Double-Precision)
     bitmask: 0xfc00003e
     pattern: 0xfc000038
@@ -686,6 +707,7 @@ opcodes:
     uses: [ frA, frC, frB ]
 
   - name: fmul
+    aliases: [ fm ]
     desc: Floating Multiply (Double-Precision)
     bitmask: 0xfc00f83e
     pattern: 0xfc000032
@@ -722,6 +744,7 @@ opcodes:
     uses: [ frB ]
 
   - name: fnmadd
+    aliases: [ fnma ]
     desc: Floating Negative Multiply-Add (Double-Precision)
     bitmask: 0xfc00003e
     pattern: 0xfc00003e
@@ -740,6 +763,7 @@ opcodes:
     uses: [ frA, frC, frB ]
 
   - name: fnmsub
+    aliases: [ fnms ]
     desc: Floating Negative Multiply-Subtract (Double-Precision)
     bitmask: 0xfc00003e
     pattern: 0xfc00003c
@@ -794,6 +818,7 @@ opcodes:
     uses: [ frA, frC, frB ]
 
   - name: fsub
+    aliases: [ fs ]
     desc: Floating Subtract (Double-Precision)
     bitmask: 0xfc0007fe
     pattern: 0xfc000028
@@ -820,6 +845,7 @@ opcodes:
     uses: [ rA.nz, rB ]
 
   - name: isync
+    aliases: [ ics ]
     desc: Instruction Synchronize
     bitmask: 0xffffffff
     pattern: 0x4c00012c
@@ -994,6 +1020,7 @@ opcodes:
 
   # TODO lmw has much more defs
   - name: lmw
+    aliases: [ lm ]
     desc: Load Multiple Word
     bitmask: 0xfc000000
     pattern: 0xb8000000
@@ -1002,6 +1029,7 @@ opcodes:
     uses: [ offset, rA.nz ]
 
   - name: lswi
+    aliases: [ lsi ]
     desc: Load String Word Immediate
     bitmask: 0xfc0007ff
     pattern: 0x7c0004aa
@@ -1010,6 +1038,7 @@ opcodes:
     uses: [ rA.nz ]
 
   - name: lswx
+    aliases: [ lsx ]
     desc: Load String Word Indexed
     bitmask: 0xfc0007ff
     pattern: 0x7c00042a
@@ -1026,6 +1055,7 @@ opcodes:
     uses: [ rA.nz, rB ]
 
   - name: lwbrx
+    aliases: [ lbrx ]
     desc: Load String Word and Byte-Reverse Indexed
     bitmask: 0xfc0007ff
     pattern: 0x7c00042c
@@ -1034,6 +1064,7 @@ opcodes:
     uses: [ rA.nz, rB ]
 
   - name: lwz
+    aliases: [ l ]
     desc: Load Word and Zero
     bitmask: 0xfc000000
     pattern: 0x80000000
@@ -1042,6 +1073,7 @@ opcodes:
     uses: [ offset, rA.nz ]
 
   - name: lwzu
+    aliases: [ lu ]
     desc: Load Word and Zero with Update
     bitmask: 0xfc000000
     pattern: 0x84000000
@@ -1050,6 +1082,7 @@ opcodes:
     uses: [ offset, rA ]
 
   - name: lwzux
+    aliases: [ lux ]
     desc: Load Word and Zero with Update Indexed
     bitmask: 0xfc0007ff
     pattern: 0x7c00006e
@@ -1058,6 +1091,7 @@ opcodes:
     uses: [ rA, rB ]
 
   - name: lwzx
+    aliases: [ lx ]
     desc: Load Word and Zero Indexed
     bitmask: 0xfc0007ff
     pattern: 0x7c00002e
@@ -1225,6 +1259,7 @@ opcodes:
     uses: [ rA, rB ]
 
   - name: mulli
+    aliases: [ muli ]
     desc: Multiply Low Immediate
     bitmask: 0xfc000000
     pattern: 0x1c000000
@@ -1233,6 +1268,7 @@ opcodes:
     uses: [ rA ]
 
   - name: mullw
+    aliases: [ muls ]
     desc: Multiply Low Word
     bitmask: 0xfc0003fe
     pattern: 0x7c0001d6
@@ -1287,6 +1323,7 @@ opcodes:
     uses: [ rS, rB ]
 
   - name: ori
+    aliases: [ oril ]
     desc: OR Immediate
     bitmask: 0xfc000000
     pattern: 0x60000000
@@ -1295,6 +1332,7 @@ opcodes:
     uses: [ rS ]
 
   - name: oris
+    aliases: [ oriu ]
     desc: OR Immediate Shifted
     bitmask: 0xfc000000
     pattern: 0x64000000
@@ -1308,6 +1346,7 @@ opcodes:
     pattern: 0x4c000064
 
   - name: rlwimi
+    aliases: [ rlimi ]
     desc: Rotate Left Word Immediate then Mask Insert
     bitmask: 0xfc000000
     pattern: 0x50000000
@@ -1317,6 +1356,7 @@ opcodes:
     uses: [ rA, rS ]
 
   - name: rlwinm
+    aliases: [ rlinm ]
     desc: Rotate Left Word Immediate then AND with Mask
     bitmask: 0xfc000000
     pattern: 0x54000000
@@ -1326,6 +1366,7 @@ opcodes:
     uses: [ rS ]
 
   - name: rlwnm
+    aliases: [ rlnm ]
     desc: Rotate Left Word then AND with Mask
     bitmask: 0xfc000000
     pattern: 0x5c000000
@@ -1340,6 +1381,7 @@ opcodes:
     pattern: 0x44000002
 
   - name: slw
+    aliases: [ sl ]
     desc: Shift Left Word
     bitmask: 0xfc0007fe
     pattern: 0x7c000030
@@ -1349,6 +1391,7 @@ opcodes:
     uses: [ rS, rB ]
 
   - name: sraw
+    aliases: [ sra ]
     desc: Shift Right Algebraic Word
     bitmask: 0xfc0007fe
     pattern: 0x7c000630
@@ -1358,6 +1401,7 @@ opcodes:
     uses: [ rS, rB ]
 
   - name: srawi
+    aliases: [ srai ]
     desc: Shift Right Algebraic Word Immediate
     bitmask: 0xfc0007fe
     pattern: 0x7c000670
@@ -1367,6 +1411,7 @@ opcodes:
     uses: [ rS ]
 
   - name: srw
+    aliases: [ sr ]
     desc: Shift Right Word
     bitmask: 0xfc0007fe
     pattern: 0x7c000430
@@ -1510,6 +1555,7 @@ opcodes:
     uses: [ rS, rA.nz, rB ]
 
   - name: stmw
+    aliases: [ stm ]
     desc: Store Multiple Word
     bitmask: 0xfc000000
     pattern: 0xbc000000
@@ -1517,6 +1563,7 @@ opcodes:
     uses: [ rS, rA.nz ]
 
   - name: stswi
+    aliases: [ stsi ]
     desc: Store String Word Immediate
     bitmask: 0xfc0007ff
     pattern: 0x7c0005aa
@@ -1524,6 +1571,7 @@ opcodes:
     uses: [ rS, rA.nz ]
 
   - name: stswx
+    aliases: [ stsx ]
     desc: Store String Word Indexed
     bitmask: 0xfc0007ff
     pattern: 0x7c00052a
@@ -1531,6 +1579,7 @@ opcodes:
     uses: [ rS, rA.nz, rB ]
 
   - name: stw
+    aliases: [ st ]
     desc: Store Word
     bitmask: 0xfc000000
     pattern: 0x90000000
@@ -1538,6 +1587,7 @@ opcodes:
     uses: [ rS, rA.nz ]
 
   - name: stwbrx
+    aliases: [ stbrx ]
     desc: Store Word Byte-Reverse Indexed
     bitmask: 0xfc0007ff
     pattern: 0x7c00052c
@@ -1552,6 +1602,7 @@ opcodes:
     uses: [ rS, rA.nz, rB ]
 
   - name: stwu
+    aliases: [ stu ]
     desc: Store Word with Update
     bitmask: 0xfc000000
     pattern: 0x94000000
@@ -1560,6 +1611,7 @@ opcodes:
     uses: [ rS, rA ]
 
   - name: stwux
+    aliases: [ stux ]
     desc: Store Word Indexed
     bitmask: 0xfc0007ff
     pattern: 0x7c00016e
@@ -1568,6 +1620,7 @@ opcodes:
     uses: [ rS, rA, rB ]
 
   - name: stwx
+    aliases: [ stx ]
     desc: Store Word Indexed
     bitmask: 0xfc0007ff
     pattern: 0x7c00012e
@@ -1584,6 +1637,7 @@ opcodes:
     uses: [ rA, rB ]
 
   - name: subfc
+    aliases: [ sf ]
     desc: Subtract from Carrying
     bitmask: 0xfc0003fe
     pattern: 0x7c000010
@@ -1593,6 +1647,7 @@ opcodes:
     uses: [ rA, rB ]
 
   - name: subfe
+    aliases: [ sfe ]
     desc: Subtract from Extended
     bitmask: 0xfc0003fe
     pattern: 0x7c000110
@@ -1602,6 +1657,7 @@ opcodes:
     uses: [ rA, rB ]
 
   - name: subfic
+    aliases: [ sfi ]
     desc: Subtract from Immediate Carrying
     bitmask: 0xfc000000
     pattern: 0x20000000
@@ -1610,6 +1666,7 @@ opcodes:
     uses: [ rA ]
 
   - name: subfme
+    aliases: [ sfme ]
     desc: Subtract from Minus One Extended
     bitmask: 0xfc00fbfe
     pattern: 0x7c0001d0
@@ -1619,6 +1676,7 @@ opcodes:
     uses: [ rA ]
 
   - name: subfze
+    aliases: [ sfze ]
     desc: Subtract from Zero Extended
     bitmask: 0xfc00fbfe
     pattern: 0x7c000190
@@ -1628,6 +1686,7 @@ opcodes:
     uses: [ rA ]
 
   - name: sync
+    aliases: [ dcs ]
     desc: Synchronize
     bitmask: 0xFF9FFFFF
     pattern: 0x7c0004ac
@@ -1647,6 +1706,7 @@ opcodes:
     pattern: 0x7c00046c
 
   - name: tw
+    aliases: [ t ]
     desc: Trap Word
     bitmask: 0xfc0007ff
     pattern: 0x7c000008
@@ -1654,6 +1714,7 @@ opcodes:
     uses: [ rA, rB ]
 
   - name: twi
+    aliases: [ ti ]
     desc: Trap Word Immediate
     bitmask: 0xfc000000
     pattern: 0x0c000000
@@ -1670,6 +1731,7 @@ opcodes:
     uses: [ rS, rB ]
 
   - name: xori
+    aliases: [ xoril ]
     desc: XOR Immediate
     bitmask: 0xfc000000
     pattern: 0x68000000
@@ -1678,6 +1740,7 @@ opcodes:
     uses: [ rS ]
 
   - name: xoris
+    aliases: [ xoriu ]
     desc: XOR Immediate Shifted
     bitmask: 0xfc000000
     pattern: 0x6c000000
@@ -2431,6 +2494,24 @@ extensions:
         defs: [ frD ]
         uses: [ frB ]
 
+      - name: fsqrt
+        desc: Floating Square Root (Double-Precision)
+        bitmask: 0xfc1f07fe
+        pattern: 0xfc00002c
+        modifiers: [ Rc ]
+        args: [ frD, frB ]
+        defs: [ frD ]
+        uses: [ frB ]
+
+      - name: fsqrts
+        desc: Floating Square Root (Single-Precision)
+        bitmask: 0xfc1f07fe
+        pattern: 0xec00002c
+        modifiers: [ Rc ]
+        args: [ frD, frB ]
+        defs: [ frD ]
+        uses: [ frB ]
+
       - name: ld
         desc: Load Double Word
         bitmask: 0xfc000003
@@ -2494,6 +2575,13 @@ extensions:
         args: [ rD, rA, rB ]
         defs: [ rD ]
         uses: [ rA.nz, rB ]
+
+      - name: mfocrf
+        desc: Move from One Condition Register Field
+        bitmask: 0xfc100fff
+        pattern: 0x7c100026
+        args: [ rD, crm ]
+        defs: [ rD ]
 
       - name: mtmsrd
         desc: Move to Machine State Register Double Word

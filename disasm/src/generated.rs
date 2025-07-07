@@ -66,8 +66,7 @@ static OPCODE_ENTRIES: [(u16, u16); 64] = [
     (289, 290),
     (290, 291),
     (291, 297),
-    (297, 438),
-    (438, 439),
+    (297, 439),
     (439, 440),
     (440, 441),
     (441, 442),
@@ -93,12 +92,13 @@ static OPCODE_ENTRIES: [(u16, u16); 64] = [
     (461, 462),
     (462, 463),
     (463, 464),
-    (464, 467),
-    (467, 476),
-    (476, 477),
-    (477, 478),
-    (478, 480),
-    (480, 508),
+    (464, 465),
+    (465, 468),
+    (468, 478),
+    (478, 479),
+    (479, 480),
+    (480, 482),
+    (482, 511),
 ];
 #[derive(Copy, Clone)]
 struct OpcodePattern {
@@ -123,7 +123,7 @@ impl OpcodePattern {
     }
 }
 /// The bitmask and pattern for each opcode.
-static OPCODE_PATTERNS: [OpcodePattern; 508] = [
+static OPCODE_PATTERNS: [OpcodePattern; 511] = [
     // tdi
     OpcodePattern::extension(0xfc000000, 0x8000000, Extension::Ppc64),
     // twi
@@ -922,6 +922,8 @@ static OPCODE_PATTERNS: [OpcodePattern; 508] = [
     OpcodePattern::extension(0xfc0007ff, 0x7c0002ea, Extension::Ppc64),
     // lwax
     OpcodePattern::extension(0xfc0007ff, 0x7c0002aa, Extension::Ppc64),
+    // mfocrf
+    OpcodePattern::extension(0xfc100fff, 0x7c100026, Extension::Ppc64),
     // mtmsrd
     OpcodePattern::extension(0xfc1effff, 0x7c000164, Extension::Ppc64),
     // mtsrd
@@ -1076,6 +1078,8 @@ static OPCODE_PATTERNS: [OpcodePattern; 508] = [
     OpcodePattern::base(0xfc1f07fe, 0xec000030),
     // fsubs
     OpcodePattern::base(0xfc0007fe, 0xec000028),
+    // fsqrts
+    OpcodePattern::extension(0xfc1f07fe, 0xec00002c, Extension::Ppc64),
     // psq_st
     OpcodePattern::extension(0xfc000000, 0xf0000000, Extension::PairedSingles),
     // psq_stu
@@ -1140,9 +1144,11 @@ static OPCODE_PATTERNS: [OpcodePattern; 508] = [
     OpcodePattern::extension(0xfc1f07fe, 0xfc00065c, Extension::Ppc64),
     // fctidz
     OpcodePattern::extension(0xfc1f07fe, 0xfc00065e, Extension::Ppc64),
+    // fsqrt
+    OpcodePattern::extension(0xfc1f07fe, 0xfc00002c, Extension::Ppc64),
 ];
 /// The name of each opcode.
-static OPCODE_NAMES: [&str; 508] = [
+static OPCODE_NAMES: [&str; 511] = [
     "tdi",
     "twi",
     "dcbz_l",
@@ -1542,6 +1548,7 @@ static OPCODE_NAMES: [&str; 508] = [
     "ldx",
     "lwaux",
     "lwax",
+    "mfocrf",
     "mtmsrd",
     "mtsrd",
     "mtsrdin",
@@ -1619,6 +1626,7 @@ static OPCODE_NAMES: [&str; 508] = [
     "fnmsubs",
     "fres",
     "fsubs",
+    "fsqrts",
     "psq_st",
     "psq_stu",
     "std",
@@ -1651,6 +1659,7 @@ static OPCODE_NAMES: [&str; 508] = [
     "fcfid",
     "fctid",
     "fctidz",
+    "fsqrt",
 ];
 #[derive(Copy, Clone, Debug, Default, PartialEq, Eq)]
 #[repr(u16)]
@@ -2457,224 +2466,230 @@ pub enum Opcode {
     Lwaux = 397,
     /// lwax: Load Word Algebraic Indexed
     Lwax = 398,
+    /// mfocrf: Move from One Condition Register Field
+    Mfocrf = 399,
     /// mtmsrd: Move to Machine State Register Double Word
-    Mtmsrd = 399,
+    Mtmsrd = 400,
     /// mtsrd: Move to Segment Register Double Word
-    Mtsrd = 400,
+    Mtsrd = 401,
     /// mtsrdin: Move to Segment Register Double Word Indirect
-    Mtsrdin = 401,
+    Mtsrdin = 402,
     /// mulhd: Multiply High Double Word
-    Mulhd = 402,
+    Mulhd = 403,
     /// mulhdu: Multiply High Double Word Unsigned
-    Mulhdu = 403,
+    Mulhdu = 404,
     /// mulld: Multiply Low Double Word
-    Mulld = 404,
+    Mulld = 405,
     /// slbia: SLB Invalidate All
-    Slbia = 405,
+    Slbia = 406,
     /// slbie: SLB Invalidate Entry
-    Slbie = 406,
+    Slbie = 407,
     /// sld: Shift Left Double Word
-    Sld = 407,
+    Sld = 408,
     /// srad: Shift Right Algebraic Double Word
-    Srad = 408,
+    Srad = 409,
     /// sradi: Shift Right Algebraic Double Word Immediate
-    Sradi = 409,
+    Sradi = 410,
     /// srd: Shift Right Double Word
-    Srd = 410,
+    Srd = 411,
     /// stdcx.: Store Double Word Conditional Indexed
-    Stdcx_ = 411,
+    Stdcx_ = 412,
     /// stdux: Store Double Word with Update Indexed
-    Stdux = 412,
+    Stdux = 413,
     /// stdx: Store Double Word Indexed
-    Stdx = 413,
+    Stdx = 414,
     /// td: Trap Double Word
-    Td = 414,
+    Td = 415,
     /// dss: Data Stream Stop
-    Dss = 415,
+    Dss = 416,
     /// dst: Data Stream Touch
-    Dst = 416,
+    Dst = 417,
     /// dstst: Data Stream Touch for Store
-    Dstst = 417,
+    Dstst = 418,
     /// lvebx: Load Vector Element Byte Indexed
-    Lvebx = 418,
+    Lvebx = 419,
     /// lvehx: Load Vector Element Half Word Indexed
-    Lvehx = 419,
+    Lvehx = 420,
     /// lvewx: Load Vector Element Word Indexed
-    Lvewx = 420,
+    Lvewx = 421,
     /// lvlx: Load Vector Left Indexed
-    Lvlx = 421,
+    Lvlx = 422,
     /// lvlxl: Load Vector Left Indexed Last
-    Lvlxl = 422,
+    Lvlxl = 423,
     /// lvrx: Load Vector Right Indexed
-    Lvrx = 423,
+    Lvrx = 424,
     /// lvrxl: Load Vector Right Indexed Last
-    Lvrxl = 424,
+    Lvrxl = 425,
     /// lvsl: Load Vector for Shift Left
-    Lvsl = 425,
+    Lvsl = 426,
     /// lvsr: Load Vector for Shift Right
-    Lvsr = 426,
+    Lvsr = 427,
     /// lvx: Load Vector Indexed
-    Lvx = 427,
+    Lvx = 428,
     /// lvxl: Load Vector Indexed LRU
-    Lvxl = 428,
+    Lvxl = 429,
     /// stvebx: Store Vector Element Byte Indexed
-    Stvebx = 429,
+    Stvebx = 430,
     /// stvehx: Store Vector Element Half Word Indexed
-    Stvehx = 430,
+    Stvehx = 431,
     /// stvewx: Store Vector Element Word Indexed
-    Stvewx = 431,
+    Stvewx = 432,
     /// stvlx: Store Vector Left Indexed
-    Stvlx = 432,
+    Stvlx = 433,
     /// stvlxl: Store Vector Left Indexed Last
-    Stvlxl = 433,
+    Stvlxl = 434,
     /// stvrx: Store Vector Right Indexed
-    Stvrx = 434,
+    Stvrx = 435,
     /// stvrxl: Store Vector Right Indexed Last
-    Stvrxl = 435,
+    Stvrxl = 436,
     /// stvx: Store Vector Indexed
-    Stvx = 436,
+    Stvx = 437,
     /// stvxl: Store Vector Indexed LRU
-    Stvxl = 437,
+    Stvxl = 438,
     /// lwz: Load Word and Zero
-    Lwz = 438,
+    Lwz = 439,
     /// lwzu: Load Word and Zero with Update
-    Lwzu = 439,
+    Lwzu = 440,
     /// lbz: Load Byte and Zero
-    Lbz = 440,
+    Lbz = 441,
     /// lbzu: Load Byte and Zero with Update
-    Lbzu = 441,
+    Lbzu = 442,
     /// stw: Store Word
-    Stw = 442,
+    Stw = 443,
     /// stwu: Store Word with Update
-    Stwu = 443,
+    Stwu = 444,
     /// stb: Store Byte
-    Stb = 444,
+    Stb = 445,
     /// stbu: Store Byte with Update
-    Stbu = 445,
+    Stbu = 446,
     /// lhz: Load Half Word and Zero
-    Lhz = 446,
+    Lhz = 447,
     /// lhzu: Load Half Word and Zero with Update
-    Lhzu = 447,
+    Lhzu = 448,
     /// lha: Load Half Word Algebraic
-    Lha = 448,
+    Lha = 449,
     /// lhau: Load Half Word Algebraic with Update
-    Lhau = 449,
+    Lhau = 450,
     /// sth: Store Half Word
-    Sth = 450,
+    Sth = 451,
     /// sthu: Store Half Word with Update
-    Sthu = 451,
+    Sthu = 452,
     /// lmw: Load Multiple Word
-    Lmw = 452,
+    Lmw = 453,
     /// stmw: Store Multiple Word
-    Stmw = 453,
+    Stmw = 454,
     /// lfs: Load Floating-Point Single
-    Lfs = 454,
+    Lfs = 455,
     /// lfsu: Load Floating-Point Single with Update
-    Lfsu = 455,
+    Lfsu = 456,
     /// lfd: Load Floating-Point Double
-    Lfd = 456,
+    Lfd = 457,
     /// lfdu: Load Floating-Point Double with Update
-    Lfdu = 457,
+    Lfdu = 458,
     /// stfs: Store Floating-Point Single
-    Stfs = 458,
+    Stfs = 459,
     /// stfsu: Store Floating-Point Single with Update
-    Stfsu = 459,
+    Stfsu = 460,
     /// stfd: Store Floating-Point Double
-    Stfd = 460,
+    Stfd = 461,
     /// stfdu: Store Floating-Point Double with Update
-    Stfdu = 461,
+    Stfdu = 462,
     /// psq_l: Paired Single Quantized Load
-    PsqL = 462,
+    PsqL = 463,
     /// psq_lu: Paired Single Quantized Load with Update
-    PsqLu = 463,
+    PsqLu = 464,
     /// ld: Load Double Word
-    Ld = 464,
+    Ld = 465,
     /// ldu: Load Double Word with Update
-    Ldu = 465,
+    Ldu = 466,
     /// lwa: Load Word Algebraic
-    Lwa = 466,
+    Lwa = 467,
     /// fadds: Floating Add (Single-Precision)
-    Fadds = 467,
+    Fadds = 468,
     /// fdivs: Floating Divide (Single-Precision)
-    Fdivs = 468,
+    Fdivs = 469,
     /// fmadds: Floating Multiply-Add (Single-Precision)
-    Fmadds = 469,
+    Fmadds = 470,
     /// fmsubs: Floating Multiply-Subtract (Single-Precision)
-    Fmsubs = 470,
+    Fmsubs = 471,
     /// fmuls: Floating Multiply (Single-Precision)
-    Fmuls = 471,
+    Fmuls = 472,
     /// fnmadds: Floating Negative Multiply-Add (Single-Precision)
-    Fnmadds = 472,
+    Fnmadds = 473,
     /// fnmsubs: Floating Negative Multiply-Subtract (Single-Precision)
-    Fnmsubs = 473,
+    Fnmsubs = 474,
     /// fres: Floating Reciprocal Estimate Single
-    Fres = 474,
+    Fres = 475,
     /// fsubs: Floating Subtract (Single-Precision)
-    Fsubs = 475,
+    Fsubs = 476,
+    /// fsqrts: Floating Square Root (Single-Precision)
+    Fsqrts = 477,
     /// psq_st: Paired Single Quantized Store
-    PsqSt = 476,
+    PsqSt = 478,
     /// psq_stu: Paired Single Quantized Store with Update
-    PsqStu = 477,
+    PsqStu = 479,
     /// std: Store Double Word
-    Std = 478,
+    Std = 480,
     /// stdu: Store Double Word with Update
-    Stdu = 479,
+    Stdu = 481,
     /// fabs: Floating Absolute Value
-    Fabs = 480,
+    Fabs = 482,
     /// fadd: Floating Add (Double-Precision)
-    Fadd = 481,
+    Fadd = 483,
     /// fcmpo: Floating Compare Ordered
-    Fcmpo = 482,
+    Fcmpo = 484,
     /// fcmpu: Floating Compare Unordered
-    Fcmpu = 483,
+    Fcmpu = 485,
     /// fctiw: Floating Convert to Integer Word
-    Fctiw = 484,
+    Fctiw = 486,
     /// fctiwz: Floating Convert to Integer Word with Round toward Zero
-    Fctiwz = 485,
+    Fctiwz = 487,
     /// fdiv: Floating Divide (Double-Precision)
-    Fdiv = 486,
+    Fdiv = 488,
     /// fmadd: Floating Multiply-Add (Double-Precision)
-    Fmadd = 487,
+    Fmadd = 489,
     /// fmr: Floating Move Register (Double-Precision)
-    Fmr = 488,
+    Fmr = 490,
     /// fmsub: Floating Multiply-Subtract (Double-Precision)
-    Fmsub = 489,
+    Fmsub = 491,
     /// fmul: Floating Multiply (Double-Precision)
-    Fmul = 490,
+    Fmul = 492,
     /// fnabs: Floating Negative Absolute Value
-    Fnabs = 491,
+    Fnabs = 493,
     /// fneg: Floating Negate
-    Fneg = 492,
+    Fneg = 494,
     /// fnmadd: Floating Negative Multiply-Add (Double-Precision)
-    Fnmadd = 493,
+    Fnmadd = 495,
     /// fnmsub: Floating Negative Multiply-Subtract (Double-Precision)
-    Fnmsub = 494,
+    Fnmsub = 496,
     /// frsp: Floating Round to Single
-    Frsp = 495,
+    Frsp = 497,
     /// frsqrte: Floating Reciprocal Square Root Estimate
-    Frsqrte = 496,
+    Frsqrte = 498,
     /// fsel: Floating Select
-    Fsel = 497,
+    Fsel = 499,
     /// fsub: Floating Subtract (Double-Precision)
-    Fsub = 498,
+    Fsub = 500,
     /// mcrfs: Move to Condition Register from FPSCR
-    Mcrfs = 499,
+    Mcrfs = 501,
     /// mffs: Move from FPSCR
-    Mffs = 500,
+    Mffs = 502,
     /// mtfsb0: Move to FPSCR Bit 0
-    Mtfsb0 = 501,
+    Mtfsb0 = 503,
     /// mtfsb1: Move to FPSCR Bit 1
-    Mtfsb1 = 502,
+    Mtfsb1 = 504,
     /// mtfsf: Move to FPSCR Fields
-    Mtfsf = 503,
+    Mtfsf = 505,
     /// mtfsfi: Move to FPSCR Field Immediate
-    Mtfsfi = 504,
+    Mtfsfi = 506,
     /// fcfid: Floating Convert from Integer Double Word
-    Fcfid = 505,
+    Fcfid = 507,
     /// fctid: Floating Convert to Integer Double Word
-    Fctid = 506,
+    Fctid = 508,
     /// fctidz: Floating Convert to Integer Double Word with Round toward Zero
-    Fctidz = 507,
+    Fctidz = 509,
+    /// fsqrt: Floating Square Root (Double-Precision)
+    Fsqrt = 510,
 }
 impl Opcode {
     pub fn mnemonic(self) -> &'static str {
@@ -2697,7 +2712,7 @@ impl Opcode {
 impl From<u16> for Opcode {
     #[inline]
     fn from(value: u16) -> Self {
-        if value > 507 {
+        if value > 510 {
             Self::Illegal
         } else {
             // Safety: The enum is repr(u16) and the value is within the enum's range
@@ -10680,6 +10695,18 @@ fn basic_lwax(out: &mut ParsedIns, ins: Ins) {
         ],
     };
 }
+fn basic_mfocrf(out: &mut ParsedIns, ins: Ins) {
+    *out = ParsedIns {
+        mnemonic: "mfocrf",
+        args: [
+            Argument::GPR(GPR(ins.field_rd() as _)),
+            Argument::OpaqueU(OpaqueU(ins.field_crm() as _)),
+            Argument::None,
+            Argument::None,
+            Argument::None,
+        ],
+    };
+}
 fn basic_mtmsrd(out: &mut ParsedIns, ins: Ins) {
     *out = ParsedIns {
         mnemonic: "mtmsrd",
@@ -11705,6 +11732,21 @@ fn basic_fsubs(out: &mut ParsedIns, ins: Ins) {
         }
     };
 }
+fn basic_fsqrts(out: &mut ParsedIns, ins: Ins) {
+    *out = {
+        static MODIFIERS: [&str; 2] = ["fsqrts", "fsqrts."];
+        ParsedIns {
+            mnemonic: MODIFIERS[ins.field_rc() as usize],
+            args: [
+                Argument::FPR(FPR(ins.field_frd() as _)),
+                Argument::FPR(FPR(ins.field_frb() as _)),
+                Argument::None,
+                Argument::None,
+                Argument::None,
+            ],
+        }
+    };
+}
 fn basic_psq_st(out: &mut ParsedIns, ins: Ins) {
     *out = ParsedIns {
         mnemonic: "psq_st",
@@ -12164,10 +12206,25 @@ fn basic_fctidz(out: &mut ParsedIns, ins: Ins) {
         }
     };
 }
+fn basic_fsqrt(out: &mut ParsedIns, ins: Ins) {
+    *out = {
+        static MODIFIERS: [&str; 2] = ["fsqrt", "fsqrt."];
+        ParsedIns {
+            mnemonic: MODIFIERS[ins.field_rc() as usize],
+            args: [
+                Argument::FPR(FPR(ins.field_frd() as _)),
+                Argument::FPR(FPR(ins.field_frb() as _)),
+                Argument::None,
+                Argument::None,
+                Argument::None,
+            ],
+        }
+    };
+}
 fn mnemonic_illegal(out: &mut ParsedIns, _ins: Ins) {
     *out = ParsedIns::new();
 }
-static BASIC_MNEMONICS: [MnemonicFunction; 508] = [
+static BASIC_MNEMONICS: [MnemonicFunction; 511] = [
     basic_tdi,
     basic_twi,
     basic_dcbz_l,
@@ -12567,6 +12624,7 @@ static BASIC_MNEMONICS: [MnemonicFunction; 508] = [
     basic_ldx,
     basic_lwaux,
     basic_lwax,
+    basic_mfocrf,
     basic_mtmsrd,
     basic_mtsrd,
     basic_mtsrdin,
@@ -12644,6 +12702,7 @@ static BASIC_MNEMONICS: [MnemonicFunction; 508] = [
     basic_fnmsubs,
     basic_fres,
     basic_fsubs,
+    basic_fsqrts,
     basic_psq_st,
     basic_psq_stu,
     basic_std,
@@ -12676,6 +12735,7 @@ static BASIC_MNEMONICS: [MnemonicFunction; 508] = [
     basic_fcfid,
     basic_fctid,
     basic_fctidz,
+    basic_fsqrt,
 ];
 pub(crate) fn parse_basic(out: &mut ParsedIns, ins: Ins) {
     match BASIC_MNEMONICS.get(ins.op as usize) {
@@ -12683,7 +12743,7 @@ pub(crate) fn parse_basic(out: &mut ParsedIns, ins: Ins) {
         None => mnemonic_illegal(out, ins),
     }
 }
-static SIMPLIFIED_MNEMONICS: [MnemonicFunction; 508] = [
+static SIMPLIFIED_MNEMONICS: [MnemonicFunction; 511] = [
     simplified_tdi,
     simplified_twi,
     basic_dcbz_l,
@@ -13083,6 +13143,7 @@ static SIMPLIFIED_MNEMONICS: [MnemonicFunction; 508] = [
     basic_ldx,
     basic_lwaux,
     basic_lwax,
+    basic_mfocrf,
     basic_mtmsrd,
     basic_mtsrd,
     basic_mtsrdin,
@@ -13160,6 +13221,7 @@ static SIMPLIFIED_MNEMONICS: [MnemonicFunction; 508] = [
     basic_fnmsubs,
     basic_fres,
     basic_fsubs,
+    basic_fsqrts,
     basic_psq_st,
     basic_psq_stu,
     basic_std,
@@ -13192,6 +13254,7 @@ static SIMPLIFIED_MNEMONICS: [MnemonicFunction; 508] = [
     basic_fcfid,
     basic_fctid,
     basic_fctidz,
+    basic_fsqrt,
 ];
 pub(crate) fn parse_simplified(out: &mut ParsedIns, ins: Ins) {
     match SIMPLIFIED_MNEMONICS.get(ins.op as usize) {
@@ -13685,7 +13748,7 @@ fn uses_stfsu(out: &mut Arguments, ins: Ins) {
 fn defs_uses_empty(out: &mut Arguments, _ins: Ins) {
     *out = EMPTY_ARGS;
 }
-static DEFS_FUNCTIONS: [DefsUsesFunction; 508] = [
+static DEFS_FUNCTIONS: [DefsUsesFunction; 511] = [
     defs_uses_empty,
     defs_uses_empty,
     defs_uses_empty,
@@ -14085,6 +14148,7 @@ static DEFS_FUNCTIONS: [DefsUsesFunction; 508] = [
     defs_mulli,
     defs_mulli,
     defs_mulli,
+    defs_mulli,
     defs_uses_empty,
     defs_uses_empty,
     defs_uses_empty,
@@ -14153,6 +14217,7 @@ static DEFS_FUNCTIONS: [DefsUsesFunction; 508] = [
     defs_mulli,
     defs_lbzux,
     defs_mulli,
+    defs_psq_lx,
     defs_psq_lx,
     defs_psq_lx,
     defs_psq_lx,
@@ -14191,6 +14256,7 @@ static DEFS_FUNCTIONS: [DefsUsesFunction; 508] = [
     defs_crand,
     defs_uses_empty,
     defs_ps_cmpo0,
+    defs_psq_lx,
     defs_psq_lx,
     defs_psq_lx,
     defs_psq_lx,
@@ -14201,7 +14267,7 @@ pub(crate) fn parse_defs(out: &mut Arguments, ins: Ins) {
         None => defs_uses_empty(out, ins),
     }
 }
-static USES_FUNCTIONS: [DefsUsesFunction; 508] = [
+static USES_FUNCTIONS: [DefsUsesFunction; 511] = [
     uses_tdi,
     uses_tdi,
     uses_dcbz_l,
@@ -14601,6 +14667,7 @@ static USES_FUNCTIONS: [DefsUsesFunction; 508] = [
     uses_dcbz_l,
     uses_psq_lux,
     uses_dcbz_l,
+    defs_uses_empty,
     uses_mtmsrd,
     uses_rlwinm,
     uses_rlwnm,
@@ -14678,6 +14745,7 @@ static USES_FUNCTIONS: [DefsUsesFunction; 508] = [
     uses_ps_madd,
     uses_ps_abs,
     uses_ps_add,
+    uses_ps_abs,
     uses_stfs,
     uses_stfsu,
     uses_stswi,
@@ -14707,6 +14775,7 @@ static USES_FUNCTIONS: [DefsUsesFunction; 508] = [
     defs_uses_empty,
     uses_ps_abs,
     defs_uses_empty,
+    uses_ps_abs,
     uses_ps_abs,
     uses_ps_abs,
     uses_ps_abs,

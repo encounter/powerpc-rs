@@ -18,6 +18,12 @@ fn test_ins_cntlzd() {
 }
 
 #[test]
+fn test_vmx_dcbzl() {
+    assert_asm!(0x7c2327ec, "dcbzl r3, r4");
+    assert_asm!(0x7c20ffec, "dcbzl r0, r31");
+}
+
+#[test]
 fn test_ins_divd() {
     assert_asm!(0x7CA63BD2, "divd r5, r6, r7");
 }
@@ -46,6 +52,18 @@ fn test_ins_fctid() {
 #[test]
 fn test_ins_fctidz() {
     assert_asm!(0xFC60065E, "fctidz f3, f0");
+}
+
+#[test]
+fn test_ins_fsqrt() {
+    assert_asm!(0xfc60f82c, "fsqrt f3, f31");
+    assert_asm!(0xffe0102d, "fsqrt. f31, f2");
+}
+
+#[test]
+fn test_ins_fsqrts() {
+    assert_asm!(0xec40182c, "fsqrts f2, f3");
+    assert_asm!(0xec60f82d, "fsqrts. f3, f31");
 }
 
 #[test]
@@ -88,6 +106,11 @@ fn test_ins_lwaux() {
 #[test]
 fn test_ins_lwax() {
     assert_asm!(0x7CA63AAA, "lwax r5, r6, r7");
+}
+
+#[test]
+fn test_ins_mfocrf() {
+    assert_asm!(0x7d702026, "mfocrf r11, 2");
 }
 
 #[test]
@@ -237,9 +260,4 @@ fn test_ins_td() {
 #[test]
 fn test_ins_tdi() {
     assert_asm!(0x09830058, "tdi 12, r3, 0x58");
-}
-
-#[test]
-fn test_vmx_dcbzl() {
-    assert_asm!(0x7c2327ec, "dcbzl r3, r4");
 }

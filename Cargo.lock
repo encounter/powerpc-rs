@@ -268,11 +268,11 @@ checksum = "439ee305def115ba05938db6eb1644ff94165c5ab5e9420d1c1bcedbba909391"
 
 [[package]]
 name = "powerpc"
-version = "0.4.0"
+version = "0.4.1"
 
 [[package]]
 name = "powerpc-asm"
-version = "0.4.0"
+version = "0.4.1"
 dependencies = [
  "phf",
  "thiserror",
@@ -280,7 +280,7 @@ dependencies = [
 
 [[package]]
 name = "powerpc-fuzz"
-version = "0.4.0"
+version = "0.4.1"
 dependencies = [
  "clap",
  "num_cpus",
@@ -289,7 +289,7 @@ dependencies = [
 
 [[package]]
 name = "powerpc-genisa"
-version = "0.4.0"
+version = "0.4.1"
 dependencies = [
  "anyhow",
  "indexmap",
