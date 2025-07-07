@@ -64,7 +64,7 @@ pub fn parse_conditions<'a>(condition: &'a str, isa: &'a Isa) -> Result<Vec<Cond
         } else if let Some((field, value)) = tok.split_once(" >= ") {
             (field, value, ConditionOp::Gte)
         } else {
-            log::error!("Invalid condition: {}", tok);
+            log::error!("Invalid condition: {tok}");
             continue;
         };
         let mut field_mask = u32::MAX;

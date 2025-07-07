@@ -40,7 +40,7 @@ pub fn gen_disasm(isa: &Isa, max_args: usize) -> Result<TokenStream> {
         } else if let Some(op) = (entry.count == 1).then(|| &sorted_ops[entry.start as usize]) {
             log::info!("{:#X}: {}", i, op.name);
         } else {
-            log::info!("{:#X}: <invalid>", i);
+            log::info!("{i:#X}: <invalid>");
         }
         entries.push(entry);
     }
@@ -64,7 +64,7 @@ pub fn gen_disasm(isa: &Isa, max_args: usize) -> Result<TokenStream> {
         let pattern = HexLiteral(opcode.pattern);
         let enum_idx = Literal::u16_unsuffixed(idx as u16);
         let name = &opcode.name;
-        let comment = format!(" {}", name);
+        let comment = format!(" {name}");
         let extension =
             isa.extensions.iter().find(|(_, e)| e.opcodes.iter().any(|o| o.name == opcode.name));
         let initializer = if let Some((id, _)) = extension {
